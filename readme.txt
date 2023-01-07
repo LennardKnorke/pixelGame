@@ -1,13 +1,19 @@
 STRUCTURE
-to compile two extra folder are needed but not uploaded
+
 /build			contains a Makefile for the compiler. compile in console using "mingw32-make" and then run "./Game"
+
 /include 		for all the extra libraries and headerfiles (raylib, json stuff)
+
 /lib		    which contains the .a file for raylib (header stuff)
+
 /src			contains the selfmade sourcecode/ main.cpp. for some reason it was recommended... alot
+    .Main.cpp   Main c++ file
 /world			empty right now. contains all the available worlds?
+
 .config			json. contains infos about the last used screen, screen settings, last used profile and etc
+
 .dalle_images	python file to make dalle our bitch
-.Game.exe		
+
 .readme			this.
 
 
