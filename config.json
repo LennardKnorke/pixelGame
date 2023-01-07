@@ -1,0 +1,11 @@
+{
+    "currentProfile": "none",
+    "first": true,
+    "screen_settings": {
+        "height": 1080,
+        "monitorId": 0,
+        "width": 1920,
+        "fullScreen" : true
+    },
+    "profiles" : []
+}
