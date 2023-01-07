@@ -1,10 +1,8 @@
 STRUCTURE
 to compile two extra folder are needed but not uploaded
-/include 		for all the extra libraries and headerfiles
-/include		which contains the .a file for raylib (header stuff)
-
-Included:
 /build			contains a Makefile for the compiler. compile in console using "mingw32-make" and then run "./Game"
+/include 		for all the extra libraries and headerfiles (raylib, json stuff)
+/lib		    which contains the .a file for raylib (header stuff)
 /src			contains the selfmade sourcecode/ main.cpp. for some reason it was recommended... alot
 /world			empty right now. contains all the available worlds?
 .config			json. contains infos about the last used screen, screen settings, last used profile and etc
