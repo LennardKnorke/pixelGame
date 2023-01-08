@@ -1,11 +1,13 @@
 {
     "currentProfile": "none",
-    "first": true,
+    "first": false,
     "screen_settings": {
-        "height": 1080,
-        "monitorId": 0,
-        "width": 1920,
-        "fullScreen" : true
+        "height": 480,
+        "monitorId": 1,
+        "width": 640,
+        "fullScreen" : false
     },
-    "profiles" : []
+    "profiles" : [
+    ]
+    
 }

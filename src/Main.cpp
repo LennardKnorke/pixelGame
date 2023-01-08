@@ -7,6 +7,8 @@
 //External libs
 #include "nlohmann/json.hpp"
 #include <raylib.h>
+#include <thread>
+#include <sys/socket.h>
 //UP here include setting type of functions and game functions and classes at the bottom
 //Open and returns json file
 nlohmann::json read_json_file (const std::string &path){
@@ -22,12 +24,56 @@ nlohmann::json read_json_file (const std::string &path){
 //How about a list, containing the following struct, is always given to the draw function
 //Every picture
 
+class imageSprite {
+    public:
+        int id; 
+        Image imageReference;
+        int sizeX;
+        int sizeY;
+        void imageResize(int newsizeX, int newsizeY){
+            sizeX = newsizeX;
+            sizeY = newsizeY;
+            ImageResize(&imageReference, sizeX, sizeY);
+        }
+        imageSprite(const char * path, int imageid, int x, int y){
+            sizeX = x;
+            sizeY = y;
+            id = imageid;
+            //id 0 == Background Menu
+            if (id == 0){
+                imageReference = LoadImage(path);
+            }
+            ImageResize(&imageReference, sizeX, sizeY);
+        }
+};
+
+class textureSprite {
+    public:
+        Texture2D loadedTexture;
+        int posX, posY, textureId;
+        textureSprite(Image img, int x, int y){
+            loadedTexture = LoadTextureFromImage (img);
+            posX = x;
+            posY = y;
+        }
+};
+
+class gameSprite : textureSprite {
+
+};
+
+
+
+
 
 int main (int argc, char *args[]){
+    //test. does not do anything /just to see if the thread works DELETE LATER:
+    //SERVER_FUNCTIONS_H::run_server_thread(0);
     
+    //Load settings, screen infos and stuff
     nlohmann::json configs = read_json_file("../config.json");
     std::string currentProfile = configs["currentProfile"];
-    //Load settings, screen info 
+    
     int screenWidth = 0, screenHeight = 0, screenNumber = 0;
     bool fullScreen;
     InitWindow(screenWidth, screenHeight, "Fuck yeah I'm a god");
@@ -55,6 +101,7 @@ int main (int argc, char *args[]){
             fullScreen = false;
         }
     }
+    float screenRatios [2] = {(float)screenWidth / (float)1920, (float)screenHeight / (float)1080};
     //Finalize Starting Window
     SetWindowMonitor(screenNumber);
     SetWindowSize(screenWidth, screenHeight);
@@ -69,40 +116,26 @@ int main (int argc, char *args[]){
         system("pause");
         return 0;
     }
-    Image menuBackground = LoadImage("../sprites/menu/bgmenu.png");
-    ImageResize(&menuBackground, 1920, 1080);
-    Texture2D menuBackground2 = LoadTextureFromImage(menuBackground);
+    //Menu Buttons
+    imageSprite bgmenu(".../sprites/menu/bgmenu.png", 0 , (float)screenWidth * screenRatios[0], (float)screenHeight * screenRatios[1]);
+    textureSprite bgmenusprite(bgmenu.imageReference, 0,0);
 
-    //initial idea. if
-    //0:    load menu (if necessary)
-    //1:    Menu
-    //2:    load world
-    //3:    world
-    Texture2D currentlyDisPlayedSprites[1];
-    while (!WindowShouldClose()){
-        
+
+    clock_t timer = clock();
+    while (!WindowShouldClose() && ((clock() - timer) / CLOCKS_PER_SEC) <= 10){
+        if (IsWindowFocused() == false){
+            MinimizeWindow();
+        }
+
         BeginDrawing();
-            ClearBackground(BLACK);
-            
-            DrawTexture(menuBackground2, 0, 0, WHITE);
+        DrawTexture(bgmenusprite.loadedTexture, bgmenusprite.posX, bgmenusprite.posY, BLANK);
         EndDrawing();
-
+        
     }
-    UnloadTexture(menuBackground2);
+    UnloadTexture(bgmenusprite.loadedTexture);
     
 
     
     return 0;
 }
 
-Texture2D* loadMenuSprites(void){
-
-}
-
-void printSprites (Texture2D *Sprites){
-    BeginDrawing();
-    for (int i = 1; i < sizeof(Sprites) / sizeof(Texture2D); i++){
-
-    }
-    EndDrawing();
-}
