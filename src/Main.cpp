@@ -10,6 +10,7 @@
 #include <raylib.h>
 #include <thread>
 
+#define NUMBER_OF_DIFFERENT_MENU_TEXTURES 6
 //UP here include setting type of functions and game functions and classes at the bottom
 //Open and returns json file
 nlohmann::json read_json_file (const std::string &path){
@@ -29,7 +30,8 @@ nlohmann::json read_json_file (const std::string &path){
 
 
 
-void resizeImageReferenceList (Image imgRefList[6], int newx, int newy);
+void resizeMenuTextures (Image imgRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], int newx, int newy, Texture2D loadedTextures[NUMBER_OF_DIFFERENT_MENU_TEXTURES]);
+int screenWidth = 0, screenHeight = 0, screenNumber = 0;
 int main (int argc, char *args[]){
     //test. does not do anything /just to see if the thread works DELETE LATER:
     //SERVER_FUNCTIONS_H::run_server_thread(0);
@@ -38,7 +40,7 @@ int main (int argc, char *args[]){
     nlohmann::json configs = read_json_file("../config.json");
     std::string currentProfile = configs["currentProfile"];
     
-    int screenWidth = 0, screenHeight = 0, screenNumber = 0;
+    
     bool fullScreen;
     InitWindow(screenWidth, screenHeight, "Fuck yeah I'm a god");
     //If its the first time starting the game, look for default options and save them in the config
@@ -80,17 +82,17 @@ int main (int argc, char *args[]){
         system("pause");
         return 0;
     }
-    //Menu Buttons
-    std::string menuItemList[6] = {"bgmenu", "curs", "default_button", "default_button_clicked", "world", "world_clicked"};
-    Image menuImage_reference[6];
-    Texture2D menuTextures[6];
-    for (int i = 0 ; i < 6; i++){
+    //Load and size Menu Buttons depending on current screen settings. Images and textures
+    std::string menuItemList[NUMBER_OF_DIFFERENT_MENU_TEXTURES] = {"bgmenu", "curs", "default_button", "default_button_clicked", "world", "world_clicked"};
+    Image menuImage_reference[NUMBER_OF_DIFFERENT_MENU_TEXTURES];
+    Texture2D menuTextures[NUMBER_OF_DIFFERENT_MENU_TEXTURES];
+    for (int i = 0 ; i < NUMBER_OF_DIFFERENT_MENU_TEXTURES; i++){
         std::string fileName = ("../sprites/menu/"+menuItemList[i]+".png");
         const char *cFileName = fileName.c_str();
         menuImage_reference[i] = LoadImage(cFileName);
         int s1,s2;
         if (i == 0){
-            s1 = 1920; s2 = 1080;
+            s1 = screenWidth; s2 = screenHeight;
         } else if (i == 1){
             s1 = 50 * screenRatios[0]; s2 = 50 * screenRatios[1];
         } else if (i == 2 || i == 3){
@@ -101,21 +103,26 @@ int main (int argc, char *args[]){
         ImageResize(&menuImage_reference[i], s1, s2);
         menuTextures[i] = LoadTextureFromImage(menuImage_reference[i]);
     }
+    std::string menuItemFunctions[] = {"New Profile", "Play", "Exit", "Host", "Join", "New World"};
 
     clock_t timer = clock();
-    while (!WindowShouldClose()){
-
-        
+    int mouseX = GetMouseX();
+    int mouseY = GetMouseY();
+    HideCursor();
+    while (!WindowShouldClose() && ((clock() - timer) / CLOCKS_PER_SEC) < 5){
+        mouseX = GetMouseX();
+        mouseY = GetMouseY();        
         BeginDrawing();
             ClearBackground(GRAY);
             DrawTexture(menuTextures[0], 0,  0, WHITE);
             DrawTexture(menuTextures[2], (screenWidth / 2) - (menuTextures[2].width / 2), (screenHeight / 2) - (menuTextures[2].height / 2), WHITE);
+            DrawTexture(menuTextures[1], mouseX, mouseY, WHITE);
         EndDrawing();
         
     }
 
 
-    for (int i = 0; i < 6; i++){
+    for (int i = 0; i < NUMBER_OF_DIFFERENT_MENU_TEXTURES; i++){
         UnloadImage(menuImage_reference[i]);
         UnloadTexture(menuTextures[i]);
     }  
@@ -125,14 +132,14 @@ int main (int argc, char *args[]){
 }
 
 
-void resizeMenuTextures (Image imgRefList[6], int newx, int newy, Texture2D loadedTextures[6]){
-    for (int i = 0; i < 6; i++){
+void resizeMenuTextures (Image imgRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], int newx, int newy, Texture2D loadedTextures[NUMBER_OF_DIFFERENT_MENU_TEXTURES]){
+    for (int i = 0; i < NUMBER_OF_DIFFERENT_MENU_TEXTURES; i++){
         ImageResize(&imgRefList[i], newx, newy);
         UnloadTexture(loadedTextures[i]);
         loadedTextures[i] = LoadTextureFromImage(imgRefList[i]);
     }
 }
 
-int runMenu(void){
+int runMenu(float screenRatios[2], Texture2D textureRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES]){
     return 0;
 }
