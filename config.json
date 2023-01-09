@@ -2,10 +2,10 @@
     "currentProfile": "none",
     "first": false,
     "screen_settings": {
-        "height": 480,
-        "monitorId": 1,
-        "width": 640,
-        "fullScreen" : false
+        "height": 1080,
+        "monitorId": 0,
+        "width": 1920,
+        "fullScreen" : true
     },
     "profiles" : [
     ]

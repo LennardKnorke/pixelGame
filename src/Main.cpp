@@ -4,11 +4,12 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <string.h>
 //External libs
 #include "nlohmann/json.hpp"
 #include <raylib.h>
 #include <thread>
-#include <sys/socket.h>
+
 //UP here include setting type of functions and game functions and classes at the bottom
 //Open and returns json file
 nlohmann::json read_json_file (const std::string &path){
@@ -24,48 +25,11 @@ nlohmann::json read_json_file (const std::string &path){
 //How about a list, containing the following struct, is always given to the draw function
 //Every picture
 
-class imageSprite {
-    public:
-        int id; 
-        Image imageReference;
-        int sizeX;
-        int sizeY;
-        void imageResize(int newsizeX, int newsizeY){
-            sizeX = newsizeX;
-            sizeY = newsizeY;
-            ImageResize(&imageReference, sizeX, sizeY);
-        }
-        imageSprite(const char * path, int imageid, int x, int y){
-            sizeX = x;
-            sizeY = y;
-            id = imageid;
-            //id 0 == Background Menu
-            if (id == 0){
-                imageReference = LoadImage(path);
-            }
-            ImageResize(&imageReference, sizeX, sizeY);
-        }
-};
-
-class textureSprite {
-    public:
-        Texture2D loadedTexture;
-        int posX, posY, textureId;
-        textureSprite(Image img, int x, int y){
-            loadedTexture = LoadTextureFromImage (img);
-            posX = x;
-            posY = y;
-        }
-};
-
-class gameSprite : textureSprite {
-
-};
 
 
 
 
-
+void resizeImageReferenceList (Image imgRefList[6], int newx, int newy);
 int main (int argc, char *args[]){
     //test. does not do anything /just to see if the thread works DELETE LATER:
     //SERVER_FUNCTIONS_H::run_server_thread(0);
@@ -117,25 +81,58 @@ int main (int argc, char *args[]){
         return 0;
     }
     //Menu Buttons
-    imageSprite bgmenu(".../sprites/menu/bgmenu.png", 0 , (float)screenWidth * screenRatios[0], (float)screenHeight * screenRatios[1]);
-    textureSprite bgmenusprite(bgmenu.imageReference, 0,0);
-
+    std::string menuItemList[6] = {"bgmenu", "curs", "default_button", "default_button_clicked", "world", "world_clicked"};
+    Image menuImage_reference[6];
+    Texture2D menuTextures[6];
+    for (int i = 0 ; i < 6; i++){
+        std::string fileName = ("../sprites/menu/"+menuItemList[i]+".png");
+        const char *cFileName = fileName.c_str();
+        menuImage_reference[i] = LoadImage(cFileName);
+        int s1,s2;
+        if (i == 0){
+            s1 = 1920; s2 = 1080;
+        } else if (i == 1){
+            s1 = 50 * screenRatios[0]; s2 = 50 * screenRatios[1];
+        } else if (i == 2 || i == 3){
+            s1 = 300 * screenRatios[0]; s2 = 100 * screenRatios[1];
+        } else if (i == 4 || i == 5){
+            s1 = 300 * screenRatios[0]; s2 = 300 * screenRatios[1];
+        }
+        ImageResize(&menuImage_reference[i], s1, s2);
+        menuTextures[i] = LoadTextureFromImage(menuImage_reference[i]);
+    }
 
     clock_t timer = clock();
-    while (!WindowShouldClose() && ((clock() - timer) / CLOCKS_PER_SEC) <= 10){
-        if (IsWindowFocused() == false){
-            MinimizeWindow();
-        }
+    while (!WindowShouldClose()){
 
+        
         BeginDrawing();
-        DrawTexture(bgmenusprite.loadedTexture, bgmenusprite.posX, bgmenusprite.posY, BLANK);
+            ClearBackground(GRAY);
+            DrawTexture(menuTextures[0], 0,  0, WHITE);
+            DrawTexture(menuTextures[2], (screenWidth / 2) - (menuTextures[2].width / 2), (screenHeight / 2) - (menuTextures[2].height / 2), WHITE);
         EndDrawing();
         
     }
-    UnloadTexture(bgmenusprite.loadedTexture);
-    
+
+
+    for (int i = 0; i < 6; i++){
+        UnloadImage(menuImage_reference[i]);
+        UnloadTexture(menuTextures[i]);
+    }  
 
     
     return 0;
 }
 
+
+void resizeMenuTextures (Image imgRefList[6], int newx, int newy, Texture2D loadedTextures[6]){
+    for (int i = 0; i < 6; i++){
+        ImageResize(&imgRefList[i], newx, newy);
+        UnloadTexture(loadedTextures[i]);
+        loadedTextures[i] = LoadTextureFromImage(imgRefList[i]);
+    }
+}
+
+int runMenu(void){
+    return 0;
+}
