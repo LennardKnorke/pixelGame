@@ -175,6 +175,7 @@ int main (int argc, char *args[]){
     bool fullScreen;
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitAudioDevice();
+    
     InitWindow(screenWidth, screenHeight, "Fuck yeah I'm a god");
     //If its the first time starting the game, look for default options and save them in the json
     if (configs["first"] == true){
@@ -272,7 +273,8 @@ int main (int argc, char *args[]){
         
     }
     CloseWindow();
-
+    
+    CloseAudioDevice();
     for (int i = 0; i < NUMBER_OF_DIFFERENT_MENU_TEXTURES; i++){
         UnloadImage(preprocessedMenuImages[i]);
     }  
@@ -298,7 +300,8 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
         Layers[k].initiate(k, configFile, imageRefList, fontGroesse);
     }
 
-    
+    Music mainMenuMusic = LoadMusicStream("../sound/menu.mp3");
+    PlayMusicStream(mainMenuMusic);
 
     //add cursor and background
     Texture2D CurserSprite = LoadTextureFromImage(imageRefList[1]);
@@ -309,6 +312,7 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
     int menu_running = 1;
     int Current_Layer = 0;
     while (menu_running == 1) {
+        UpdateMusicStream(mainMenuMusic);
         mouseX = GetMouseX();
         mouseY = GetMouseY();
         BeginDrawing();
@@ -340,6 +344,7 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
 
     //Unload Texture and Images. Cause why do we need them...
     UnloadSound(clickSound);
+    UnloadMusicStream(mainMenuMusic);
     UnloadTexture(BackGroundSprite);
     UnloadTexture(CurserSprite);
     for (int k = 0; k < 6; k++){
