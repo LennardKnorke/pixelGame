@@ -1,5 +1,4 @@
 {
-    "currentProfile": "none",
     "first": false,
     "screen_settings": {
         "height": 1080,
@@ -7,7 +6,14 @@
         "width": 1920,
         "fullScreen" : true
     },
-    "profiles" : [
+    "nprofiles" : 1,
+    "profiles" :
+    [
+        {
+            "name" : "Lennard",
+            "id" : "akbvlspo49x83mf935"
+            
+        }
     ]
     
 }
