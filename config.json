@@ -6,13 +6,10 @@
         "width": 1920,
         "fullScreen" : true
     },
-    "nprofiles" : 1,
+    "nprofiles" : 0,
     "profiles" :
     [
         {
-            "name" : "Lennard",
-            "id" : "akbvlspo49x83mf935"
-            
         }
     ]
     
