@@ -8,7 +8,7 @@ class gameFeature {
 
 };
 
-
+int stuff;
 void run_server_thread(int port){
 
     return;
