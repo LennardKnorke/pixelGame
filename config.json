@@ -1,16 +1,16 @@
 {
-    "first": false,
-    "screen_settings": {
-        "height": 1080,
-        "monitorId": 0,
-        "width": 1920,
-        "fullScreen" : true
-    },
-    "nprofiles" : 0,
-    "profiles" :
-    [
-        {
-        }
-    ]
-    
+ "first": false,
+ "nprofiles": 1,
+ "profiles": [
+  {
+   "key": "8JvUaAS5XYkFt6H",
+   "name": "Lennard"
+  }
+ ],
+ "screen_settings": {
+  "fullScreen": true,
+  "height": 1080,
+  "monitorId": 0,
+  "width": 1920
+ }
 }

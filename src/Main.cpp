@@ -6,6 +6,7 @@
 #include <thread>
 #include <string>
 #include <thread>
+#include <random>
 //External libs
 #include "nlohmann/json.hpp"
 #include <raylib.h>
@@ -16,7 +17,6 @@ extern  void run_server_thread(int port);
 
 //Ease scalability of texture/ button loading
 #define NUMBER_OF_DIFFERENT_MENU_TEXTURES 6 
-#define NUMBER_OF_DEFAULT_MENU_BUTTONS 12
 
 #define NUMBER_WORLD_TEXTURES 0
 #define NUMBER_CHAR_TEXTURES 0
@@ -27,7 +27,7 @@ extern  void run_server_thread(int port);
 int screenWidth = 0;
 int screenHeight = 0;
 int screenNumber = 0;
-float screenRatios[2]; //can all be reduced to one number if we limit to 16:9
+float screenRatio; //can all be reduced to one number if we limit to 16:9
 bool fullScreen;
 int GAME_STATE = 0;
 //relevant for the network communicaiton
@@ -35,8 +35,8 @@ std::string own_Ip_Adress;
 std::string host_Ip_Adress;
 int client_Port;
 int host_Port;
-std::string activeProfile;
-std::string profileKey;
+std::string activeProfileName;
+std::string activeProfileKey;
 
 //Structures and Classes
 
@@ -54,7 +54,11 @@ nlohmann::json read_json_file (const std::string &path){
 
 
 
+
+
 //Other fthen the main Functions
+std::string generateKey(void);
+bool checkFile (void);
 int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::json configFile);
 int play_Game();
 int load_World(void);
@@ -66,7 +70,7 @@ int main (int argc, char *args[]){
     //Load settings, screen infos and stuff
     nlohmann::json configs = read_json_file("../config.json");
     
-    
+    //init audio and make window minimizeable
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitAudioDevice();
     
@@ -76,13 +80,26 @@ int main (int argc, char *args[]){
         screenHeight = GetScreenHeight();
         screenWidth = GetScreenWidth();
         screenNumber = GetCurrentMonitor();
+        //standardize into 16:9? just in case
+        if (screenHeight >= 1080 && screenWidth >= 1920){
+            screenHeight = 1080;
+            screenWidth = 1920;
+        } else if (screenHeight >= 720 && screenWidth >= 1280){
+            screenHeight = 1080;
+            screenWidth = 1920;
+        } else {
+            screenHeight = 540;
+            screenWidth = 960;
+        }
+        //save in config and then in json
         configs["first"] = false;
         configs["screen_settings"]["width"] = screenWidth;
         configs["screen_settings"]["height"] = screenHeight;
         configs["screen_settings"]["fullScreen"] = true;
         fullScreen = true;
-        std::ofstream output_file("config.json");
+        std::ofstream output_file("../config.json");
         output_file << configs.dump(1) << std::endl;
+        output_file.close();
     }
     //Or read out information of the config file
     else {
@@ -91,8 +108,8 @@ int main (int argc, char *args[]){
         screenNumber = configs["screen_settings"]["monitorId"];
         fullScreen = configs["screen_settings"]["fullScreen"];
     }
-    screenRatios[0] = (float)screenWidth / (float)1920;
-    screenRatios[1] = (float)screenHeight / (float)1080;
+    screenRatio = (float)screenWidth / (float)1920;
+
 
     //Set Up Window
     SetWindowMonitor(screenNumber);
@@ -132,6 +149,8 @@ int main (int argc, char *args[]){
         Load images and textures of the loading screen but only load images into cpu waiting and during loading resize and load into gpu
         Add a small note on what could happen during the initial socket connection. No game stuff or shit. just to figure out if it worked.  
     */
+
+   //Main main main loop. switch between menu, loading/connecting and game cycle
     while (GAME_STATE != -1){ 
         switch (GAME_STATE){
             //Menu
@@ -145,6 +164,8 @@ int main (int argc, char *args[]){
                 GAME_STATE = play_Game();
         }
     }
+
+
     //Unload all images, close window and close all modules
     CloseWindow();
     CloseAudioDevice();
@@ -166,40 +187,58 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
     Texture2D scaledMenuTextures[NUMBER_OF_DIFFERENT_MENU_TEXTURES];
     int textureSizes [NUMBER_OF_DIFFERENT_MENU_TEXTURES][2] = {{screenWidth, screenHeight}, {50, 50}, {300, 100}, {300, 100}, {300, 100}, {300, 100}};
     for (int m = 0; m < NUMBER_OF_DIFFERENT_MENU_TEXTURES; m++){
-        ImageResize(&imageRefList[m], textureSizes[m][0] * screenRatios[0], textureSizes[m][1]* screenRatios[1]);
+        ImageResize(&imageRefList[m], textureSizes[m][0] * screenRatio, textureSizes[m][1]* screenRatio);
         scaledMenuTextures[m] = LoadTextureFromImage(imageRefList[m]);
     }
 
     //Button information. How many default button, how many variable buttons. Then their Text
-    int nDefaultButtonPerLayer[6] = {1,3,4,2,1,2};
+    int nDefaultButtonPerLayer[6] = {1,3,3,2,1,2};
     int nNonDefaultButtonPerLayer[6] = {configFile["nprofiles"],0,0,0,0,0};
     int nTotalButtons[6] = {(nDefaultButtonPerLayer[0] + nNonDefaultButtonPerLayer[0]), (nDefaultButtonPerLayer[1] + nNonDefaultButtonPerLayer[1]), (nDefaultButtonPerLayer[2] + nNonDefaultButtonPerLayer[2]), (nDefaultButtonPerLayer[3] + nNonDefaultButtonPerLayer[3]), (nDefaultButtonPerLayer[4] + nNonDefaultButtonPerLayer[4]), (nDefaultButtonPerLayer[5] + nNonDefaultButtonPerLayer[5])};
-    std::string displayText[6][4] = {{"New Profile", "", ""}, {"Play", "Options", "Exit"}, {"Toggle FullScreen", "High Res", "Mid Res", "Low Res"},{"Host", "Join", ""}, {"New World", "" , ""}, {"Enter Host Ip", "Enter Host Port", ""}};
+    std::string displayText[6][3] = {{"New Profile", "", ""}, {"Play", "Options", "Exit"}, {"High Res", "Mid Res", "Low Res"},{"Host", "Join", ""}, {"New World", "" , ""}, {"Enter Host Ip", "Enter Host Port", ""}};
+    
+    
     //Idx will be used display a maximum number of 4 profiles/ worlds. adapt idx to a maximum of 4 if exactly 4 are available (no new profile/ world available)
+    /*
     if (nNonDefaultButtonPerLayer[0] >= 4){
         nTotalButtons[0] = 4;
     } else if (nNonDefaultButtonPerLayer[4] >= 4){
+        nTotalButtons[4] = 4;
+    }*/
 
-    }
+
     //Info for non-default buttons (profile and world buttons)
     std::string availableProfiles[(int)configFile["nprofiles"]];
+    std::string availableProfileKeys[(int)configFile["nprofiles"]];
     std::string *availableWorlds;
+    bool Max_Profiles = false;
+    bool Max_Worlds = false;
+    if (nNonDefaultButtonPerLayer[0] >= 4){
+        Max_Profiles = true;
+    }
 
     //Other on screen info
-    std::string userInput;
+    std::string userInput = "";
     std::string instructions = "Use Arrow Buttons, 'Entf' and 'Enter' to navigate";
 
+    
     //Load in available profiles
     for (int i = 0; i < configFile["nprofiles"]; i++){
-        std::cout << configFile["profiles"][i]["name"] << std::endl;
+        std::cout << "Found Profile: " << configFile["profiles"][i]["name"] << std::endl;
         availableProfiles[i] = configFile["profiles"][i]["name"];
+        availableProfileKeys[i] = configFile["profiles"][i]["key"];
     }
 
     //Navigating through the menu
-    int menu_running = 1;
+    int menu_running = 1;//int because we can return it to indicate next step in the Main main main loop
     int Current_Layer = 0;
     int pickedIdx = 0;
+
+    //Used for managing char input 
     bool userInputBool = false;
+    bool userDeletingBool = false;
+    int MAX_LENGTH = 20;
+    int nUserInput = 0;
 
     //MENU LOOP
     while (menu_running == 1) {
@@ -207,16 +246,29 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
         BeginDrawing();
             ClearBackground(GRAY);
             DrawTexture(scaledMenuTextures[0], 0, 0, WHITE);
+
             //Draw default buttons available for the current layer
             for (int i = 0 ; i < nDefaultButtonPerLayer[Current_Layer]; i++){
-                if (nTotalButtons[Current_Layer] <= 4){
+                //Draw everthing for basically every layer. one more if for layer 0 and 4 in which a maximum of profiles and worlds are drawn
+                if ((Current_Layer == 0 && Max_Profiles == false) || (Current_Layer != 0 && Current_Layer != 4) || (Current_Layer == 4 && Max_Worlds == false)){
+                    //Draw button background
                     if (pickedIdx == i){
                         DrawTexture(scaledMenuTextures[3], (screenWidth / 2) - (imageRefList[2].width / 2), ((screenHeight / (nTotalButtons[Current_Layer] + 1)) * (1 + i)) - (imageRefList[2].height / 2), WHITE);
                     } else {
                         DrawTexture(scaledMenuTextures[2], (screenWidth / 2) - (imageRefList[2].width / 2), ((screenHeight / (nTotalButtons[Current_Layer] + 1)) * (1 + i)) - (imageRefList[2].height / 2), WHITE);
                     }
-                    DrawText(displayText[Current_Layer][i].c_str(), (screenWidth / 2) - (MeasureText(displayText[Current_Layer][i].c_str(), 30 * screenRatios[1]) / 2), ((screenHeight / (nTotalButtons[Current_Layer] + 1)) * (1 + i)) - ((30 * screenRatios[1])/2), 30*screenRatios[1], BLACK);
+                    
 
+                    //Draw button Text
+                    if (Current_Layer == 0 || Current_Layer == 4 || Current_Layer == 5){
+                        if (userInputBool == false){
+                            DrawText(displayText[Current_Layer][i].c_str(), (screenWidth / 2) - (MeasureText(displayText[Current_Layer][i].c_str(), 30 * screenRatio) / 2), ((screenHeight / (nTotalButtons[Current_Layer] + 1)) * (1 + i)) - ((30 * screenRatio)/2), 30*screenRatio, BLACK);
+                        } else if ((Current_Layer == 0) && userInputBool == true){
+                            DrawText(userInput.c_str(), (screenWidth / 2) - (MeasureText(userInput.c_str(), 30 * screenRatio) / 2), ((screenHeight / (nTotalButtons[Current_Layer] + 1)) * (1 + i)) - ((30 * screenRatio)/2), 30*screenRatio, BLACK);
+                        }
+                    } else {
+                        DrawText(displayText[Current_Layer][i].c_str(), (screenWidth / 2) - (MeasureText(displayText[Current_Layer][i].c_str(), 30 * screenRatio) / 2), ((screenHeight / (nTotalButtons[Current_Layer] + 1)) * (1 + i)) - ((30 * screenRatio)/2), 30*screenRatio, BLACK);
+                    }
                 }
             }
 
@@ -224,20 +276,29 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
             for (int i = 0 ; i < nNonDefaultButtonPerLayer[Current_Layer]; i++){
                 if (pickedIdx == i + nDefaultButtonPerLayer[Current_Layer]){
                     DrawTexture(scaledMenuTextures[3], (screenWidth / 2) - (imageRefList[2].width / 2), ((screenHeight / (nTotalButtons[Current_Layer] + 1)) * (1 + nDefaultButtonPerLayer[Current_Layer] + i)) - (imageRefList[2].height / 2), WHITE);
+                    if (userDeletingBool == true){
+                        Rectangle re;
+                        re.x = (screenWidth / 2) - (imageRefList[2].width / 2);
+                        re.y = ((screenHeight / (nTotalButtons[Current_Layer] + 1)) * (1 + nDefaultButtonPerLayer[Current_Layer] + i)) - (imageRefList[2].height / 2);
+                        re.width = imageRefList[2].width;
+                        re.height = imageRefList[2].height;
+                        const char* warningMsg = "Confirm profile delete with delete or enter. Cancel using ESC.";
+                        DrawRectangleLinesEx(re, 10 * screenRatio, RED);
+                        DrawText(warningMsg, (screenWidth / 2) - (MeasureText(warningMsg, 18 * screenRatio) / 2), ((screenHeight / (nTotalButtons[Current_Layer] + 1)) * (1 + nDefaultButtonPerLayer[Current_Layer] + i)) + (imageRefList[2].height / 2), 18 * screenRatio, BLACK); 
+                    }
                 } else {
                     DrawTexture(scaledMenuTextures[2], (screenWidth / 2) - (imageRefList[2].width / 2), ((screenHeight / (nTotalButtons[Current_Layer] + 1)) * (1 + nDefaultButtonPerLayer[Current_Layer] + i)) - (imageRefList[2].height / 2), WHITE);
                 }
                 if (Current_Layer == 0){
-                    DrawText(availableProfiles[i].c_str(), (screenWidth / 2) - (MeasureText(availableProfiles[i].c_str(), 30 * screenRatios[1]) / 2), ((screenHeight / (nTotalButtons[Current_Layer] + 1)) * (1 + nDefaultButtonPerLayer[Current_Layer] + i)) - ((30 * screenRatios[1])/2), 30*screenRatios[1], BLACK);
+                    DrawText(availableProfiles[i].c_str(), (screenWidth / 2) - (MeasureText(availableProfiles[i].c_str(), 30 * screenRatio) / 2), ((screenHeight / (nTotalButtons[Current_Layer] + 1)) * (1 + nDefaultButtonPerLayer[Current_Layer] + i)) - ((30 * screenRatio)/2), 30*screenRatio, BLACK);
                 }
+                
             }
 
             //Draw menu instructions. like use arrows and enter and hist.
-            if (Current_Layer == 0){
-                DrawText(instructions.c_str(), (screenWidth / 2) - (MeasureText(instructions.c_str(), 18 * screenRatios[1]) / 2), screenHeight - ((18 * screenRatios[1])), 18 * screenRatios[1], BLACK);
-            }
+            DrawText(instructions.c_str(), (screenWidth / 2) - (MeasureText(instructions.c_str(), 18 * screenRatio) / 2), screenHeight - ((18 * screenRatio)), 18 * screenRatio, BLACK);
 
-            //Draw developmental tools
+            //Draw helpful tools. fps and two lines in the middle of the screen
             DrawFPS(0,0);
             DrawLine(0, screenHeight/2, screenWidth, screenHeight/2, ORANGE);
             DrawLine(screenWidth/2, 0, screenWidth/2, screenHeight, ORANGE);
@@ -245,37 +306,85 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
         EndDrawing();
 
         //KEY INPUT
+        //Escape button 
         if (IsKeyPressed(KEY_ESCAPE) == true){
-            if (Current_Layer == 0){
+            if (Current_Layer == 0 && userInputBool == false && userDeletingBool == false){
                 menu_running = -1;
-            } else if (userInputBool == true){
-                userInputBool = false;
-            } else {
+            } else if ((Current_Layer == 0|| Current_Layer == 3 || Current_Layer == 4  || Current_Layer == 5) && (userInputBool == true || userDeletingBool == true)){
+                if (userDeletingBool == true){
+                    userDeletingBool = false;
+                } else if (userInputBool == true){
+                    userInputBool = false;
+                    userInput = "";
+                    nUserInput = 0;
+                }
+                
+            } else if (Current_Layer == 5){
+                Current_Layer = 3;
+            } else if (Current_Layer == 3){
+                Current_Layer = 1;
+            }else {
                 Current_Layer -= 1;
             }
-        } else if (IsKeyPressed(KEY_UP)){
+        //pick upper button. ONLY if allowed
+        } else if (IsKeyPressed(KEY_UP) && userInputBool == false && userDeletingBool == false){
             pickedIdx -= 1;
             if (pickedIdx < 0){
                 pickedIdx = nTotalButtons[Current_Layer] - 1;
             }
-        } else if (IsKeyPressed(KEY_DOWN)){
+        //pick lower button. only if now user input is going on
+        } else if (IsKeyPressed(KEY_DOWN) && userInputBool == false && userDeletingBool == false){
             pickedIdx += 1;
             if (pickedIdx >= nTotalButtons[Current_Layer]){
                 pickedIdx = 0;
             }
+        //Enter button
         } else if (IsKeyPressed(KEY_ENTER)){
+            //from the first layer
             if (Current_Layer == 0){
-                if (pickedIdx == 0 && nTotalButtons[Current_Layer] <= 4){
-                    //CREATE NEW PROFILE
-                    Current_Layer = 1;
-                    pickedIdx = 0;
-                } else {
-                    if (nTotalButtons[Current_Layer] <= 4){
-                        activeProfile = availableProfiles[pickedIdx - 1];
+                //if available. create a new profile and go to layer 1
+                if (pickedIdx == 0 && Max_Profiles == false){
+                    //If no input has been given yet. allow input
+                    if (userInputBool == false){
+                        userInputBool = true;
+                    //Or create the profile given the name
+                    } else {
+                        userInputBool = false;
+                        //create profile key. Make sure it's not a duplicate!
+                        bool tmpCheck = false;
+                        do {
+                            tmpCheck = false;
+                            activeProfileKey = generateKey();
+                            for (int i = 0; i < configFile["nprofiles"]; i++){
+                                if (strcmp(activeProfileKey.c_str(), availableProfileKeys[i].c_str()) == 0){
+                                    tmpCheck = true;
+                                }
+                            }
+                        } while (tmpCheck == true);
+                        //Change number of profiles! and save in json config
+                        configFile["nprofiles"] = configFile["nprofiles"].get<int>() + 1;
+                        nlohmann::json newElement = {{"name", userInput.c_str()}, {"key", activeProfileKey.c_str()}};
+                        configFile["profiles"].push_back(newElement);
+                        std::ofstream output_file ("../config.json");
+                        output_file << configFile.dump(1) << std::endl;
+
+                        //Next layer
+                        Current_Layer = 1;
+                        pickedIdx = 0;
+                    }
+                    
+                } else/* alligns active profile and associated key with the currently selected profile*/ {
+                    if (nNonDefaultButtonPerLayer[Current_Layer] <= 4){
+                        activeProfileName = availableProfiles[pickedIdx - 1];
+                        activeProfileKey = availableProfileKeys[pickedIdx - 1];
+                    } else {
+                        activeProfileName = availableProfiles[pickedIdx];
+                        activeProfileKey = availableProfileKeys[pickedIdx];
                     }
                     Current_Layer = 1;
                     pickedIdx = 0;
                 }
+            //Boring. Main Layer from which you can go play, see options or exit;
             } else if (Current_Layer == 1){
                 if (pickedIdx == 0){
                     Current_Layer = 3;
@@ -284,6 +393,7 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
                 } else if (pickedIdx == 2){
                     menu_running = -1;
                 }
+            //OPTIONS. Implement resize function and save new sizes in config
             } else if (Current_Layer == 2){
                 if (pickedIdx == 0){
 
@@ -291,16 +401,31 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
 
                 } else if (pickedIdx == 2){
                     
-                }else if (pickedIdx == 3){
-                    
                 }
+            //Choose to host or Join. Also easy and boring
             } else if (Current_Layer == 3){
                 if (pickedIdx == 0){
                     Current_Layer = 4;
-                    pickedIdx = 0;
                 } else if (pickedIdx == 1){
                     Current_Layer = 5;
-                    pickedIdx = 0;
+                }
+                pickedIdx = 0;
+            }
+        } else if (IsKeyPressed(KEY_DELETE)){
+            userDeletingBool = true;
+        //Any other button
+        } else {
+            //Only in specific layers if they are not filled out the proper field has been selected. 
+            if (userInputBool == true && ((Current_Layer == 0 && pickedIdx == 0 && Max_Profiles == false) || (Current_Layer == 4 && pickedIdx == 0 && Max_Worlds == false) || (Current_Layer == 5 && (pickedIdx == 0 || pickedIdx == 1)))){
+                int key = GetCharPressed();
+                char keyInput[2]; keyInput[0] = key; keyInput[1] = '\0';
+                if (key >= 32 && key <= 125 && nUserInput <= MAX_LENGTH){
+                    userInput.append(keyInput);
+                    nUserInput += 1;
+                }
+                if (IsKeyPressed(KEY_BACKSPACE)){
+                    userInput.pop_back();
+                    nUserInput -= 1;
                 }
             }
         }
@@ -320,6 +445,22 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
 
     //initiate new part of the game loop
     return menu_running;
+}
+
+std::string generateKey(void){
+    const std::string alphabet = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    std::random_device rd;
+    std::mt19937 generator(rd());
+    std::uniform_int_distribution<int> distribution(0, alphabet.length() - 1);
+    std::string result;
+    for (int i = 0 ; i < 15; i++){
+        result += alphabet[distribution(generator)];
+    }
+    return result;
+}
+
+bool checkFile (void){
+    return true;
 }
 
 
