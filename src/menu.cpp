@@ -361,9 +361,7 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
                         if (choB){
                             break;
                         }
-                        
                     }
-                    break;
                 }
             }
         }
