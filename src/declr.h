@@ -9,22 +9,30 @@
 #define NUMBER_ENEMY_TEXTURES 0
 
 //SOME GLOBAL VARIABLES (gV)
-//relevant for the window:
 namespace gV {
+    //screen/window variables
     extern int screenWidth;
     extern int screenHeight;
     extern int screenNumber;
     extern float screenRatio; //can all be reduced to one number if we limit to 16:9
     extern bool fullScreen;
+
+    //Game information
     extern int GAME_STATE;
+    extern std::string activeProfileName;
+    extern std::string activeProfileKey;
 
     //relevant for the network communicaiton
     extern std::string own_Ip_Adress;
     extern std::string host_Ip_Adress;
     extern int client_Port;
     extern int host_Port;
-    extern std::string activeProfileName;
-    extern std::string activeProfileKey;
+
+    //Information in case of hosting
+    extern bool wantsHost;
+    extern std::string hosting_chosen_world;
+    extern bool newWorld;
+    
 }
 
 
@@ -35,8 +43,9 @@ namespace gV {
 nlohmann::json read_json_file (const std::string &path);
 void resizeTextureAndImages (Image imageList[], Texture2D textureList[],  int sizes[][2], int numberImages);
 bool checkFile(void);
-std::string generateKey(void);
-
+std::string generateString(void);
+void createWorldFile(void);
+void addProfileToConfig(nlohmann::json configFileToSave, std::string newProfileKey,std::string newProfileName);
 
 //Game Loop Functions
 void run_server_thread(int port);

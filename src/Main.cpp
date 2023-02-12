@@ -20,15 +20,24 @@ namespace gV {
     int screenWidth;
     int screenHeight;
     int screenNumber;
-    float screenRatio; //can all be reduced to one number if we limit to 16:9
+    float screenRatio; 
     bool fullScreen;
+
+    //Game information
     int GAME_STATE;
+    std::string activeProfileName;
+    std::string activeProfileKey;
+
+    //relevant for the network communicaiton
     std::string own_Ip_Adress;
     std::string host_Ip_Adress;
     int client_Port;
     int host_Port;
-    std::string activeProfileName;
-    std::string activeProfileKey;
+
+    //Information in case of hosting
+    bool wantsHost;
+    std::string hosting_chosen_world;
+    bool newWorld;
 }
 
 
@@ -38,7 +47,7 @@ int main (int argc, char *args[]){
     
     //Load settings, screen infos and stuff
     nlohmann::json configs = read_json_file("../config.json");
-    
+    gV::wantsHost = false;
     //init audio and make window minimizeable
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     
