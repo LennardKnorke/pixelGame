@@ -50,36 +50,42 @@ class displayImage {
 
 class defaultButton {
     public:
-        Rectangle rec;
-        int textPosition[2];
-        bool focus;
-        int currentLayer;
-        int followUpLayer;
-        std::string buttonText;
-        int buttonTextLength;
-        int textureIdx[2];
+        Rectangle rec;                      //Contins size[width, height] and x,y position of upper left corner
+        int textPosition[2];                //screen position of the upper left corner
+        int buttonType;                     //button type. 0:defaultButton, 1:create Button, 2: choose button, 3: optionsButton, 4:connectionButton
+        bool focus;                         //true, if MouseRec colllides with button
+        int currentLayer;                   //Assigned Layer
+        int buttIdx;                        //First, second, third or fourth button?
+        int followUpLayer;                  //Where does the button lead?
+        std::string buttonText;             //Text on Button
+        int buttonTextLength;               //width of Button Text
+        int textureIdx[2];                  //saves the indexes of textures to be drawn for this button
+        bool directFollowOnClick = true;    //if true, then clicking will immideatly follow to the next layer
+        bool inUse = false;                 //inUse, if next layers does not follow on click, the button is "inUse"
         //Create a default button
-        defaultButton(int spriteIdx[], int size[], std::string text, int lay, int pos, int maxPos, int funcIdx){
+        defaultButton(int spriteIdx[], int size[], std::string text, int lay, int pos, int maxPos, int funcIdx, int type){
             //Save general information
+            buttonType = type;
             currentLayer = lay;
             focus = false;
+            buttIdx = pos;
             buttonText = text;
             followUpLayer = funcIdx;
-            //Set a reference to the texture aswell its positions 
+            //Save texture information, size, position, index in texturelist 
             textureIdx[0] = spriteIdx[1];
             textureIdx[1] = spriteIdx[0];
             rec.height = size[1];
             rec.width = size[0]; 
             rec.x = (gV::screenWidth / 2) - (rec.width / 2);
             rec.y = (((gV::screenHeight / (maxPos + 1)) * pos) - (rec.height / 2));
-            //Do the same for the displayed text.
+            //Set position and size of button text;
             buttonTextLength = MeasureText(buttonText.c_str(), 30 * gV::screenRatio);
             textPosition[0] = (gV::screenWidth / 2) - (buttonTextLength / 2);
             textPosition[1] = ((gV::screenHeight / (maxPos + 1)) * pos) - ((30 * gV::screenRatio) / 2);
         }
 
         //Draw appropriate button texture and add text to it
-        void draw(Texture2D textureList[]){
+        virtual void draw(Texture2D textureList[]){
             if (focus == true){
                 DrawTexture(textureList[textureIdx[0]], rec.x, rec.y, WHITE);
             } else {
@@ -88,83 +94,94 @@ class defaultButton {
             DrawText(buttonText.c_str(), textPosition[0], textPosition[1], 30 * gV::screenRatio, BLACK);
         }
 
-        int click(void){
-            return followUpLayer;
+        //Button Click
+        virtual void click(void){
+            return;
         }
 
-        void update(Rectangle mouseRec){
+        //Check collision with mouse
+        virtual void update(Rectangle mouseRec){
             if (CheckCollisionRecs(mouseRec, rec) == true){
                 focus = true;
             } else {
                 focus = false;
             }
         }
+
+        virtual void updatePosition(void){
+            
+        }
 };
 
 class createButton : public defaultButton {
-    public:
-        std::string textcpy;
+
 };
 
 class choiceButton : public defaultButton {
 
 };
 
-class optionsButton {
-    public:
-        Rectangle rec;
-        int textPosition[2];
-        bool focus;
-        int currentLayer;
-        int followUpLayer;
-        std::string buttonText;
-        int buttonTextLength;
-        int textureIdx[2];
-        optionsButton (int spriteIdx[], int size[], std::string text, int pos){
-            //Save general information
-            currentLayer = 2;
-            focus = false;
-            buttonText = text;
-            followUpLayer = 2;
-            //Set a reference to the texture aswell its positions 
-            textureIdx[0] = spriteIdx[1];
-            textureIdx[1] = spriteIdx[0];
-            rec.height = size[1];
-            rec.width = size[0]; 
-            rec.x = (gV::screenWidth / 2) - (rec.width / 2);
-            rec.y = (((gV::screenHeight / (4)) * pos) - (rec.height / 2));
-            //Do the same for the displayed text.
-            buttonTextLength = MeasureText(buttonText.c_str(), 30 * gV::screenRatio);
-            textPosition[0] = (gV::screenWidth / 2) - (buttonTextLength / 2);
-            textPosition[1] = ((gV::screenHeight / (4)) * pos) - ((30 * gV::screenRatio) / 2);
-        }
-
-        //Draw appropriate button texture and add text to it
-        void draw(Texture2D textureList[]){
-            if (focus == true){
-                DrawTexture(textureList[textureIdx[0]], rec.x, rec.y, WHITE);
-            } else {
-                DrawTexture(textureList[textureIdx[1]], rec.x, rec.y, WHITE);
-            }
-            DrawText(buttonText.c_str(), textPosition[0], textPosition[1], 30 * gV::screenRatio, BLACK);
-        }
-
-        int click(void){
-            return followUpLayer;
-        }
-
-        void update(Rectangle mouseRec){
-            if (CheckCollisionRecs(mouseRec, rec) == true){
-                focus = true;
-            } else {
-                focus = false;
-            }
-        }
-
-
+//Same as default. But changes window and overall screen information. 
+//Can it take all textures and resize them?
+class optionsButton : public defaultButton{
+    using defaultButton::defaultButton;
+    void click(void) override {
+        std::cout << "Now it should change into " << buttonText << std::endl;
+        return;
+    }
 };
 
+//2 connectionButton's needed. To ask for host ip and host port number
 class connectionButton : public defaultButton{
+    public:
+        std::string input = "";     //User Input text.
+        std::string ogTextCopy;     //Copy of the original text to switch around between displayed texts
+        int numberInputChars = 0;   //Number of chars inputed for this field.
+        int maxInputChars;
+        
+        connectionButton(int spriteIdx[], int size[], std::string text, int lay, int pos, int maxPos, int funcIdx, int type) : defaultButton(spriteIdx, size, text, lay, pos, maxPos, funcIdx, type){
+            ogTextCopy = buttonText;
+            directFollowOnClick = false;
+            if (pos == 1){
+                maxInputChars = 13;
+            } else {
+                maxInputChars = 5;
+            }
+        }
+
+        void click(void) override {
+            if (inUse == false){
+                inUse = true;
+                buttonText = input;
+                updateHorizontalTextPosition();
+            }
+        }
+
+        //add a char to the user input
+        void addInputChar (int inputKey){
+            char inputCharStar[2];
+            inputCharStar[0] = (char)inputKey;
+            inputCharStar[1] = '\0';
+            if ((inputKey >= 32) && (inputKey <= 125) && (numberInputChars <= maxInputChars)){
+                input.append(inputCharStar); 
+            }
+            updateHorizontalTextPosition();
+        }
+
+        //Update the text position
+        void updateHorizontalTextPosition(void){
+            buttonTextLength = MeasureText(buttonText.c_str(), 30 * gV::screenRatio);
+            textPosition[0] = (gV::screenWidth / 2) - (buttonTextLength / 2);
+        }
+
+        void cancelInput(void){
+            if (inUse){
+                inUse = false;
+                input = "";
+                buttonText = ogTextCopy;
+                updateHorizontalTextPosition();
+            }
+        }
 
 };
 
@@ -189,8 +206,6 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
     std::string *availableProfiles = (std::string *) malloc(sizeof(std::string) * (int) configFile["nprofiles"]);
     std::string *availableProfileKeys = (std::string *) malloc(sizeof(std::string) * (int) configFile["nprofiles"]);
     std::string *availableWorlds = nullptr;
-    bool Max_Profiles = false;
-    bool Max_Worlds = false;
 
 
     int bgPos[2] = {0, 0};
@@ -204,53 +219,40 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
 
     //Create class instances
     //Background and Cursor
-    
     displayImage BackgroundImage(0, textureSizes[0],bgPos);
     displayImage Cursor(1, textureSizes[1], mousePos);
     std::cout << "Background and Cursor created\n";
     
-    //Create Default Buttons
-    std::vector<defaultButton> DefaultButtonList;
-    std::string defaultsTexts[5] = {"Play", "Options", "Exit", "Host", "Join"};
-    int defaultsLayers[5] = {1, 1, 1, 3, 3};
-    int defaultsFuncIdx[5] = {3, 2, -1, 4, 5};
-    int defaultsSpriteIdx[2] = {2,3};
-    for (int i = 0; i < 5; i++){
-        if (defaultsLayers[i] == 1){
-            defaultButton button(defaultsSpriteIdx, textureSizes[3], defaultsTexts[i], 1, 1 + i, 3, defaultsFuncIdx[i]);
-            DefaultButtonList.push_back(button);
-            std::cout << "Button added in Layer: " << 1 << std::endl;
 
-        } else {
-            defaultButton button(defaultsSpriteIdx, textureSizes[3], defaultsTexts[i], 3, (1 + i) - 3, 2, defaultsFuncIdx[i]);
-            DefaultButtonList.push_back(button);
-            std::cout << "Button added in Layer: " << 3 << std::endl;
+    //create all buttons (except profile and worlds buttons!)
+    std::vector<defaultButton*> Buttons;
+    int nBUTTONS = 13;
+    int buttonTypes[] =     {1, 0, 0, 0, 3, 3, 3, 3, 0, 0, 1, 4, 4};
+    int spriteIdxs[2] =     {2, 3};
+    std::string displayTexts[] = {"New Profile", "Play", "Options", "Exit", "Toggle Fullscreen", "High Res", "Mid Res", "Low Res", "Host", "Join", "New World", "Enter Host Ip", "Enter Host Port"};
+    int layers[] =          {0, 1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5, 5};
+    int positions[] =       {1, 1, 2, 3, 1, 2, 3, 4, 1, 2, 1, 1, 2};
+    int maxPositions[] =    {4, 3, 3, 3, 4, 4, 4, 4, 2, 2, 4, 2, 2};
+    int functionalIdxs[]=   {1, 3, 2, -1, 2, 2, 2, 2, 4, 5, 4, 5, 5};//NOTE: needs to be adapted eventually!!. Returns the following layer
+    
+    for (int i = 0; i < nBUTTONS; i++){
+        switch (buttonTypes[i])
+        {
+        case 1: std::cout << "yeee" << std::endl;// Buttons.push_back(new createButton(spriteIdxs, textureSizes[3], displayTexts[i], layers[i], positions[i], maxPositions[i], functionalIdxs[i]));
+
+        case 0: Buttons.push_back(new defaultButton(spriteIdxs, textureSizes[3], displayTexts[i], layers[i], positions[i], maxPositions[i], functionalIdxs[i], buttonTypes[i]));
+
+        case 3: Buttons.push_back(new optionsButton(spriteIdxs, textureSizes[3], displayTexts[i], layers[i], positions[i], maxPositions[i], functionalIdxs[i], buttonTypes[i]));
+
+        case 4: Buttons.push_back(new connectionButton(spriteIdxs, textureSizes[3], displayTexts[i], layers[i], positions[i], maxPositions[i], functionalIdxs[i], buttonTypes[i]));
+
         }
     }
-    std::cout << "Default Buttons created\n";
-
-    //Option Buttons
-    std::vector<optionsButton> optionsButtonList;
-    std::string optionsText[] = {"High Res", "Mid Res", "Low Res"};
-    for (int i = 0; i < 3; i++){
-        optionsButton butt(defaultsSpriteIdx, textureSizes[3], optionsText[i], i+1);
-        optionsButtonList.push_back(butt);
-            std::cout << "Button added in Layer: " << 2 << std::endl;
-    }
-
-    //Create Buttons
-
-    //choice Buttons
-    std::vector<choiceButton> ChoiceButtonList;
-
-    //connectionButton
-    std::vector<connectionButton> ConnectionButtonList;
 
 
-    
     //Navigating through the menu
     int Current_Layer = 1;
-    bool MouseClick = false;
+    bool activeUserInput = false;
     //MENU LOOP
     while (Current_Layer >= 0 && Current_Layer <= 5) {
         //FIRST DRAW
@@ -259,25 +261,16 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
             BackgroundImage.draw(scaledTextures);
             
             //Draw appropriate Layer
-            if (Current_Layer == 1 || Current_Layer == 3){
-                for (auto &iterate : DefaultButtonList){
-                    if (iterate.currentLayer == Current_Layer){
-                        iterate.draw(scaledTextures);
-                    }
+            for (auto &iterator : Buttons){
+                if (iterator->currentLayer == Current_Layer){
+                    iterator->draw(scaledTextures);
                 }
-            } else if (Current_Layer == 0){
-
-            } else if (Current_Layer == 2){
-                for (auto &iterate : optionsButtonList){
-                    iterate.draw(scaledTextures);
-                }
-            } else if (Current_Layer == 4){
-
-            } else if (Current_Layer == 5){
-
             }
             
-            Cursor.draw(scaledTextures);
+            if (activeUserInput == false){
+                Cursor.draw(scaledTextures);
+            }
+            
             //Draw helpful tools. fps and two lines in the middle of the screen
             DrawFPS(0,0);
             DrawLine(0, gV::screenHeight/2, gV::screenWidth, gV::screenHeight/2, ORANGE);
@@ -285,47 +278,95 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
             
         EndDrawing();
 
+        //Update Mouse Position
+        if (activeUserInput == false){
+            mousePos[0] = GetMouseX();
+            mousePos[1] = GetMouseY();
+            Cursor.rePosition(mousePos[0], mousePos[1]);
+        }
         
- 
-        mousePos[0] = GetMouseX();
-        mousePos[1] = GetMouseY();
-        Cursor.rePosition(mousePos[0], mousePos[1]);
+        //Update all the buttons of the current Layer
+        for (auto &iterator : Buttons){
+            if (iterator->currentLayer == Current_Layer){
+                iterator->update(Cursor.rec);
+            }
+        }
 
-
-        for (auto &iterater : DefaultButtonList){
-            if (iterater.currentLayer == Current_Layer){
-                //General updates to the outlook of the button
-                iterater.update(Cursor.rec);
-                //button is clicked
-                if (MouseClick == true && iterater.focus == true){
-                    MouseClick = false;//Magical line that prevents that the play button leads to layer 4 instead of 3
-                    Current_Layer = iterater.click();
-                    std::cout << "Changed layer to: " << Current_Layer << std::endl;
+        //Handle Mouse Input seperate!
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+            for (auto &iterator : Buttons){
+                if (iterator->currentLayer == Current_Layer && iterator->focus == true){
+                    iterator->click();
+                    if (iterator->directFollowOnClick){
+                        Current_Layer = iterator->followUpLayer;
+                    }else {
+                        iterator->inUse = true;
+                        activeUserInput = true;
+                    }
+                //prevent multiple button pressing bugs
+                break;
                 }
             }
         }
-
-        //Manage KeyInput
-        if(IsKeyPressed(KEY_ESCAPE) == true){
-            if (Current_Layer == 3){
-                Current_Layer = 1;
-            } else if (Current_Layer == 4 || Current_Layer == 5){
-                Current_Layer = 3;
+        //What if the escape button is pressed
+        if(IsKeyPressed(KEY_ESCAPE)){
+            if (activeUserInput){
+                for (auto &iterator : Buttons){
+                    if (iterator->inUse){
+                        connectionButton * conB = dynamic_cast<connectionButton *>(iterator);
+                        if (conB){
+                            conB->cancelInput();
+                            activeUserInput = false;
+                            break;
+                        }
+                    }
+                }
             } else {
-                Current_Layer -= 1;
+                if (Current_Layer == 3 || Current_Layer == 5){
+                    Current_Layer -= 2;
+                } else {
+                    Current_Layer -= 1;
+                }
             }
-            std::cout << "layer to: " << Current_Layer << std::endl;
+            //Jump between menu layers
+            
+        } 
+        //What if Enter is pressed
+        if (IsKeyPressed(KEY_ENTER)){
+
         }
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)== true){
-            MouseClick = true;
+        //What if backspace or delete have been pressed
+        if ((IsKeyPressed(KEY_BACKSPACE) || IsKeyPressed(KEY_DELETE)) && activeUserInput){
+
         } else {
-            MouseClick = false;
+            if (activeUserInput){
+                for (auto &iterator : Buttons){
+                    if (iterator->inUse){
+                        //Create dynamic cast to all possible buttons. and try each until one works
+                        connectionButton * conB = dynamic_cast<connectionButton *>(iterator);
+                        if (conB){
+                            int inputKey = GetCharPressed();
+                            while (inputKey != 0){
+                                std::cout << "Entered: " << inputKey << std::endl;
+                                conB->addInputChar(inputKey);
+                                inputKey = GetCharPressed();
+                            }
+                            break;
+                        }
+                        createButton *  creB = dynamic_cast<createButton *>(iterator);
+                        if (creB){
+                            break;
+                        }
+                        choiceButton * choB = dynamic_cast<choiceButton *>(iterator);
+                        if (choB){
+                            break;
+                        }
+                        
+                    }
+                    break;
+                }
+            }
         }
-
-
-        //while(IsMouseButtonReleased(MOUSE_BUTTON_LEFT) == false && GetCharPressed() != 0){
-        //    std::cout << "Waiting for Input to end\n";
-        //}   
     }
 
     //Unload Texture.    
@@ -371,6 +412,8 @@ std::string* findWorlds(std::string profKey){
     return array;
 }
 */
+
+
 
 bool checkFile (void){
     return true;

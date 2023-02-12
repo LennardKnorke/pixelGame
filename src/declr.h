@@ -33,6 +33,7 @@ namespace gV {
 //
 //Overall Functions
 nlohmann::json read_json_file (const std::string &path);
+void resizeTextureAndImages (Image imageList[], Texture2D textureList[],  int sizes[][2], int numberImages);
 bool checkFile(void);
 std::string generateKey(void);
 

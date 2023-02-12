@@ -54,8 +54,8 @@ int main (int argc, char *args[]){
             gV::screenHeight = 1080;
             gV::screenWidth = 1920;
         } else if (gV::screenHeight >= 720 && gV::screenWidth >= 1280){
-            gV::screenHeight = 1080;
-            gV::screenWidth = 1920;
+            gV::screenHeight = 720;
+            gV::screenWidth = 1280;
         } else {
             gV::screenHeight = 540;
             gV::screenWidth = 960;
