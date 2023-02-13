@@ -7,11 +7,10 @@
 #include <thread>
 #include <random>
 #include <vector>
-
+#include <time.h>
 //External libs
 #include "nlohmann/json.hpp"
 #include <raylib.h>
-//#include "SFML/Network.hpp"
 
 //Own functions
 #include "declr.h"

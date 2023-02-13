@@ -7,7 +7,7 @@
 #include <thread>
 #include <random>
 #include <vector>
-
+#include <time.h>
 //External libs
 #include "nlohmann/json.hpp"
 #include <raylib.h>
@@ -21,13 +21,6 @@ nlohmann::json read_json_file (const std::string &path){
     return j;
 }
 
-void resizeTextureAndImages (Image imageList[], Texture2D textureList[],  int sizes[][2], int numberImages){
-    for (int i = 0; i < numberImages; i++){
-        UnloadTexture(textureList[i]);
-        ImageResize(&imageList[i], sizes[i][0] * gV::screenRatio, sizes[i][1] * gV::screenRatio);
-        textureList[i] = LoadTextureFromImage(imageList[i]);
-    }
-}
 
 void createWorldFile(void){
     return;
@@ -35,16 +28,30 @@ void createWorldFile(void){
 
 std::string generateString(void){
     const std::string alphabet = "!#$%^&*(){}=-+/abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    std::random_device rd;
-    std::mt19937 generator(rd());
-    std::uniform_int_distribution<int> distribution(0, alphabet.length() - 1);
+    std::srand(std::time(NULL));
+
     std::string result;
     for (int i = 0 ; i < 15; i++){
-        result += alphabet[distribution(generator)];
+        result += alphabet[rand() % ((int)alphabet.size())];
     }
     return result;
 }
 
-void addProfileToConfig(nlohmann::json configFileToSave, std::string newProfileKey,std::string newProfileName){
-    return;
+int findStringIndex(std::string &target, std::vector<std::string> &stringArray){
+    for (unsigned int i = 0; i < stringArray.size(); i++){
+        if (stringArray[i] == target){
+            return i;
+        }
+    }
+    return -1;
+}
+
+void addProfileToConfig(nlohmann::json &configFileToSave, std::string &newProfileKey, std::string &newProfileName){
+    //Update config
+    configFileToSave["nprofiles"] = configFileToSave["nprofiles"].get<int>() + 1;                                         //Increase number of profiles
+    configFileToSave["profiles"].push_back({{"name", newProfileName}, {"key", newProfileKey}});    //Add profile and key
+    //save file
+    std::ofstream savingOutput("../config.json");
+    savingOutput << configFileToSave.dump(4);
+    savingOutput.close();
 }

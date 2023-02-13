@@ -40,14 +40,23 @@ namespace gV {
 //Declare Functions
 //
 //Overall Functions
-nlohmann::json read_json_file (const std::string &path);
-void resizeTextureAndImages (Image imageList[], Texture2D textureList[],  int sizes[][2], int numberImages);
+nlohmann::json read_json_file (const std::string &path);                            //Use to read and return a json files content
+std::string generateString(void);                                                   //generate a key for player
+int findStringIndex(std::string &target, std::vector<std::string> &stringArray);
+void addProfileToConfig(nlohmann::json &configFileToSave, std::string &newProfileKey, std::string &newProfileName);
+
+//not finished!
 bool checkFile(void);
-std::string generateString(void);
+//not finished!
 void createWorldFile(void);
-void addProfileToConfig(nlohmann::json configFileToSave, std::string newProfileKey,std::string newProfileName);
+//not finished!
+void removeProfileFromConfig(void);
+//not finished!
+void deleteProfileWorlds(void);
+
 
 //Game Loop Functions
+//Use to run either the menu, load world/ connect with host, run client, run host_thread
 void run_server_thread(int port);
 int play_Game(void);
 int load_World(void);
