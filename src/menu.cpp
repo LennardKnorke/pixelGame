@@ -132,7 +132,7 @@ class defaultButton
             return;
         }
         //In response to grafic changes or addition/ removal of buttons in layer
-        virtual void updatePosition(int maxButt)
+        virtual void updatePosition(int maxButts)
         {
             return;
         }
@@ -206,7 +206,7 @@ class createButton : public defaultButton
             textPosition[0] = (gV::screenWidth / 2) - (buttonTextLength / 2);
         }
 
-        //confirm the current input/ return the input. End user input loop
+        //confirm the current input/ return the input. End user input
         std::string confirmInput(void)
         {
             inUse = false;
@@ -217,7 +217,8 @@ class createButton : public defaultButton
         void removeInputChar(void)
         {
             numberInputChars -= 1;
-            if (numberInputChars < 0){
+            if (numberInputChars < 0)
+            {
                 numberInputChars = 0;
             } 
             input[numberInputChars] = '\0';
@@ -254,43 +255,49 @@ class choiceButton : public defaultButton
 {
     using defaultButton::defaultButton;
     public:
-    bool deleting = false;
-    void updatePosition (int maxButts) override 
-    {
-        if (maxButts >= 5)
+        bool deleting = false;
+        void updatePosition (int maxButts) override 
         {
-            rec.y = (((gV::screenHeight / (5)) * (buttIdx - 1)) - (rec.height / 2));
-            textPosition[1] = ((gV::screenHeight / (5)) * (buttIdx - 1)) - ((30 * gV::screenRatio) / 2);
-        } 
-        else 
-        {
-            rec.y = (((gV::screenHeight / (maxButts + 1)) * buttIdx) - (rec.height / 2));
-            textPosition[1] = ((gV::screenHeight / (maxButts + 1)) * buttIdx) - ((30 * gV::screenRatio) / 2);
+            if (maxButts >= 5)
+            {
+                rec.y = (((gV::screenHeight / (5)) * (buttIdx - 1)) - (rec.height / 2));
+                textPosition[1] = ((gV::screenHeight / (5)) * (buttIdx - 1)) - ((30 * gV::screenRatio) / 2);
+            } 
+            else 
+            {
+                rec.y = (((gV::screenHeight / (maxButts + 1)) * buttIdx) - (rec.height / 2));
+                textPosition[1] = ((gV::screenHeight / (maxButts + 1)) * buttIdx) - ((30 * gV::screenRatio) / 2);
+            }
         }
-    }
 
-    void draw(Texture2D textureList[]) override 
-    {
-        if (focus == true){
-            DrawTexture(textureList[textureIdx[0]], rec.x, rec.y, WHITE);
-        } 
-        else 
+        void draw(Texture2D textureList[]) override 
         {
-            DrawTexture(textureList[textureIdx[1]], rec.x, rec.y, WHITE);
-        }
-        DrawText(buttonText.c_str(), textPosition[0], textPosition[1], 30 * gV::screenRatio, BLACK);
+            if (focus == true){
+                DrawTexture(textureList[textureIdx[0]], rec.x, rec.y, WHITE);
+            } 
+            else 
+            {
+                DrawTexture(textureList[textureIdx[1]], rec.x, rec.y, WHITE);
+            }
+            DrawText(buttonText.c_str(), textPosition[0], textPosition[1], 30 * gV::screenRatio, BLACK);
 
-        if (deleting)
+            if (deleting)
+            {
+                DrawLine(rec.x, rec.y, rec.x + rec.width, rec.y + rec.height, RED);
+                DrawLine(rec.x, rec.y + rec.height, rec.x + rec.width, rec.y, RED);
+            }
+        }
+        //Removing will remove entries and files associated with the profile.
+        //Button deletion in menu loop!
+        void removeProfile(std::string associatedKey, std::vector<std::string> &names, std::vector<std::string> &keys)
         {
-            DrawLine(rec.x, rec.y, rec.x + rec.width, rec.y + rec.height, RED);
-            DrawLine(rec.x, rec.y + rec.height, rec.x + rec.width, rec.y, RED);
+            //remove info from vectors and update files here!
+            return;
         }
-    }
-
-    void click(void) override
-    {
-        std::cout << "Picked Profile: " << buttonText << std::endl;
-    }
+        void click(void) override
+        {
+            std::cout << "Picked Profile: " << buttonText << std::endl;
+        }
 };
 
 //Same as default. But changes window and overall screen information. 
@@ -314,7 +321,8 @@ class connectionButton : public defaultButton
         int numberInputChars = 0;   //Number of chars inputed for this field.
         int maxInputChars;
         
-        connectionButton(int spriteIdx[], int size[], std::string text, int lay, int pos, int maxPos, int funcIdx, int type) : defaultButton(spriteIdx, size, text, lay, pos, maxPos, funcIdx, type){
+        connectionButton(int spriteIdx[], int size[], std::string text, int lay, int pos, int maxPos, int funcIdx, int type) : defaultButton(spriteIdx, size, text, lay, pos, maxPos, funcIdx, type)
+        {
             ogTextCopy = buttonText;
             directFollowOnClick = false;
             if (pos == 1)
@@ -368,7 +376,6 @@ class connectionButton : public defaultButton
         }
 
         //confirm the current input/ return the input
-
         std::string confirmInput(void)
         {
             inUse = false;
@@ -411,7 +418,7 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
     int textureSizes [NUMBER_OF_DIFFERENT_MENU_TEXTURES][2] = {{gV::screenWidth, gV::screenHeight}, {50, 50}, {300, 100}, {300, 100}, {300, 100}, {300, 100}};
     Texture2D scaledTextures[NUMBER_OF_DIFFERENT_MENU_TEXTURES];
 
-    //Scale Textures
+    //Resize textures
     for (int m = 0; m < NUMBER_OF_DIFFERENT_MENU_TEXTURES; m++)
     {
         ImageResize(&imageRefList[m], textureSizes[m][0] * gV::screenRatio, textureSizes[m][1]* gV::screenRatio);
@@ -434,8 +441,6 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
     int bgPos[2] = {0, 0}; int mousePos[2] = {GetMouseX(), GetMouseY()};
 
     //Create class instances
-    
-
     //Background and Cursor
     displayImage BackgroundImage(0, textureSizes[0],bgPos);
     displayImage Cursor(1, textureSizes[1], mousePos);
@@ -475,6 +480,7 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
         availableProfileKeys.push_back(configFile["profiles"][i]["key"]);
         Buttons.push_back(new choiceButton(spriteIdxs, textureSizes[3], availableProfileNames[i], 0, i + 2, nProfilesAvailable + 1, 1, 2));
     }
+    //Update Layer 0 positions!
     for (auto &iterator : Buttons)
     {
         if (iterator->currentLayer == 0)
