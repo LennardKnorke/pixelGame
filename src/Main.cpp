@@ -15,7 +15,8 @@
 //Own functions
 #include "declr.h"
 
-namespace gV {
+namespace gV 
+{
     int screenWidth;
     int screenHeight;
     int screenNumber;
@@ -42,7 +43,8 @@ namespace gV {
 
 //Main script. loads default settings, creates configs and loads menu texture before going into the game cycle
 //Within the game cycle one may switch between 1. the menu, 2. loading (connecting to server etc..) and 3.The actual game.
-int main (int argc, char *args[]){
+int main (int argc, char *args[])
+{
     
     //Load settings, screen infos and stuff
     nlohmann::json configs = read_json_file("../config.json");
@@ -52,19 +54,24 @@ int main (int argc, char *args[]){
     
     InitWindow(0, 0, "Fuck yeah I'm a god");
     //If its the first time starting the game, look for default options and save them in the json
-    if (configs["first"] == true){
-        
+    if (configs["first"] == true)
+    {
         gV::screenHeight = GetScreenHeight();
         gV::screenWidth = GetScreenWidth();
         gV::screenNumber = GetCurrentMonitor();
         //standardize into 16:9? just in case
-        if (gV::screenHeight >= 1080 && gV::screenWidth >= 1920){
+        if (gV::screenHeight >= 1080 && gV::screenWidth >= 1920)
+        {
             gV::screenHeight = 1080;
             gV::screenWidth = 1920;
-        } else if (gV::screenHeight >= 720 && gV::screenWidth >= 1280){
+        } 
+        else if (gV::screenHeight >= 720 && gV::screenWidth >= 1280)
+        {
             gV::screenHeight = 720;
             gV::screenWidth = 1280;
-        } else {
+        } 
+        else
+        {
             gV::screenHeight = 540;
             gV::screenWidth = 960;
         }
@@ -79,42 +86,54 @@ int main (int argc, char *args[]){
         output_file.close();
     }
     //Or read out information of the config file
-    else {
+    else 
+    {
         gV::screenHeight = configs["screen_settings"]["height"];
         gV::screenWidth = configs["screen_settings"]["width"];
         gV::screenNumber = configs["screen_settings"]["monitorId"];
         gV::fullScreen = configs["screen_settings"]["fullScreen"];
     }
+    //THE.. Most important grafik information. especially if we stick to 16:9
     gV::screenRatio = (float)gV::screenWidth / (float)1920;
 
 
     //Set Up Window
     SetWindowMonitor(gV::screenNumber);
     SetWindowSize(gV::screenWidth, gV::screenHeight);
-    if ((IsWindowFullscreen() == true && gV::fullScreen == false) || (IsWindowFullscreen() == false && gV::fullScreen == true)){
+    if ((IsWindowFullscreen() == true && gV::fullScreen == false) || (IsWindowFullscreen() == false && gV::fullScreen == true))
+    {
         ToggleFullscreen();
     }
     SetTargetFPS(60);HideCursor();
 
+    //LOAD SOUND!!
+
+
     //STOP IF ANYTHING FAILED!!!
-    if (IsWindowReady() == false){
+    if (IsWindowReady() == false)
+    {
         std::cout << "Error setting up application window" << std::endl;
         system("pause");
         return 0;
-    } else {
+    } 
+    else 
+    {
         gV::GAME_STATE = 0;
     }
-    //Load images necessary for the menu
+
+
+    //Loading Menu Images
     std::string menuItemList[NUMBER_OF_DIFFERENT_MENU_TEXTURES] = {"bgmenu", "curs", "default_button", "default_button_clicked", "world", "world_clicked"};
     Image preprocessedMenuImages[NUMBER_OF_DIFFERENT_MENU_TEXTURES];
-    for (int i = 0 ; i < NUMBER_OF_DIFFERENT_MENU_TEXTURES; i++){
+    for (int i = 0 ; i < NUMBER_OF_DIFFERENT_MENU_TEXTURES; i++)
+    {
         std::string fileName = ("../sprites/menu/"+menuItemList[i]+".png");
         const char *cFileName = fileName.c_str();
         preprocessedMenuImages[i] = LoadImage(cFileName);
     }
 
 
-    //DO THE SAME FOR CHAR AND INGAME SPRITES
+    //DO THE SAME FOR ingamesprites and loading screen textures!
 /*
     Image preprocessedWorldSprites[NUMBER_WORLD_TEXTURES];
     Image preprocessedCharSprites[NUMBER_CHAR_TEXTURES];
@@ -130,8 +149,10 @@ int main (int argc, char *args[]){
     */
 
    //Main main main loop. switch between menu, loading/connecting and game cycle
-    while (gV::GAME_STATE != -1){ 
-        switch (gV::GAME_STATE){
+    while (gV::GAME_STATE != -1)
+    { 
+        switch (gV::GAME_STATE)
+        {
             //Menu
             case 0:
                 gV::GAME_STATE = run_Menu(preprocessedMenuImages, configs);
@@ -147,7 +168,8 @@ int main (int argc, char *args[]){
 
     //Unload all images, close window and close all modules
     CloseWindow();
-    for (int i = 0; i < NUMBER_OF_DIFFERENT_MENU_TEXTURES; i++){
+    for (int i = 0; i < NUMBER_OF_DIFFERENT_MENU_TEXTURES; i++)
+    {
         UnloadImage(preprocessedMenuImages[i]);
     }  
 
