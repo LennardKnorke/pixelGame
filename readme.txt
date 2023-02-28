@@ -1,30 +1,39 @@
 STRUCTURE
+/build			        Compile and Run from this folder! 
+    .Makefile           Compiles using "mingw32-make" in the console
+    .Game.exe           Here the .exe will be placed
 
-/build			contains a Makefile for the compiler. compile in console using "mingw32-make" and then run "./Game"
+/include 		        For all the extra libraries and headerfiles (raylib, json stuff)
 
-/include 		for all the extra libraries and headerfiles (raylib, json stuff)
+/lib		            Contains the .a file for raylib (header stuff)
 
-/lib		    which contains the .a file for raylib (header stuff)
+/src			        Self produced sourcecode
+    .Main.cpp           Main game loop
+    .menu.cpp           Menu loop
+    .localGameLoop.cpp  In game loop here
+    .server.cpp         Server script
+    .overallFunction.cpp    filled with all kinds of extra functions
+    .loadingScreen.cpp  attempts to connect with the host and then load textures.
 
-/src			contains the selfmade sourcecode/ main.cpp. for some reason it was recommended... alot
-    .Main.cpp   Main c++ file
-/world			empty right now. contains all the available worlds?
+/world			    contains world files.
 
-.config			json. contains infos about the last used screen, screen settings, last used profile and etc
+.config			    json. contains infos about the last used screen, screen settings, last used profile and etc
 
-.dalle_images	python file to make dalle our bitch
-
-.readme			this.
-
-
-STORY AND SETTING IDEAS
-No story is explained. Only szenarie and randomly appearing npcs give indirekt hints of what happened
-they wake up and everything is dark and in background are explosions. Tress are dead.
-Living organism have split up into digital/mechanical creatures and treehugging nature freaks who unleashed hell on earth as they destroyed the protective. At the end of time in our solar system certain death is approaching from space
-but also from the bottom of the core as the earth core starts to "boil over" unleashing toxic gas through the earth. Players are survivors of a war. Some human, some mashine. 
-They need different ressources some of which are only found on the surface most of which are underground. Their base requires the sunlight to run and therewas has to be build on the surface.
+.readme			    this.
 
 
-SKILLPOINT SYSTEM
-how the fuck do your award exp.
-Anyway
+To do next:
+1. seed generator/ generate world tiles out of it.
+1. Socket implementation
+2. send data to server
+2. Implement grafics in response to server as send by server
+3. Update menu for world file development and error problems in from the server.
+4. Profit.
+5.Start on the game
+
+
+List of ideas:
+- 1-4 Players
+- Permadeath?
+- Skilltree?
+- Mining and crafting.
