@@ -50,8 +50,8 @@ int findStringIndex(std::string &target, std::vector<std::string> &stringArray)
 
 void addProfileToConfig(nlohmann::json &configFileToSave, std::string &newProfileKey, std::string &newProfileName)
 {
-    //Update config
-    configFileToSave["nprofiles"] = configFileToSave["nprofiles"].get<int>() + 1;                                         //Increase number of profiles
+    //Update config file
+    configFileToSave["nprofiles"] = configFileToSave["nprofiles"].get<int>() + 1;                  //Increase number of profiles
     configFileToSave["profiles"].push_back({{"name", newProfileName}, {"key", newProfileKey}});    //Add profile and key
     //save file
     std::ofstream savingOutput("../config.json");

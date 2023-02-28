@@ -1,7 +1,19 @@
 {
     "first": false,
-    "nprofiles": 0,
+    "nprofiles": 3,
     "profiles": [
+        {
+            "key": "}u-oy6ACmPZPKi!",
+            "name": "Lennard"
+        },
+        {
+            "key": "cB}Vp8g{eG0Qyyi",
+            "name": "kl"
+        },
+        {
+            "key": "9Sn3gwVyMqk4I4w",
+            "name": "fds"
+        }
     ],
     "screen_settings": {
         "fullScreen": true,

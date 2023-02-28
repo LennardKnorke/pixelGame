@@ -46,13 +46,16 @@ namespace gV
 int main (int argc, char *args[])
 {
     
-    //Load settings, screen infos and stuff
+    //Load general access settings set by the last user
     nlohmann::json configs = read_json_file("../config.json");
     gV::wantsHost = false;
+
+
     //init audio and make window minimizeable
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    
     InitWindow(0, 0, "Fuck yeah I'm a god");
+
+    
     //If its the first time starting the game, look for default options and save them in the json
     if (configs["first"] == true)
     {

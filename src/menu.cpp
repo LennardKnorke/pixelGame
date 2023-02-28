@@ -579,7 +579,9 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
 
                                 //Update Layer 4
                                 for (auto &subiterator : Buttons){
-                                    //update positions in layer 4!!
+                                    if (subiterator->currentLayer == 4){
+                                        subiterator->updatePosition(1);
+                                    }
                                 }
                             } 
                             else if (Current_Layer == 4)

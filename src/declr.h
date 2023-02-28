@@ -1,3 +1,5 @@
+//Maybe this should contain only declerations important for the main loop, menu and loading application to avoid confusion and create a new decleration file
+
 #ifndef DECLR_H
 #define DECLR_H
 
@@ -38,29 +40,53 @@ namespace gV
 
 typedef struct worldTileInformationTemplate SaveFile;
 typedef struct PlayerInformation PlayerInformation;
-//Declare Functions
-//
+
 //Overall Functions
-nlohmann::json read_json_file (const std::string &path);                            //Use to read and return a json files content
-std::string generateString(void);                                                   //generate a key for player
-int findStringIndex(std::string &target, std::vector<std::string> &stringArray);    //find index of string in a string vector
-//updates the config file with a new profile
+
+nlohmann::json read_json_file (const std::string &path);    
+    //Use to read and return a json files content
+
+std::string generateString(void);
+    //generate a key for player
+
+int findStringIndex(std::string &target, std::vector<std::string> &stringArray);    
+    //find index of string in a vector of strings
+
 void addProfileToConfig(nlohmann::json &configFileToSave, std::string &newProfileKey, std::string &newProfileName);
-void createWorldFile(std::string ownerName, std::string ownerKey, std::string worldName);                  //create a NEW uninitiliazed savefile
-SaveFile openOwnedSave(std::string ownerKey, std::string fileName);                 //che
+    //updates the config file with a new profile
+
+void createWorldFile(std::string ownerName, std::string ownerKey, std::string worldName); 
+    //create a NEW uninitiliazed savefile
+
+SaveFile openOwnedSave(std::string ownerKey, std::string fileName);
+    //open a file and if the owner key cooincide return the saveFile
 
 //not finished!
 void removeProfileFromConfig(void);
+    //updates config to remove a profile. Given an ownerkey, delete all worlds associated with this key
+
 //not finished!
-void deleteProfileWorlds(void);
+void deleteSpecificWorld(void);
+    //Delete a specific world of a profile
 
 
 //Game Loop Functions
 //Use to run either the menu, load world/ connect with host, run client, run host_thread
-void run_server_thread(int port);       //Start in seperate thread and run the server there
-int play_Game(void);                    //Game loop. draws, reads input, sends input, receives and updates drawings
-int load_World(void);                   //Connect to host
+
 int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::json configFile);
+    //Runs the menu and return true if a user requested to play
+    
+//Unfinished!
+void run_server_thread(int port);       
+    //Start in seperate thread and run the server there
+//Unfinished!
+int play_Game(void);                    
+    //Game loop. draws, reads input, sends input, receives and updates drawings
+
+//Unfinished!
+int load_World(void);                   
+    //Connect to host
+
 
 
 #endif
