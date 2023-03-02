@@ -4,14 +4,14 @@
             "name": "C/C++: g++.exe build and debug active file",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}\\Game.exe",
+            "program": "${workspaceFolder}\\build\\Game.exe",
             "args": [],
-            "stopAtEntry": true,
+            "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
-            "miDebuggerPath": "E:\\Stuff\\mingw64\\bin\\g++.exe",
+            "miDebuggerPath": "E:\\Stuff\\MYSYS2\\mingw64\\bin\\gdb.exe",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",

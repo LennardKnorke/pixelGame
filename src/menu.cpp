@@ -1,26 +1,28 @@
-////GAME
-//Standart libs
-#include <iostream>
-#include <fstream>
-#include <thread>
-#include <string>
-#include <thread>
-#include <random>
-#include <vector>
-#include <time.h>
-//External libs
-#include "nlohmann/json.hpp"
-#include <raylib.h>
+//Menu loop and menu classes
+#include "declr.hpp"
 
-//Own functions
-#include "declr.h"
+struct ProfileData
+{
+    std::string Name;
+    std::string Key;
+    int nr_worlds;
+    std::vector<WorldData> worlds;
+};
+
+struct WorldData
+{
+    std::string owner_Name;
+    std::string owner_Key;
+};
+
+
 
 //Template for a display class. Actually used for the background and mouse
 //Cosmetic upgrades lead to this beeing the mother of all classes.
 class displayImage 
 {
     public:
-        int textureIdx; //Index for the appropriate texture to draw
+        short textureIdx; //Index for the appropriate texture to draw
         Rectangle rec;  //contains size[width, height] and position[x,y]
 
         //Save the size/ position and texture idx information.
@@ -138,6 +140,7 @@ class defaultButton
         }
 };
 
+//Button for creating profiles or new worlds
 class createButton : public defaultButton 
 {
     public:
@@ -251,11 +254,16 @@ class createButton : public defaultButton
         }
 };
 
+//Either a profile or world button
 class choiceButton : public defaultButton 
 {
-    using defaultButton::defaultButton;
     public:
         bool deleting = false;
+        std::string associated_key;
+        choiceButton(int spriteIdx[], int size[], std::string text, int lay, int pos, int maxPos, int funcIdx, int type, std::string key) : defaultButton(spriteIdx, size, text, lay, pos, maxPos, funcIdx, type)
+        {
+            associated_key = key;
+        }
         void updatePosition (int maxButts) override 
         {
             if (maxButts >= 5)
@@ -289,7 +297,7 @@ class choiceButton : public defaultButton
         }
         //Removing will remove entries and files associated with the profile.
         //Button deletion in menu loop!
-        void removeProfile(std::string associatedKey, std::vector<std::string> &names, std::vector<std::string> &keys)
+        void removeButt(std::string associatedKey, std::vector<std::string> &names, std::vector<std::string> &keys)
         {
             //remove info from vectors and update files here!
             return;
@@ -412,14 +420,14 @@ class connectionButton : public defaultButton
 
 
 
-int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::json configFile)
+int run_Menu(Image imageRefList[NR_MENU_TEXTURES], nlohmann::json configFile)
 {
     //Textures in the menu include: {(0, Background);(1, Cursor); (2, Button_default); (3, Button_inUse); (4, World_default); (5, World_default-_inUse)}
-    int textureSizes [NUMBER_OF_DIFFERENT_MENU_TEXTURES][2] = {{gV::screenWidth, gV::screenHeight}, {50, 50}, {300, 100}, {300, 100}, {300, 100}, {300, 100}};
-    Texture2D scaledTextures[NUMBER_OF_DIFFERENT_MENU_TEXTURES];
+    int textureSizes [NR_MENU_TEXTURES][2] = {{gV::screenWidth, gV::screenHeight}, {50, 50}, {300, 100}, {300, 100}, {300, 100}, {300, 100}};
+    Texture2D scaledTextures[NR_MENU_TEXTURES];
 
-    //Resize textures
-    for (int m = 0; m < NUMBER_OF_DIFFERENT_MENU_TEXTURES; m++)
+    //Scale textures
+    for (int m = 0; m < NR_MENU_TEXTURES; m++)
     {
         ImageResize(&imageRefList[m], textureSizes[m][0] * gV::screenRatio, textureSizes[m][1]* gV::screenRatio);
         scaledTextures[m] = LoadTextureFromImage(imageRefList[m]);
@@ -427,10 +435,10 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
     }
 
     //Info for non-default buttons (available profile and world buttons)
-    int nWorldsAvailable;
+    ProfileData Profiles[4];
+    //int nWorldsAvailable;
     int nProfilesAvailable = configFile["nprofiles"];
-    bool maxProfiles = false;
-    bool maxWorlds = false;
+    int nWorldsAvailable = 0;
     
     //
     std::vector<std::string> availableProfileNames;
@@ -478,7 +486,7 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
         std::cout << "Create Profile Button for: " << configFile["profiles"][i]["name"] << std::endl;
         availableProfileNames.push_back(configFile["profiles"][i]["name"]);
         availableProfileKeys.push_back(configFile["profiles"][i]["key"]);
-        Buttons.push_back(new choiceButton(spriteIdxs, textureSizes[3], availableProfileNames[i], 0, i + 2, nProfilesAvailable + 1, 1, 2));
+        Buttons.push_back(new choiceButton(spriteIdxs, textureSizes[3], availableProfileNames[i], 0, i + 2, nProfilesAvailable + 1, 1, 2, availableProfileKeys[i]));
     }
     //Update Layer 0 positions!
     for (auto &iterator : Buttons)
@@ -489,11 +497,14 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
         }
     }
 
+
+
     //Navigating through the menu
     int Current_Layer = 0;
     bool activeUserInput = false;
     bool MenuRunning = true;
-
+    bool deleting = false;
+    std::string delete_warning = "To cancel removal press 'ESCAPE', or press 'ENTER' to delete!";
     //MENU LOOP
     while (MenuRunning) 
     {
@@ -507,20 +518,7 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
             {
                 if (iterator->currentLayer == Current_Layer)
                 {
-                    //In the first and forth layer. DONT draw creation buttons if the max is full!
-                    if ((Current_Layer == 0 && maxProfiles == true) || (Current_Layer == 4 && maxWorlds == true))
-                    {
-                        choiceButton * choB = dynamic_cast<choiceButton *>(iterator);
-                        if (choB)
-                        {
-                            choB->draw(scaledTextures);
-                        }
-                    //otherwise draw everything
-                    } 
-                    else 
-                    {
-                        iterator->draw(scaledTextures);
-                    }
+                    iterator->draw(scaledTextures);
                 }
             }
             
@@ -528,6 +526,9 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
             if (activeUserInput == false)
             {
                 Cursor.draw(scaledTextures);
+            }
+            if (deleting){
+                DrawText(delete_warning.c_str(), (gV::screenWidth/2) - ((MeasureText(delete_warning.c_str(), 40 * gV::screenRatio))/2), (gV::screenHeight/2) - ((40 * gV::screenRatio)/2),40 * gV::screenRatio, BLACK);
             }
             
             //DELETE LATER!!
@@ -642,6 +643,7 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
                             choB->deleting = false;
                             choB->inUse = false;
                             activeUserInput = false;
+                            deleting = false;
                             break;
                         }
                     }
@@ -698,7 +700,7 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
                             //create a new profile entry!, button!, look for associated worlds! AND update positions in layer 0 and 4!
                             if (Current_Layer == 0)
                             {
-                                //save name, generate key
+                                //Note name and generate key
                                 gV::activeProfileName = creB->confirmInput();
                                 creB->cancelInput(); //Not really but will reset the text
                                 std::string generatedProfileKey = generateString();
@@ -706,21 +708,14 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
                                 {
                                     generatedProfileKey = generateString();
                                 }
+
                                 //save and add to the available ones
                                 addProfileToConfig(configFile, generatedProfileKey, gV::activeProfileName);
                                 availableProfileKeys.push_back(generatedProfileKey);
                                 availableProfileNames.push_back(gV::activeProfileName);
                                 nProfilesAvailable += 1;
                                 //updatePositions!
-                                if (nProfilesAvailable >= 5)
-                                {
-                                    maxProfiles = true;
-                                    Buttons.push_back(new choiceButton(spriteIdxs, textureSizes[3], gV::activeProfileName, 0, 5, 5, 1, 2));
-                                } 
-                                else 
-                                {
-                                    Buttons.push_back(new choiceButton(spriteIdxs, textureSizes[3], gV::activeProfileName, 0, nProfilesAvailable + 1, nProfilesAvailable + 1, 1, 2));
-                                }
+                                Buttons.push_back(new choiceButton(spriteIdxs, textureSizes[3], gV::activeProfileName, 0, nProfilesAvailable + 1, nProfilesAvailable + 1, 1, 2, generatedProfileKey));
                                 //Create new button and update positions
                                 for (auto &iterator : Buttons)
                                 {
@@ -734,7 +729,7 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
                                 std::cout << "Added Profile: " << gV::activeProfileName << ". With key : " << generatedProfileKey << std::endl;
                                 Current_Layer = 1;
 
-                            //Create a new world file and just positions in layer 4!
+                            //Create a new world file and adjust positions in layer 4!
                             } 
                             else if (Current_Layer == 4)
                             {
@@ -751,10 +746,12 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
                         }
                         //CONFIRM DELETION! - TO DO!!
                         choiceButton *choB = dynamic_cast<choiceButton *>(iterator);
-                        if (choB)
+                        if (choB && choB->deleting)
                         {
-                            
-
+                            //deleteProfile(configFile, choB->associated_key, choB->buttonText);
+                            choB->deleting = false;
+                            deleting = false;
+                            std::cout << "Deleting\n";
                             break;
                         }
                     }
@@ -785,16 +782,10 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
                             creB->removeInputChar();
                             break;
                         }
-                        //Gonna Delete a Profile!!
-                        choiceButton * choB = dynamic_cast<choiceButton *>(iterator);
-                        if (choB)
-                        {
-                            break;
-                        }
                     }
                 }
             } 
-            else if (Current_Layer == 0|| Current_Layer == 4)
+            else if (Current_Layer == 0|| Current_Layer == 4)//Initiate deletion of profile or world
             {
                 for (auto &iterator : Buttons)
                 {
@@ -806,19 +797,20 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
                             choB->deleting = true;
                             choB->inUse = true;
                             activeUserInput = true;
+                            deleting = true;
                         }
                     }
                 }
 
             }
         } 
-        else 
+        else //ANY OTHER BUTTONS PRESSED??
         {
             if (activeUserInput)
             {
                 for (auto &iterator : Buttons)
                 {
-                    if (iterator->inUse)
+                    if (iterator->inUse)//only allowed for specific buttons in specific states
                     {
                         //Adding chars as user input
                         connectionButton * conB = dynamic_cast<connectionButton *>(iterator);
@@ -890,7 +882,7 @@ int run_Menu(Image imageRefList[NUMBER_OF_DIFFERENT_MENU_TEXTURES], nlohmann::js
     }
 
     //Unload Texture.    
-    for (int i = 0; i < NUMBER_OF_DIFFERENT_MENU_TEXTURES; i++)
+    for (int i = 0; i < NR_MENU_TEXTURES; i++)
     {
         UnloadTexture(scaledTextures[i]);
     }

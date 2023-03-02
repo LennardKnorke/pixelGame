@@ -1,19 +1,6 @@
 ////GAME
-//Standart libs
-#include <iostream>
-#include <fstream>
-#include <thread>
-#include <string>
-#include <thread>
-#include <random>
-#include <vector>
-#include <time.h>
-//External libs
-#include "nlohmann/json.hpp"
-#include <raylib.h>
-
-//Own functions
-#include "declr.h"
+//Main File. Here the basic settings are loaded. And the game loop switches between menu, loading, playing or exiting properly.
+#include "declr.hpp"
 
 namespace gV 
 {
@@ -25,6 +12,7 @@ namespace gV
 
     //Game information
     int GAME_STATE;
+    int ERROR_HANDLING;
     std::string activeProfileName;
     std::string activeProfileKey;
 
@@ -45,17 +33,15 @@ namespace gV
 //Within the game cycle one may switch between 1. the menu, 2. loading (connecting to server etc..) and 3.The actual game.
 int main (int argc, char *args[])
 {
-    
     //Load general access settings set by the last user
     nlohmann::json configs = read_json_file("../config.json");
     gV::wantsHost = false;
-
 
     //init audio and make window minimizeable
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(0, 0, "Fuck yeah I'm a god");
 
-    
+
     //If its the first time starting the game, look for default options and save them in the json
     if (configs["first"] == true)
     {
@@ -122,19 +108,19 @@ int main (int argc, char *args[])
     else 
     {
         gV::GAME_STATE = 0;
+        gV::ERROR_HANDLING = 0;
     }
 
 
     //Loading Menu Images
-    std::string menuItemList[NUMBER_OF_DIFFERENT_MENU_TEXTURES] = {"bgmenu", "curs", "default_button", "default_button_clicked", "world", "world_clicked"};
-    Image preprocessedMenuImages[NUMBER_OF_DIFFERENT_MENU_TEXTURES];
-    for (int i = 0 ; i < NUMBER_OF_DIFFERENT_MENU_TEXTURES; i++)
+    std::string menuItemList[NR_MENU_TEXTURES] = {"bgmenu", "curs", "default_button", "default_button_clicked", "world", "world_clicked"};
+    Image preprocessedMenuImages[NR_MENU_TEXTURES];
+    for (int i = 0 ; i < NR_MENU_TEXTURES; i++)
     {
         std::string fileName = ("../sprites/menu/"+menuItemList[i]+".png");
         const char *cFileName = fileName.c_str();
         preprocessedMenuImages[i] = LoadImage(cFileName);
     }
-
 
     //DO THE SAME FOR ingamesprites and loading screen textures!
 /*
@@ -171,7 +157,7 @@ int main (int argc, char *args[])
 
     //Unload all images, close window and close all modules
     CloseWindow();
-    for (int i = 0; i < NUMBER_OF_DIFFERENT_MENU_TEXTURES; i++)
+    for (short i = 0; i < NR_MENU_TEXTURES; i++)
     {
         UnloadImage(preprocessedMenuImages[i]);
     }  

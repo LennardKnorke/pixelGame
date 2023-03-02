@@ -1,18 +1,5 @@
-#include <iostream>
-#include <fstream>
-#include <thread>
-#include <string>
-#include <thread>
-#include <random>
-#include <vector>
-
-//External libs
-#include "nlohmann/json.hpp"
-#include <raylib.h>
-//#include "SFML/Network.hpp"
-
 //Own functions
-#include "declr.h"
+#include "declr.hpp"
 
 int play_Game(void)
 {

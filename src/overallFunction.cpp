@@ -1,21 +1,8 @@
-////GAME
-//Standart libs
-#include <iostream>
-#include <fstream>
-#include <thread>
-#include <string>
-#include <thread>
-#include <random>
-#include <vector>
-#include <time.h>
-//External libs
-#include "nlohmann/json.hpp"
-#include <raylib.h>
-
-#include "declr.h"
+//Contains Function definitions and structures for the menu and loading screen!
+#include "declr.hpp"
 
 
-//
+//Opens a json file and returns its content
 nlohmann::json read_json_file (const std::string &path)
 {
     std::ifstream input_file(path);
@@ -23,6 +10,8 @@ nlohmann::json read_json_file (const std::string &path)
     input_file >> j;
     return j;
 }
+
+//Generate a random string for profile keys
 std::string generateString(void)
 {
     const std::string alphabet = "!#$%^&*(){}=-+/abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -36,6 +25,7 @@ std::string generateString(void)
     return result;
 }
 
+//return the index of a string in a vector of strings. return -1 if its not there
 int findStringIndex(std::string &target, std::vector<std::string> &stringArray)
 {
     for (unsigned int i = 0; i < stringArray.size(); i++)
@@ -47,10 +37,10 @@ int findStringIndex(std::string &target, std::vector<std::string> &stringArray)
     }
     return -1;
 }
-
+//Given information for a new profile, the function updates the config file and saves it
 void addProfileToConfig(nlohmann::json &configFileToSave, std::string &newProfileKey, std::string &newProfileName)
 {
-    //Update config file
+    //Update config data
     configFileToSave["nprofiles"] = configFileToSave["nprofiles"].get<int>() + 1;                  //Increase number of profiles
     configFileToSave["profiles"].push_back({{"name", newProfileName}, {"key", newProfileKey}});    //Add profile and key
     //save file
@@ -59,14 +49,22 @@ void addProfileToConfig(nlohmann::json &configFileToSave, std::string &newProfil
     savingOutput.close();
 }
 
+void deleteProfile(nlohmann::json &configFile, std::string &ProfileKey, std::string &ProfileName)
+{
+    //for (auto &files : std::experimental::filesystem::recursive_directory_iterator("../worlds/")){
+    //    std::cout<< files << std::endl;
+    //}
+    
+}
+
 /////PROCESSING OF WORLD FILE!!
 //World information to be saved in a file!
 struct worldTileInformationTemplate
 {
-    std::string owner;                                  //Remeber the owner!
+    std::string owner_name;                                  //Remeber the owner!
     std::string owner_key;     
     bool initialized;                                   //
-    short unsigned worldTileInformation[300][1000] = {0};   //Saves the "state" of each tile
+    short unsigned worldTileInformation[WORLD_WIDTH_C][WORLD_DEPTH_C] = {EMPTY_TILE};   //Saves the "state" of each tile
     int seed;                                           //Seed used to create world
     std::vector<PlayerInformation> joinedPlayers;       //List of players that joined and their information that needs saving
 }; 
@@ -75,32 +73,31 @@ struct PlayerInformation
 {
     std::string name;                                   //PlayerName
     std::string key;                                    //PlayerKey
+    bool initialized;                                        //if false, loading the world will set up all the stats for the player
     int level;                                          //what is the level?
     bool alive;                                         //are they alive?
 };
 
-
+//
 void createWorldFile (std::string ownerName, std::string ownerKey, std::string worldName)
 {
     //Prepare FileName
     std::string fileName = "../worlds/";
     fileName.append(gV::hosting_chosen_world.c_str());
-    fileName.append(".dat\0");
+    fileName.append(".WORLDSAVE\0");
 
     //Create new world Information struct
     SaveFile newSafe;
     newSafe.initialized = false;
-    newSafe.owner = ownerName;
+    newSafe.owner_name = ownerName;
     newSafe.owner_key = ownerKey;
     newSafe.seed = 0;
     //Create Player entry for owner
     PlayerInformation addedOwner;
-    addedOwner.alive = true;
-    addedOwner.level = 1;
+    addedOwner.initialized = false;
     addedOwner.name = ownerName;
     addedOwner.key = ownerKey;
     newSafe.joinedPlayers.push_back(addedOwner);
-    std::cout << "LOOOL\n";
 
     //Create File;
     std::ofstream file(fileName.c_str(),std::ios::out | std::ios::binary);
@@ -112,10 +109,11 @@ void createWorldFile (std::string ownerName, std::string ownerKey, std::string w
     } 
     else 
     {
-        std::cout << "Faield to produce file\n";
+        std::cout << "Failed to produce file\n";
     }
     std::cout << "Check 5\n";
 }
+
 
 SaveFile openOwnedSave(std::string ownerKey, std::string fileName)
 {
