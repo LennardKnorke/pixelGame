@@ -6,7 +6,7 @@
             "command": "E:\\Stuff\\MYSYS2\\mingw64\\bin\\g++.exe",
             "args": [
                 "-fdiagnostics-color=always",
-                "${workspaceFolder}\\src\\*.cpp",
+                "${workspaceFolder}\\src2\\*.cpp",
                 "-o",
                 "${workspaceFolder}\\build\\Game.exe",
                 "-Wall",

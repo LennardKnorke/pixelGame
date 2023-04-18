@@ -1,7 +1,8 @@
 //Maybe this should contain only declerations important for the main loop, menu and loading application to avoid confusion and create a new decleration file
+#pragma once
 
-#ifndef DECLR_H
-#define DECLR_H
+#ifndef DECLR_HPP
+#define DECLR_HPP
 //Standart libs
 #include <iostream>
 #include <fstream>
@@ -15,7 +16,7 @@
 //External libs
 #include "nlohmann/json.hpp"
 #include <raylib.h>
-
+#include "tilemakros.hpp"
 //MACROS
 //Texture overview
 #define NR_MENU_TEXTURES 6     //Currently only 4 in Use
@@ -28,21 +29,17 @@
 #define WORLD_WIDTH_C 500
 #define WORLD_DEPTH_C 1000
 
+
+#define MAX_KEY_LENGTH 15
+#define MAX_INPUT_LENGTH 16
 //easy makros to set tile state? will be a long list tho
-#define EMPTY_TILE 0    //Tile is empty
-#define ROCK_TILE 1
-#define WOOD_TILE 2
-#define IRON_TILE 3
 
 //SOME GLOBAL VARIABLES (gV)
-namespace gV 
-{
-    //screen/window variables
-    extern int screenWidth;
-    extern int screenHeight;
+namespace gV {
+    extern int windowWidth;
+    extern int windowHeight;
     extern int screenNumber;
     extern float screenRatio; //can all be reduced to one number if we limit to 16:9
-    extern bool fullScreen;
 
     //Game information
     extern int GAME_STATE;
@@ -62,41 +59,72 @@ namespace gV
     extern bool newWorld;
     
 }
-//in menu.cpp
-typedef struct ProfileData ProfileData;
-    //Stores name and key and worldData for a profile
-typedef struct WorldData WorldData;
-    //Stores the name. But can be extended if needed
 
-//in overallFunction.cpp
-typedef struct worldTileInformationTemplate SaveFile;
-    //Stores an owner name and their their key
-    //whether the world has been generated
-    // saves about all the players that have joined
-    //Aand the saveable tile states
-typedef struct PlayerInformation PlayerInformation;
-    //for each saved name and associated key, keep track of all the saved stats of the character!
+typedef struct ProfileData{
+    std::string Name;
+    std::string Key;
+    std::vector<std::string> Worlds;
+} ProfileData;
 
-//Menu functions in overallFunction.cpp
+//in filemanagement.cpp
+class Player {
+    private:
+    char *name;               //PlayerName
+    char key[MAX_KEY_LENGTH];                //PlayerKey
+    int level;                      //what is the level?
+    bool alive;
+
+    public:
+    void createPlayer(std::string name, std::string key);
+    void readPlayer(std::ifstream &inputFile);
+    void writePlayer(std::ofstream &outputFile);
+    void freePlayer(void);
+
+};
+
+//in filemanagement.cpp
+class SaveFile{
+    private:
+    char *worldName;
+    char owner_Key[MAX_KEY_LENGTH];
+    bool initialized;
+    int seed;
+    char worldTileInformation[WORLD_WIDTH_C][WORLD_DEPTH_C] = {EMPTY_TILE};
+    std::vector<Player> joinedPlayers;
+
+    public:
+    void createNewSave(std::string name, std::string ownerName, std::string ownerKey);
+    void initialize(void);
+
+    void writeIntoFile(std::ofstream &outputFile);
+
+    void readFromFile(std::ifstream &inputFile);
+    void freeSaveFile(void);
+};
+
+
+
+
+//in filemanagement.cpp
 nlohmann::json read_json_file (const std::string &path);    
     //Use to read and return a json files content
 
+//in orga.cpp
 std::string generateString(void);
     //generate a key for player
 
+//in orga.cpp
 int findStringIndex(std::string &target, std::vector<std::string> &stringArray);    
     //find index of string in a vector of strings
 
+//in orga.cpp
 void addProfileToConfig(nlohmann::json &configFileToSave, std::string &newProfileKey, std::string &newProfileName);
     //updates the config file with a new profile
 
+//in filemanagement.cpp
 void createWorldFile(std::string ownerName, std::string ownerKey, std::string worldName); 
     //create a NEW uninitiliazed savefile
 
-SaveFile openOwnedSave(std::string ownerKey, std::string fileName);
-    //open a file and if the owner key cooincide return the saveFile
-
-//not finished!
 void deleteProfile(nlohmann::json &configFile, std::string &ProfileKey, std::string &ProfileName);
     //updates config to remove a profile. Given an ownerkey, delete all worlds associated with this key
 
