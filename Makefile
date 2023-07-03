@@ -1,24 +1,20 @@
-CC = g++
-CFLAGS = -Wall -pedantic -O2 -Wno-missing-braces
-INCLUDE = -I include/
-LINK = -L lib/ -lraylib -lopengl32 -lgdi32 -lwinmm
-FILES = src/*.cpp -o Game.exe
-FILES2 = src3/*.cpp -o Game.exe
-DE = -g
-TIME = -ftime-report
+all: compile_ALL link #Update all sourcefiles and compile to exe
+application: compile_Application link#Update only changes in application, then compile to execute
+#Optional: Add a command to leave the .o files in another folder for more organization.
+compile_ALL:
+	g++ -c src/code/*.cpp -Isrc/include
 
-default:
-	$(CC) $(FILES) $(CFLAGS) $(INCLUDE) $(LINK)
-debug: 
-	$(CC) $(FILES) $(CFLAGS) $(INCLUDE) $(LINK) $(DE)
+compile_Application:
+	g++ -c src/code/application.cpp -Isrc/include
 
-#compile a file which runs tests on specific new/unknown features
-test:
-	$(CC) test.cpp -o test.exe $(CFLAGS) $(INCLUDE) $(LINK) 
 
-#old files/ version
-version2:
-	$(CC) $(FILES2) $(CFLAGS) $(INCLUDE) $(LINK)
 
-version2debug:
-	$(CC) $(FILES2) $(CFLAGS) $(INCLUDE) $(LINK) $(DE)
+
+
+
+###########################################################################################
+###OUTPUT FOR THE APPLICATION
+###########################################################################################
+#If optional above implemented, then also adapt second command to {folderAsAbove}/*.o
+link:
+	g++ *.o -o Game -L src/lib -lsfml-graphics -lsfml-audio -lsfml-network -lsfml-system -lsfml-window
