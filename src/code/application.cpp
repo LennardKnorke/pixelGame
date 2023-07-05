@@ -1,13 +1,12 @@
 #include "application.hpp"
 
+
 Application::Application(void){
-    applicationRunning = true;
     applicationState = STATE_MENU;
     initSettings();
     initWindow();
 
     std::cout << publicAdress << "\t" << localAdress <<  std::endl;
-
 
     while (applicationState != STATE_QUIT){
         if (applicationState == STATE_MENU){
@@ -18,18 +17,23 @@ Application::Application(void){
             applicationState = game();
         }
     }
+
+    window.close();
     return;
 }
+
 
 void Application::initWindow(void){
     window.create(sf::VideoMode(resolution.x, resolution.y, 32), "ReFrAcTuReD", sf::Style::Fullscreen);
     window.setFramerateLimit(60);
 }
 
+
 bool Application::fileExists(const std::string &filename){
     std::ifstream file(filename);
     return file.good();
 }
+
 
 void Application::initSettings(void){
     std::string setting_file = "settings.bin";
@@ -39,7 +43,22 @@ void Application::initSettings(void){
     else {
         createSettings(setting_file);
     }
+
+    //Load Font
+    if (!gameFont.loadFromFile("PFAgoraSlabPro Bold.ttf")){
+        std::cout << "Failed to load display font!\n";
+        applicationState = STATE_QUIT;
+    }
+    else {
+        menuText.setFont(gameFont);
+        menuText.setString("Play");
+        menuText.setCharacterSize(24);
+        menuText.setFillColor(sf::Color::White);
+        menuText.setStyle(sf::Text::Bold);
+        menuText.setPosition(resolution.x/2.0, resolution.y/2.0);
+    }
 }
+
 
 void Application::loadSettings(const std::string &filename){
     std::ifstream inputFile(filename, std::ios::binary);
@@ -50,6 +69,7 @@ void Application::loadSettings(const std::string &filename){
                 << resolution.y <<"\n";
     inputFile.close();
 }
+
 
 void Application::createSettings(const std::string &filename){
     //Get Screen Size
@@ -71,6 +91,7 @@ void Application::createSettings(const std::string &filename){
     saveSettings(filename);
 }
 
+
 void Application::saveSettings(const std::string &filename){
     std::ofstream outputFile("settings.bin", std::ios::binary);
     outputFile.write(reinterpret_cast<const char *>(&userKey), sizeof(userKey));
@@ -78,7 +99,9 @@ void Application::saveSettings(const std::string &filename){
     outputFile.close();
 }
 
+
 int Application::game(void){
     std::cout << "Started the game loop!"<< std::endl;
     return 0;
 }
+

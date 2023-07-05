@@ -12,6 +12,7 @@ int Application::menu(void){
     while (menu_running){
         //Draw
         window.clear(c[idx]);
+        window.draw(menuText);
         window.display();
         //Manage events
         sf::Event event;
