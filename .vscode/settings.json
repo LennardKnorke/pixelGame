@@ -79,5 +79,6 @@
         "sstream": "cpp",
         "condition_variable": "cpp",
         "set": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "enabled"
 }

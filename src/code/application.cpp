@@ -1,13 +1,22 @@
 #include "application.hpp"
 
-
+////////////////////////////////////////////
+//APPLICATION CLASS
+////////////////////////////////////////////
 Application::Application(void){
     applicationState = STATE_MENU;
     initSettings();
     initWindow();
 
+    if (!loadAssets()){
+        applicationState = STATE_QUIT;
+    }
+    connectTexturesWClasses();
+    
+
     std::cout << publicAdress << "\t" << localAdress <<  std::endl;
 
+    //Main Game Loop. Switch between gamestates
     while (applicationState != STATE_QUIT){
         if (applicationState == STATE_MENU){
             applicationState = menu();
@@ -26,6 +35,7 @@ Application::Application(void){
 void Application::initWindow(void){
     window.create(sf::VideoMode(resolution.x, resolution.y, 32), "ReFrAcTuReD", sf::Style::Fullscreen);
     window.setFramerateLimit(60);
+    window.setMouseCursorVisible(false);
 }
 
 
@@ -43,20 +53,6 @@ void Application::initSettings(void){
     else {
         createSettings(setting_file);
     }
-
-    //Load Font
-    if (!gameFont.loadFromFile("PFAgoraSlabPro Bold.ttf")){
-        std::cout << "Failed to load display font!\n";
-        applicationState = STATE_QUIT;
-    }
-    else {
-        menuText.setFont(gameFont);
-        menuText.setString("Play");
-        menuText.setCharacterSize(24);
-        menuText.setFillColor(sf::Color::White);
-        menuText.setStyle(sf::Text::Bold);
-        menuText.setPosition(resolution.x/2.0, resolution.y/2.0);
-    }
 }
 
 
@@ -64,7 +60,7 @@ void Application::loadSettings(const std::string &filename){
     std::ifstream inputFile(filename, std::ios::binary);
     inputFile.read(reinterpret_cast<char *>(&userKey), sizeof(userKey));
     inputFile.read(reinterpret_cast<char *>(&resolution), sizeof(sf::Vector2u));
-    std::cout   <<"Loaded user: " << userKey << "\n"
+    std::cout   <<"Loaded user: " << this->userKey << "\n"
                 << resolution.x << "\t"
                 << resolution.y <<"\n";
     inputFile.close();
@@ -88,7 +84,7 @@ void Application::createSettings(const std::string &filename){
                 << resolution.y << "\n";
 
     //
-    saveSettings(filename);
+    this->saveSettings(filename);
 }
 
 
@@ -100,8 +96,107 @@ void Application::saveSettings(const std::string &filename){
 }
 
 
-int Application::game(void){
-    std::cout << "Started the game loop!"<< std::endl;
-    return 0;
+bool Application::loadAssets(void){
+    //Load Textures
+    if (!(loadTextures())){
+        return false;
+    }
+    //Load Sound Assets
+
+    //Load Font Asset
+    if (!(gameFont.loadFromFile("PFAgoraSlabPro Bold.ttf"))){
+        std::cout << "Failed to load display font!\n";
+        return false;
+    }
+    //Load Otherstuff?
+
+
+    return true;
 }
 
+bool Application::RectangleCollision(rectangle rec1, rectangle rec2){
+    if (rec1.position.x > rec2.position.x 
+            && rec1.position.x < rec2.position.x+rec2.size.width
+            && rec1.position.y > rec2.position.y
+            && rec1.position.y < rec2.position.y+rec2.size.height
+        ||rec1.position.x+rec1.size.width < rec2.position.x+rec2.size.width
+            && rec1.position.x+rec1.size.width > rec2.position.x
+            && rec1.position.y > rec2.position.y
+            && rec1.position.y < rec2.position.y+rec2.size.height
+        ||rec1.position.x > rec2.position.x 
+            && rec1.position.x < rec2.position.x+rec2.size.width
+            && rec1.position.y+rec1.size.height > rec2.position.y
+            && rec1.position.y+rec1.size.height < rec2.position.y+rec2.size.height
+        ||rec1.position.x+rec1.size.width < rec2.position.x+rec2.size.width
+            && rec1.position.x+rec1.size.width > rec2.position.x
+            && rec1.position.y+rec1.size.height > rec2.position.y
+            && rec1.position.y+rec1.size.height < rec2.position.y+rec2.size.height){
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+
+
+bool Application::loadTextures(void){
+    //Get Menu Textures
+    int texture_idx = 0;
+    for (auto &iterator : std::filesystem::directory_iterator("assets/sprites/menu/")){
+        if (!(textures.menu[texture_idx].loadFromFile(iterator.path().string()))){
+            std::cout << "Failed to load menu texture: " << iterator << std::endl;
+            return false;
+        }
+        texture_idx += 1;
+        if (texture_idx == nr_menu_textures){
+            break;
+        }
+    }
+    //Get CursorTextures
+    texture_idx = 0;
+    for (auto &iterator : std::filesystem::directory_iterator("assets/sprites/cursor/")){
+        if (!(textures.cursors[texture_idx].loadFromFile(iterator.path().string()))){
+            std::cout << "Failed to load cursor texture: " << iterator << std::endl;
+            return false;
+        }
+        texture_idx += 1;
+        if (texture_idx == nr_cursor_textures){
+            break;
+        }
+    }
+    //Get Character Textures
+
+    //Get Monster Textures
+
+    //Get Weapon Textures
+
+    //Get Game Textures
+
+
+    return true;
+}
+
+void Application::connectTexturesWClasses(void){
+    for (int i = 0; i < nr_cursor_textures; i++){
+        cursor.sprite[i].setTexture(textures.cursors[i]);
+    }
+    cursor.sprite[0].setScale(100/cursor.sprite[0].getGlobalBounds().getSize().x, 100/cursor.sprite[0].getGlobalBounds().getSize().y);
+}
+
+////////////////////////////////////////////
+// CURSOR CLASS
+////////////////////////////////////////////
+
+CursorSprite::CursorSprite(void){
+    rec.position = sf::Mouse::getPosition();
+    activeSprite = 0;
+}
+void CursorSprite::changeSprite(int i){
+    activeSprite = i;
+}
+void CursorSprite::update(void){
+    rec.position = sf::Mouse::getPosition();
+    click = sf::Mouse::isButtonPressed(sf::Mouse::Left);
+    sprite[activeSprite].setPosition(rec.position.x, rec.position.y);
+}
