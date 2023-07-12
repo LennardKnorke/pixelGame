@@ -10,21 +10,21 @@ int Application::menu(void){
     initializeMenu();
 
     int current_layer = LAYER_BASE;
+    std::cout << "Reached Menu" << std::endl;
     while (menu_running){
         //START DRAWING
         window.clear(sf::Color::Black);
         //Draw default buttons
         for (int i = 0; i < MAX_DEFAULTBUTTONS; i++){
-            if (menuButtons_defaults[i].layer == current_layer){
-                window.draw(menuButtons_defaults[i].text);
-            }
         }
         //Draw non-default buttons
 
         //Draw Mouse
+        /*
         if (active_mouse){
             window.draw(cursor.sprite[cursor.activeSprite]);
         }
+        */
         //Draw Error
 
         window.display();
@@ -65,10 +65,8 @@ int Application::menu(void){
 
         //START UPDATE
         cursor.update();
+        //Update MenuButtons
         for (int i = 0; i < MAX_DEFAULTBUTTONS; i++){
-            if (menuButtons_defaults[i].layer == current_layer){
-                //menuButtons_defaults[i].update(cursor.rec.position, false);
-            }
         }
         //END UPDATE
 
@@ -76,6 +74,7 @@ int Application::menu(void){
 
     return next_state;
 }
+
 //Sets up the buttons for the menu
 void Application::initializeMenu(void){
     /////////////////////////////////////////////////////////////////////
@@ -97,13 +96,14 @@ void Application::initializeMenu(void){
                                                     LAYER_HOST_SAVE, LAYER_HOST_SAVE,
                                                     LAYER_HOST_NEWSAVE, LAYER_HOST_OLDSAVE,
                                                     Layer_final};
+    int max_button_perLayer[MAX_DEFAULTBUTTONS] = {3, 3, 3,
+                                                    2, 2,
+                                                    2,2,
+                                                    2,2,
+                                                    2,2,
+                                                    1};
     for (int i = 0; i < MAX_DEFAULTBUTTONS; i++){
-        menuButtons_defaults[i].create(displayText[i], dButtons_nextLayer[i],dButtons_layer[i], i, resolution, gameFont);
-        menuButtons_defaults[i].text.setString(menuButtons_defaults[i].text_as_string);
-        menuButtons_defaults[i].text.setCharacterSize(48);
-        menuButtons_defaults[i].text.setFont(this->gameFont);
-        menuButtons_defaults[i].text_size = menuButtons_defaults[i].text.getGlobalBounds();
-        menuButtons_defaults[i].text.setPosition((resolution.x/2) - menuButtons_defaults[i].text_size.width/2, 200.0*(1+i));
+
     }
 
     //LOAD NON DEFAULT BUTTONS AKA SAVEFILE BUTTONS
@@ -113,24 +113,4 @@ void Application::initializeMenu(void){
 //BUTTON CLASS
 ////////////////////////////////////////////
 
-void Button::create(std::string displayText, int followLayer,int layer, int displayIndex, sf::Vector2u res, sf::Font font){
-    next_layer = followLayer;
-    layer = layer;
-    text_as_string = displayText;
-
-}
-
-void Button::update(sf::Vector2i mouse_position, bool click){
-    if (mouse_position.x > text.getPosition().x && mouse_position.x < text.getPosition().x + text_size.width
-        && mouse_position.y > text.getPosition().y && mouse_position.y < text.getPosition().y + text_size.height){
-        focused = true;
-        text.setStyle(sf::Text::Bold);
-    }
-    else {
-        if (focused){
-            focused = false;
-            text.setStyle(sf::Text::Regular);
-        }
-    }
-}
 

@@ -1,17 +1,9 @@
 all: compile_ALL link #Update all sourcefiles and compile to exe
-application: compile_Application link#Update only changes in application, then compile to execute
-menu: compile_Menu link
-
 
 #Optional: Add a command to leave the .o files in another folder for more organization.
 compile_ALL:
 	g++ -c src/code/*.cpp -Isrc/include
 
-compile_Application:
-	g++ -c src/code/application.cpp -Isrc/include
-
-compile_Menu:
-	g++ -c src/code/menu.cpp -Isrc/include
 
 
 

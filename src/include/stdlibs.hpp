@@ -17,5 +17,42 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Network.hpp>
 #include <SFML/Window.hpp>
+#include <SFML/System.hpp>
 
+typedef struct coordinates{
+    int x;
+    int y;
+}coordinates;
+
+typedef struct Rectangle {
+    int height;
+    int width;
+    coordinates topLeft;
+    coordinates topRight;
+    coordinates bottomLeft;
+    coordinates bottomRight;
+    int leftX;
+    int rightX;
+    int upperY;
+    int lowerY;
+    coordinates center;
+} Rectangle;
+
+typedef struct Player{
+    std::string name;
+    std::string key;
+}Player;
+
+typedef struct gameSaveSummary{
+    std::string saveName;
+    std::string filename;
+}gameSaveSummary;
+
+typedef struct gameSave{
+    std::string saveName;
+    std::string filename;
+    std::string owner;
+    int playerNumber;
+    std::vector<Player> PlayerData;
+}gameSave;
 #endif //STDLIBS_HPP

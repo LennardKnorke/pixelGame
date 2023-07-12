@@ -1,5 +1,29 @@
 #include "application.hpp"
+Rectangle createRectangle(int height, int width, int posX, int posY){
+    Rectangle rec;
+    rec.height = height;
+    rec.width = width;
+    rec.topLeft.x = posX;
+    rec.topLeft.y = posY;
 
+    rec.topRight.x = posX + width;
+    rec.topRight.y = posY;
+
+    rec.bottomLeft.x = posX;
+    rec.bottomLeft.y = posY + height;
+
+    rec.bottomRight.x = posX + width;
+    rec.bottomRight.y = posY + height;
+
+    rec.center.x = posX + (width / 2);
+    rec.center.y = posY + (height / 2);
+
+    rec.leftX = posX;
+    rec.rightX = posX + width;
+    rec.upperY = posY;
+    rec.lowerY = posY + height;
+    return rec;
+}
 ////////////////////////////////////////////
 //APPLICATION CLASS
 ////////////////////////////////////////////
@@ -12,7 +36,7 @@ Application::Application(void){
         applicationState = STATE_QUIT;
     }
     connectTexturesWClasses();
-    
+    readAllSaveFiles();
 
     std::cout << publicAdress << "\t" << localAdress <<  std::endl;
 
@@ -26,7 +50,6 @@ Application::Application(void){
             applicationState = game();
         }
     }
-
     window.close();
     return;
 }
@@ -60,9 +83,9 @@ void Application::loadSettings(const std::string &filename){
     std::ifstream inputFile(filename, std::ios::binary);
     inputFile.read(reinterpret_cast<char *>(&userKey), sizeof(userKey));
     inputFile.read(reinterpret_cast<char *>(&resolution), sizeof(sf::Vector2u));
-    std::cout   <<"Loaded user: " << this->userKey << "\n"
+    std::cout   <<"Loaded user: " << userKey << std::endl
                 << resolution.x << "\t"
-                << resolution.y <<"\n";
+                << resolution.y << std::endl;
     inputFile.close();
 }
 
@@ -79,12 +102,12 @@ void Application::createSettings(const std::string &filename){
         userKey[i] = alphabet[dist(rng)];
     }
     userKey[MAX_LENGTH_KEY] = '\0';
-    std::cout   << "Created User:  "<< userKey << "\n"
+    std::cout   << "Created User:  "<< userKey << std::endl
                 << resolution.x << "\t"
-                << resolution.y << "\n";
+                << resolution.y << std::endl;
 
     //
-    this->saveSettings(filename);
+    saveSettings(filename);
 }
 
 
@@ -114,23 +137,41 @@ bool Application::loadAssets(void){
     return true;
 }
 
-bool Application::RectangleCollision(rectangle rec1, rectangle rec2){
-    if (rec1.position.x > rec2.position.x 
-            && rec1.position.x < rec2.position.x+rec2.size.width
-            && rec1.position.y > rec2.position.y
-            && rec1.position.y < rec2.position.y+rec2.size.height
-        ||rec1.position.x+rec1.size.width < rec2.position.x+rec2.size.width
-            && rec1.position.x+rec1.size.width > rec2.position.x
-            && rec1.position.y > rec2.position.y
-            && rec1.position.y < rec2.position.y+rec2.size.height
-        ||rec1.position.x > rec2.position.x 
-            && rec1.position.x < rec2.position.x+rec2.size.width
-            && rec1.position.y+rec1.size.height > rec2.position.y
-            && rec1.position.y+rec1.size.height < rec2.position.y+rec2.size.height
-        ||rec1.position.x+rec1.size.width < rec2.position.x+rec2.size.width
-            && rec1.position.x+rec1.size.width > rec2.position.x
-            && rec1.position.y+rec1.size.height > rec2.position.y
-            && rec1.position.y+rec1.size.height < rec2.position.y+rec2.size.height){
+void Application::readAllSaveFiles(void){
+    std::filesystem::path pathDirectory = std::string("sav/");
+    if (!std::filesystem::exists(pathDirectory)){
+        std::cout<<"Savefolder being created"<<std::endl;
+        std::filesystem::create_directory(pathDirectory);
+    }
+    else {
+        std::cout<<"Savefolder available"<<std::endl;
+        for (auto &iterator : std::filesystem::recursive_directory_iterator(pathDirectory)){
+            if (iterator.path().extension() == std::filesystem::path(".SAVEFILE")){
+                availableSaveFiles.push_back(loadSaveSummary(iterator.path().string()));
+            }
+        }
+    }
+    
+}
+
+
+gameSaveSummary Application::loadSaveSummary(const std::string &filename){
+    std::ifstream inputFile(filename, std::ios::binary);
+    gameSaveSummary sumTmp;
+    inputFile.read(reinterpret_cast<char *>(&sumTmp.saveName), sizeof(std::string));
+    inputFile.read(reinterpret_cast<char *>(&sumTmp.filename), sizeof(std::string));
+    inputFile.close();
+    return sumTmp;
+
+}
+
+void Application::writeSaveFile(gameSave Save){
+
+}
+
+
+bool Application::RectangleCollision(Rectangle rec_1, Rectangle rec_2){
+    if (true){
         return true;
     }
     else {
@@ -189,14 +230,11 @@ void Application::connectTexturesWClasses(void){
 ////////////////////////////////////////////
 
 CursorSprite::CursorSprite(void){
-    rec.position = sf::Mouse::getPosition();
-    activeSprite = 0;
+
 }
 void CursorSprite::changeSprite(int i){
     activeSprite = i;
+
 }
 void CursorSprite::update(void){
-    rec.position = sf::Mouse::getPosition();
-    click = sf::Mouse::isButtonPressed(sf::Mouse::Left);
-    sprite[activeSprite].setPosition(rec.position.x, rec.position.y);
 }

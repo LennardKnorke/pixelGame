@@ -1,3 +1,4 @@
+#pragma once
 #ifndef APPLICATION_HPP
 #define APPLICATON_HPP
 #include "stdlibs.hpp"
@@ -10,12 +11,8 @@
 #define STATE_QUIT 0 
 
 #define nr_cursor_textures 2
-//Simple structure to sort infos of EVERY item that is displayed in the game
-typedef struct rectangle {
-    sf::FloatRect size;
-    sf::Vector2i position;
-} rectangle;
-//only to keep structure for increasing number of textures
+Rectangle createRectangle(int height, int width, int posX, int posY);
+
 typedef struct Textures {
     sf::Texture cursors[nr_cursor_textures];
     sf::Texture menu[nr_menu_textures];
@@ -23,14 +20,11 @@ typedef struct Textures {
     //sf::
 } Textures;
 
-class base_sprite {
-    public:
-    rectangle rec;
-};
 
-class CursorSprite : public base_sprite {
+class CursorSprite {
     public:
     bool click;
+    Rectangle rec;
     sf::Sprite sprite[nr_cursor_textures];
     int activeSprite;
     CursorSprite(void);
@@ -52,8 +46,8 @@ class Application{
     Textures textures;
     
     //Menu related
-    Button menuButtons_defaults[MAX_DEFAULTBUTTONS];
-
+    MenuButtons Buttons_Menu;
+    std::vector<gameSaveSummary> availableSaveFiles;
     //Socket variables
     sf::IpAddress publicAdress = sf::IpAddress::getPublicAddress();
     sf::IpAddress localAdress = sf::IpAddress::getLocalAddress();
@@ -65,6 +59,7 @@ class Application{
     bool applicationFocused;
     char userKey[MAX_LENGTH_KEY + 1];
 
+    //SavefileManagement
 
     ////////////////FUNCTIONS////////////////
     //Boot ups
@@ -73,6 +68,10 @@ class Application{
     bool loadAssets(void);
     bool loadTextures(void);
     void connectTexturesWClasses(void);
+
+    void readAllSaveFiles(void);
+    gameSaveSummary loadSaveSummary(const std::string &filename);
+    void writeSaveFile(gameSave Save);
     //Orga Stuff
     void loadSettings(const std::string &filename);
     void createSettings(const std::string &filename);
@@ -80,7 +79,7 @@ class Application{
 
     bool fileExists(const std::string &filename);
 
-    bool RectangleCollision(rectangle rec1, rectangle rec2);
+    bool RectangleCollision(Rectangle rec_1, Rectangle rec_2);
     //Menu functions
     int menu(void);
     void initializeMenu(void);
