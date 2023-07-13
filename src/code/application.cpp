@@ -59,6 +59,7 @@ void Application::initWindow(void){
     window.create(sf::VideoMode(resolution.x, resolution.y, 32), "ReFrAcTuReD", sf::Style::Fullscreen);
     window.setFramerateLimit(60);
     window.setMouseCursorVisible(false);
+    window.setMouseCursorGrabbed(true);
 }
 
 
@@ -165,7 +166,7 @@ gameSaveSummary Application::loadSaveSummary(const std::string &filename){
 
 }
 
-void Application::writeSaveFile(gameSave Save){
+void Application::createSaveFile(gameSave Save){
 
 }
 
@@ -190,7 +191,7 @@ bool Application::loadTextures(void){
             return false;
         }
         texture_idx += 1;
-        if (texture_idx == nr_menu_textures){
+        if (texture_idx == nr_menu_textures){//So we don't load random assets, forgotten or added to the folder
             break;
         }
     }
@@ -223,18 +224,25 @@ void Application::connectTexturesWClasses(void){
         cursor.sprite[i].setTexture(textures.cursors[i]);
     }
     cursor.sprite[0].setScale(100/cursor.sprite[0].getGlobalBounds().getSize().x, 100/cursor.sprite[0].getGlobalBounds().getSize().y);
+    cursor.changeSprite(0);
 }
 
 ////////////////////////////////////////////
 // CURSOR CLASS
 ////////////////////////////////////////////
-
-CursorSprite::CursorSprite(void){
-
-}
 void CursorSprite::changeSprite(int i){
     activeSprite = i;
 
 }
 void CursorSprite::update(void){
+    sprite[activeSprite].setPosition(sf::Vector2f(sf::Mouse::getPosition()));
+    pressed = sf::Mouse::isButtonPressed(sf::Mouse::Left);
+}
+
+void CursorSprite::draw(sf::RenderWindow *renderwindow){
+    renderwindow->draw(sprite[activeSprite]);
+}
+
+sf::Vector2f CursorSprite::returnPosition(void){
+    return sprite[activeSprite].getPosition();
 }

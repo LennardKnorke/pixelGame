@@ -21,33 +21,76 @@
 //Online, Local         (LAYER_HOST 2 Button, 2 CLICKING)
 //CreateSave, LoadSave  (LAYER_HOST_SAVE 2 Button, 2CLICKING)
 //Name                  (LAYER_HOST_NEWSAVE 1 Button, 1 WRITE)
-//                      (LAYER_HOST_OLDSAVE ?Button)
+//                      (LAYER_HOST_OLDSAVE....SAVE FILE BUTTONS == unknown)
 //Helps creating the buttons
 #define MAX_DEFAULTBUTTONS 12
 #define MAX_DEFAULTBUTTONS_WRITING 3
 #define MAX_DEFAULTBUTTONS_CLICK 9
 
+
+#define InputMax_IpAdress 15
+#define InputMax_Port 5
 //Help to load menu textures
 #define nr_menu_textures 1
 
 class Button {
     public:
-    std::string displayText;
-    Rectangle rec;
+    std::string stringText;
+    sf::Text text;
+    sf::IntRect rec;
+    bool focus;
+    bool pressed;
 };
 
+//Either you can click a buttons and you go to the next layer
 class Menu_Button_Click : public Button {
+    private:
+    int layer;
+    int nextLayer;
+    public:
+    int idx;
+    int maxIdx;
+    void update(sf::Vector2f mouseposition, bool click);
+    void init(  std::string display_text,
+                int textureIdx, 
+                int currentlayer, 
+                int buttonIdx, 
+                int maxButtonIdx,
+                int followUpLayer
+                );
+    void updatePosition(sf::Vector2u res);
+    int getLayer(void);
+    int getNextLayer(void);
+    void draw(sf::RenderWindow *window);
 };
-
+//Or you are able to write
 class Menu_Button_Write : public Button{
     public:
     bool active_input = false;
+    int currentInput;
 };
 
-
+//Basically just structures the buttons in some way.
 typedef struct MenuButtons {
-    Menu_Button_Click *SaveFileButton;
+    public:
+    std::vector<Menu_Button_Click> SaveFileButtons;
     Menu_Button_Write WriteButtons[MAX_DEFAULTBUTTONS_WRITING];
     Menu_Button_Click ClickButtons[MAX_DEFAULTBUTTONS_CLICK];
-} MenuButtons;
+}MenuButtons;
+
+
+class menuLayer {
+
+};
+
+class menu{
+    public:
+    menu(void);
+    void draw(void);
+    void handleInput(void);
+    void update(void);
+    void updateResolution(void);
+    
+
+};
 #endif //MENU_HPP

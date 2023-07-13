@@ -10,6 +10,7 @@
 #define STATE_GAME 2
 #define STATE_QUIT 0 
 
+//overview of how much textures we want to load
 #define nr_cursor_textures 2
 Rectangle createRectangle(int height, int width, int posX, int posY);
 
@@ -22,14 +23,15 @@ typedef struct Textures {
 
 
 class CursorSprite {
-    public:
-    bool click;
-    Rectangle rec;
-    sf::Sprite sprite[nr_cursor_textures];
+    private:
     int activeSprite;
-    CursorSprite(void);
+    public:
+    sf::Sprite sprite[nr_cursor_textures];
+    bool pressed;
     void changeSprite(int i);
     void update(void);
+    void draw(sf::RenderWindow *renderwindow);
+    sf::Vector2f returnPosition(void);
 };
 
 class Application{
@@ -71,7 +73,7 @@ class Application{
 
     void readAllSaveFiles(void);
     gameSaveSummary loadSaveSummary(const std::string &filename);
-    void writeSaveFile(gameSave Save);
+    void createSaveFile(gameSave Save);
     //Orga Stuff
     void loadSettings(const std::string &filename);
     void createSettings(const std::string &filename);
