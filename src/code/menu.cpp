@@ -131,7 +131,7 @@ void menuLayer::init(layerInformation setUpInfo, Application *applicationPointer
     //everything else is just clicking
     else {
         for (int i = 0; i < setUpInfo.nButtons; i++){
-            LayerButtons.push_back(new ClickButton(setUpInfo.buttonTexts[i], setUpInfo.followUpLay[i], applicationPointer));
+            LayerButtons.push_back(new ClickButton(setUpInfo.buttonTexts[i], setUpInfo.followUpLay[i], applicationPointer, setUpInfo.nButtons, i));
         }
     } 
 }
@@ -160,21 +160,20 @@ void button::update(void){}
 //Pretending over
 
 
-ClickButton::ClickButton(std::string t, layersId followLayer, Application *applicationPointer){
+ClickButton::ClickButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt){
     stringText = t;
     text.setString(stringText);
     text.setFillColor(sf::Color::White);
     text.setFont(applicationPointer->gameFont);
     text.setCharacterSize(42);
-    text.setPosition((*applicationPointer).resolution.x/2.0, (*applicationPointer).resolution.y/2.0);
+    text.setPosition(((*applicationPointer).resolution.x/2.0) - (text.getLocalBounds().width/2.0), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (text.getLocalBounds().height / 2));
     text.setStyle(sf::Text::Style::Regular);
 };
 ClickButton::~ClickButton(void){};
 
 
 void ClickButton::draw(sf::RenderWindow *window){
-    (*window).draw(text);
-    std::cout << stringText << std::endl;
+    window->draw(text);
 }
 void ClickButton::update(void){
 

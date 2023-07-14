@@ -37,7 +37,7 @@ class button{
 };
 class ClickButton : public button {
     public:
-    ClickButton(std::string t, layersId followLayer, Application *applicationPointer);
+    ClickButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt);
     void draw(sf::RenderWindow *window);
     void update(void);
     ~ClickButton(void);
