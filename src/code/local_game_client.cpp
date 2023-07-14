@@ -1,6 +1,6 @@
 #include "application.hpp"
 
-int Application::game(void){
+GAME_STATE Application::gameLoop(void){
     std::cout << "Started the game loop!"<< std::endl;
-    return 0;
+    return QUIT;
 }

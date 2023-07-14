@@ -32,11 +32,9 @@
                 //possibility for an escape menu
 
 
-int main()
-{
+int main(){
     Application Game;
-    //Pause and display commandline in case the game crashed with errors before exiting
-    if (Game.errorHandling == -1){
+    if (Game.error != NoErr){
         system("pause");
         return 1;
     }

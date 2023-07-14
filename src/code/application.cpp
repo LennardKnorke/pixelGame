@@ -1,53 +1,29 @@
 #include "application.hpp"
-Rectangle createRectangle(int height, int width, int posX, int posY){
-    Rectangle rec;
-    rec.height = height;
-    rec.width = width;
-    rec.topLeft.x = posX;
-    rec.topLeft.y = posY;
 
-    rec.topRight.x = posX + width;
-    rec.topRight.y = posY;
-
-    rec.bottomLeft.x = posX;
-    rec.bottomLeft.y = posY + height;
-
-    rec.bottomRight.x = posX + width;
-    rec.bottomRight.y = posY + height;
-
-    rec.center.x = posX + (width / 2);
-    rec.center.y = posY + (height / 2);
-
-    rec.leftX = posX;
-    rec.rightX = posX + width;
-    rec.upperY = posY;
-    rec.lowerY = posY + height;
-    return rec;
-}
 ////////////////////////////////////////////
 //APPLICATION CLASS
 ////////////////////////////////////////////
 Application::Application(void){
-    applicationState = STATE_MENU;
+    State = MENU;
     initSettings();
     initWindow();
 
     if (!loadAssets()){
-        applicationState = STATE_QUIT;
+        State = QUIT;
     }
-    connectTexturesWClasses();
+    setUpCursorAssets();
     readAllSaveFiles();
 
     std::cout << publicAdress << "\t" << localAdress <<  std::endl;
 
     //Main Game Loop. Switch between gamestates
-    while (applicationState != STATE_QUIT){
-        if (applicationState == STATE_MENU){
-            applicationState = menu();
+    while (State != QUIT){
+        if (State == MENU){
+            State = menuLoop();
         }
-        else if (applicationState == STATE_GAME)
+        else if (State == GAME)
         {
-            applicationState = game();
+            State = gameLoop();
         }
     }
     window.close();
@@ -167,20 +143,8 @@ gameSaveSummary Application::loadSaveSummary(const std::string &filename){
 }
 
 void Application::createSaveFile(gameSave Save){
-
+    
 }
-
-
-bool Application::RectangleCollision(Rectangle rec_1, Rectangle rec_2){
-    if (true){
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-
-
 
 bool Application::loadTextures(void){
     //Get Menu Textures
@@ -219,7 +183,7 @@ bool Application::loadTextures(void){
     return true;
 }
 
-void Application::connectTexturesWClasses(void){
+void Application::setUpCursorAssets(void){
     for (int i = 0; i < nr_cursor_textures; i++){
         cursor.sprite[i].setTexture(textures.cursors[i]);
     }

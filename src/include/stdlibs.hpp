@@ -3,6 +3,7 @@
 #define STDLIBS_HPP
 #include <iostream>
 #include <fstream>
+#include <cassert>
 #include <thread>
 #include <string>
 #include <cstring>
@@ -18,25 +19,6 @@
 #include <SFML/Network.hpp>
 #include <SFML/Window.hpp>
 #include <SFML/System.hpp>
-
-typedef struct coordinates{
-    int x;
-    int y;
-}coordinates;
-
-typedef struct Rectangle {
-    int height;
-    int width;
-    coordinates topLeft;
-    coordinates topRight;
-    coordinates bottomLeft;
-    coordinates bottomRight;
-    int leftX;
-    int rightX;
-    int upperY;
-    int lowerY;
-    coordinates center;
-} Rectangle;
 
 typedef struct Player{
     std::string name;

@@ -6,14 +6,17 @@
 
 
 #define MAX_LENGTH_KEY 14
-#define STATE_MENU 1
-#define STATE_GAME 2
-#define STATE_QUIT 0 
+
+enum GAME_STATE {
+    MENU, GAME, QUIT
+};
+enum errorCodes{
+    ConnectErr, FileLoadErr, InvalidSaveNameErr, NoErr
+};
 
 //overview of how much textures we want to load
 #define nr_cursor_textures 2
-Rectangle createRectangle(int height, int width, int posX, int posY);
-
+#define nr_menu_textures 1
 typedef struct Textures {
     sf::Texture cursors[nr_cursor_textures];
     sf::Texture menu[nr_menu_textures];
@@ -41,14 +44,11 @@ class Application{
     sf::RenderWindow window;
     sf::Vector2u resolution;
     CursorSprite cursor;
-    
     //////
     //Grafik Variables
     sf::Font gameFont;
     Textures textures;
     
-    //Menu related
-    MenuButtons Buttons_Menu;
     std::vector<gameSaveSummary> availableSaveFiles;
     //Socket variables
     sf::IpAddress publicAdress = sf::IpAddress::getPublicAddress();
@@ -56,9 +56,9 @@ class Application{
 
 
     //Application variables
-    int applicationState;   //0=quit, 1= run menu, 2=run game
-    int errorHandling;      //0= no error...
-    bool applicationFocused;
+    GAME_STATE State;
+    errorCodes error = NoErr;
+
     char userKey[MAX_LENGTH_KEY + 1];
 
     //SavefileManagement
@@ -69,7 +69,7 @@ class Application{
     void initSettings(void);
     bool loadAssets(void);
     bool loadTextures(void);
-    void connectTexturesWClasses(void);
+    void setUpCursorAssets(void);
 
     void readAllSaveFiles(void);
     gameSaveSummary loadSaveSummary(const std::string &filename);
@@ -81,14 +81,12 @@ class Application{
 
     bool fileExists(const std::string &filename);
 
-    bool RectangleCollision(Rectangle rec_1, Rectangle rec_2);
     //Menu functions
-    int menu(void);
-    void initializeMenu(void);
-
+    
 
     //game(client) functions
-    int game(void);
+    GAME_STATE menuLoop(void);
+    GAME_STATE gameLoop(void);
 
 
     //?server functions?
