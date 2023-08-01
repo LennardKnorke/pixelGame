@@ -6,6 +6,8 @@
 
 
 #define MAX_LENGTH_KEY 14
+#define MAX_LENGTH_SAVENAME 12
+#define MAX_LENGTH_IPPORT 20
 
 enum GAME_STATE {
     MENU, GAME, QUIT
@@ -24,11 +26,10 @@ typedef struct Textures {
     //sf::
 } Textures;
 
-
-class CursorSprite {
-    private:
-    int activeSprite;
+#define GAMESTATE_QUIT 0
+class CursorSprite {    
     public:
+    int activeSprite;
     sf::Sprite sprite[nr_cursor_textures];
     bool pressed;
     void changeSprite(int i);
@@ -42,6 +43,7 @@ class Application{
     Application(void);
     //Window related variables
     sf::RenderWindow window;
+
     sf::Vector2u resolution;
     CursorSprite cursor;
     //////
@@ -53,12 +55,15 @@ class Application{
     //Socket variables
     sf::IpAddress publicAdress = sf::IpAddress::getPublicAddress();
     sf::IpAddress localAdress = sf::IpAddress::getLocalAddress();
-
-
+    
+    std::string hostIp = "";
+    std::string hostPort = "";
     //Application variables
     GAME_STATE State;
     errorCodes error = NoErr;
-
+    gameSave activeSave;
+    bool wantsHost;
+    bool online;
     char userKey[MAX_LENGTH_KEY + 1];
 
     //SavefileManagement
@@ -68,12 +73,16 @@ class Application{
     void initWindow(void);
     void initSettings(void);
     bool loadAssets(void);
+    //assets loading
     bool loadTextures(void);
     void setUpCursorAssets(void);
-
+    //save functions
+    void setUpSaveFolder(void);
     void readAllSaveFiles(void);
     gameSaveSummary loadSaveSummary(const std::string &filename);
-    void createSaveFile(gameSave Save);
+    bool createSaveFile(std::string newSaveName);
+    void saveSave(gameSave Save, const std::string &path);
+    gameSave loadSave(const std::string &filename);
     //Orga Stuff
     void loadSettings(const std::string &filename);
     void createSettings(const std::string &filename);
@@ -82,8 +91,9 @@ class Application{
     bool fileExists(const std::string &filename);
 
     //Menu functions
+    void getMenuPicks(sf::Vector2f cursorPosition, layersId currentLayer);
+    bool checkCharacterInput(layersId activeLayer, sf::Uint32 c, int activeLength);
     
-
     //game(client) functions
     GAME_STATE menuLoop(void);
     GAME_STATE gameLoop(void);

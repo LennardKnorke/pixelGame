@@ -12,7 +12,7 @@ Application::Application(void){
         State = QUIT;
     }
     setUpCursorAssets();
-    readAllSaveFiles();
+    setUpSaveFolder();
 
     std::cout << publicAdress << "\t" << localAdress <<  std::endl;
 
@@ -44,7 +44,7 @@ bool Application::fileExists(const std::string &filename){
     return file.good();
 }
 
-
+//SETTINGS FUNCTIONS
 void Application::initSettings(void){
     std::string setting_file = "settings.bin";
     if (fileExists(setting_file)){
@@ -94,8 +94,9 @@ void Application::saveSettings(const std::string &filename){
     outputFile.write(reinterpret_cast<const char *>(&resolution), sizeof(sf::Vector2u));
     outputFile.close();
 }
+///
 
-
+//MANAGE ASSETS
 bool Application::loadAssets(void){
     //Load Textures
     if (!(loadTextures())){
@@ -114,36 +115,90 @@ bool Application::loadAssets(void){
     return true;
 }
 
-void Application::readAllSaveFiles(void){
+void Application::setUpSaveFolder(void){
     std::filesystem::path pathDirectory = std::string("sav/");
     if (!std::filesystem::exists(pathDirectory)){
         std::cout<<"Savefolder being created"<<std::endl;
         std::filesystem::create_directory(pathDirectory);
     }
-    else {
-        std::cout<<"Savefolder available"<<std::endl;
-        for (auto &iterator : std::filesystem::recursive_directory_iterator(pathDirectory)){
-            if (iterator.path().extension() == std::filesystem::path(".SAVEFILE")){
-                availableSaveFiles.push_back(loadSaveSummary(iterator.path().string()));
-            }
+}
+
+
+void Application::readAllSaveFiles(void){
+    std::filesystem::path pathDirectory = std::string("sav/");
+    for (auto &iterator : std::filesystem::recursive_directory_iterator(pathDirectory)){
+        if (iterator.path().extension() == std::filesystem::path(".SAV")){
+            availableSaveFiles.push_back(loadSaveSummary(iterator.path().string()));
         }
     }
-    
 }
 
 
 gameSaveSummary Application::loadSaveSummary(const std::string &filename){
     std::ifstream inputFile(filename, std::ios::binary);
     gameSaveSummary sumTmp;
-    inputFile.read(reinterpret_cast<char *>(&sumTmp.saveName), sizeof(std::string));
-    inputFile.read(reinterpret_cast<char *>(&sumTmp.filename), sizeof(std::string));
+    size_t size;
+    inputFile.read(reinterpret_cast<char *>(&size), sizeof(size));
+    sumTmp.saveName.resize(size);
+    inputFile.read(reinterpret_cast<char *>(&sumTmp.saveName[0]), size);
+
+    inputFile.read(reinterpret_cast<char *>(&size), sizeof(size));
+    inputFile.read(reinterpret_cast<char *>(&sumTmp.filename[0]), size);
+
+    inputFile.read(reinterpret_cast<char *>(&sumTmp.initialized), sizeof(bool));
+
     inputFile.close();
     return sumTmp;
 
 }
 
-void Application::createSaveFile(gameSave Save){
+bool Application::createSaveFile(std::string newSaveName){
+    if (newSaveName == ""){
+        return false;
+    }
+    //find a valid savename
+    std::string newFileName = "WORLD_";
+    std::string pathName = "sav/"+newFileName;
+    int i = 0;
+    while (fileExists(pathName+std::to_string(i)+".SAV")){
+        i++;
+    }
     
+    newFileName = newFileName+std::to_string(i);
+    pathName = pathName+std::to_string(i);
+    std::cout <<pathName <<std::endl;
+    //set up the newly created save as the active one
+    activeSave.initialized = false;
+    activeSave.saveName = newSaveName;
+    activeSave.filename = newFileName;
+    activeSave.owner = userKey;
+    activeSave.playerNumber = 0;
+
+    //save like a normal save file
+    saveSave(activeSave, pathName);
+    return true;
+}
+void Application::saveSave(gameSave Save, const std::string &path){
+    std::ofstream file(path+".SAV", std::ios::binary);
+
+    size_t size = Save.saveName.size();
+    //Save the saveName (name given by player)
+    file.write(reinterpret_cast<char *>(&size), sizeof(size));
+    file.write(reinterpret_cast<char*>(Save.saveName.data()), size);
+    //Save the filename (name of the file)
+
+    //Save whether save has been initialized
+    file.write(reinterpret_cast<char*>(&Save.initialized), sizeof(bool));
+    if (Save.initialized){
+        std::cout<< "SAVING EVERYTHING\n";
+    }
+    
+
+    file.close();
+}
+gameSave Application::loadSave(const std::string &filename){
+    gameSave tmp;
+    return tmp;
 }
 
 bool Application::loadTextures(void){

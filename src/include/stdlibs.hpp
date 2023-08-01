@@ -28,11 +28,13 @@ typedef struct Player{
 typedef struct gameSaveSummary{
     std::string saveName;
     std::string filename;
+    bool initialized;
 }gameSaveSummary;
 
 typedef struct gameSave{
     std::string saveName;
     std::string filename;
+    bool initialized;
     std::string owner;
     int playerNumber;
     std::vector<Player> PlayerData;
