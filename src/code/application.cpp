@@ -41,7 +41,9 @@ void Application::initWindow(void){
 
 bool Application::fileExists(const std::string &filename){
     std::ifstream file(filename);
-    return file.good();
+    bool works = file.good();
+    file.close();
+    return works;
 }
 
 //SETTINGS FUNCTIONS

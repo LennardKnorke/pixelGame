@@ -2,7 +2,7 @@
 #include "menu.hpp"
 
 GAME_STATE Application::menuLoop(void){
-    //readAllSaveFiles();
+    readAllSaveFiles();
     layersId currentLayer = Base;
     //Set up menu layers
     std::vector<menuLayer*> Layers;
@@ -96,6 +96,9 @@ GAME_STATE Application::menuLoop(void){
                     //Either just change the layer
                     if (childPtr1 && buttTmp->focus){                            
                         currentLayer = childPtr1->nextLayer;
+                        if (currentLayer == final){
+
+                        }
                     }
                     //or activate text input
                     else if (childPtr2 && buttTmp->focus){
@@ -147,9 +150,9 @@ GAME_STATE Application::menuLoop(void){
             std::cout << "Playing locally\n";
         }
         if (wantsHost){
-            std::cout << "Hosting save: ";
+            std::cout << "Hosting save: " << activeSave.saveName <<std::endl;
         }
-        else if (!wantsHost){
+        else{
             std::cout << "Joining to: ";
             std::cout << hostIp << "\t" << hostPort <<std::endl;
         }
@@ -248,13 +251,13 @@ menuLayer::menuLayer(layersId assignedLayer, Application *applicationPointer){
         previousLayer = Play;
     }
     else if (assignedLayer == Host){
+        info.buttonTexts.push_back(std::string("Create New Save"));
+        info.followUpLay.push_back(final);
         for (int i = 0; i < applicationPointer->availableSaveFiles.size(); i++){
             info.buttonTexts.push_back(applicationPointer->availableSaveFiles[i].saveName);
             info.followUpLay.push_back(final);
         }
         info.nButtons = 1 + info.buttonTexts.size();
-        info.buttonTexts.push_back(std::string("Create New Save"));
-        info.followUpLay.push_back(final);
         previousLayer = Play;
     }
     else {
