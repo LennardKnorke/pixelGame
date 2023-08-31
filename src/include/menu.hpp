@@ -8,8 +8,8 @@ enum layersId{
     leave = -1, 
     Base = 0, 
     Settings = 1, 
-    Play = 2, 
-    Type = 3, 
+    Type = 2, 
+    Multiplayer = 3, 
     Join = 4, 
     Host = 5, 
     final = 6
@@ -47,6 +47,11 @@ class ClickButton : public button {
     ~ClickButton(void);
 };
 
+class SavefileButton : public ClickButton {
+    public:
+    std::string fileName;
+};
+
 //Or you are able to write
 class WriteButton : public button {
     public:
@@ -73,6 +78,7 @@ class menuLayer {
     menuLayer(layersId assignedLayer, Application *applicationPointer);//For most basic layers
     void init(layerInformation setUpInfo, Application *applicationPointer);
     void update(sf::Vector2f mousePos);
+    
     ~menuLayer(void);
 };
 

@@ -267,3 +267,7 @@ void CursorSprite::draw(sf::RenderWindow *renderwindow){
 sf::Vector2f CursorSprite::returnPosition(void){
     return sprite[activeSprite].getPosition();
 }
+
+sf::Vector2f CursorSprite::returnSize(void){
+    return sprite[activeSprite].getGlobalBounds().getSize();
+}

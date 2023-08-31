@@ -15,6 +15,9 @@ enum GAME_STATE {
 enum errorCodes{
     ConnectErr, FileLoadErr, InvalidSaveNameErr, NoErr
 };
+enum gameMode{
+    Single, Local, Online
+};
 
 //overview of how much textures we want to load
 #define nr_cursor_textures 2
@@ -36,6 +39,7 @@ class CursorSprite {
     void update(void);
     void draw(sf::RenderWindow *renderwindow);
     sf::Vector2f returnPosition(void);
+    sf::Vector2f returnSize(void);
 };
 
 class Application{
@@ -63,7 +67,7 @@ class Application{
     errorCodes error = NoErr;
     gameSave activeSave;
     bool wantsHost;
-    bool online;
+    gameMode mode;
     char userKey[MAX_LENGTH_KEY + 1];
 
     //SavefileManagement
@@ -91,7 +95,7 @@ class Application{
     bool fileExists(const std::string &filename);
 
     //Menu functions
-    void getMenuPicks(sf::Vector2f cursorPosition, layersId currentLayer);
+    void getMenuPicks(sf::Vector2f cursorPosition, layersId currentLayer, menuLayer *Lay);
     bool checkCharacterInput(layersId activeLayer, sf::Uint32 c, int activeLength);
     
     //game(client) functions
