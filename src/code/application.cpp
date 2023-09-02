@@ -4,24 +4,25 @@
 //APPLICATION CLASS
 ////////////////////////////////////////////
 Application::Application(void){
-    State = MENU;
+    State = GAME_STATE::MENU;
     initSettings();
     initWindow();
 
     if (!loadAssets()){
-        State = QUIT;
+        State = GAME_STATE::QUIT;
     }
+    setUpTextureAssets();
     setUpCursorAssets();
     setUpSaveFolder();
 
     std::cout << publicAdress << "\t" << localAdress <<  std::endl;
 
     //Main Game Loop. Switch between gamestates
-    while (State != QUIT){
-        if (State == MENU){
+    while (State != GAME_STATE::QUIT){
+        if (State == GAME_STATE::MENU){
             State = menuLoop();
         }
-        else if (State == GAME)
+        else if (State == GAME_STATE::GAME)
         {
             State = gameLoop();
         }
@@ -36,14 +37,6 @@ void Application::initWindow(void){
     window.setFramerateLimit(60);
     window.setMouseCursorVisible(false);
     window.setMouseCursorGrabbed(true);
-}
-
-
-bool Application::fileExists(const std::string &filename){
-    std::ifstream file(filename);
-    bool works = file.good();
-    file.close();
-    return works;
 }
 
 //SETTINGS FUNCTIONS
@@ -126,7 +119,7 @@ void Application::setUpSaveFolder(void){
 }
 
 
-void Application::readAllSaveFiles(void){
+void Application::readAllSaveSummaries(void){
     std::filesystem::path pathDirectory = std::string("sav/");
     for (auto &iterator : std::filesystem::recursive_directory_iterator(pathDirectory)){
         if (iterator.path().extension() == std::filesystem::path(".SAV")){
@@ -140,68 +133,41 @@ gameSaveSummary Application::loadSaveSummary(const std::string &filename){
     std::ifstream inputFile(filename, std::ios::binary);
     gameSaveSummary sumTmp;
     size_t size;
+
     inputFile.read(reinterpret_cast<char *>(&size), sizeof(size));
     sumTmp.saveName.resize(size);
     inputFile.read(reinterpret_cast<char *>(&sumTmp.saveName[0]), size);
 
     inputFile.read(reinterpret_cast<char *>(&size), sizeof(size));
-    inputFile.read(reinterpret_cast<char *>(&sumTmp.filename[0]), size);
+    sumTmp.fileName.resize(size);
+    inputFile.read(reinterpret_cast<char *>(&sumTmp.fileName[0]), size);
 
-    inputFile.read(reinterpret_cast<char *>(&sumTmp.initialized), sizeof(bool));
+    inputFile.read(reinterpret_cast<char *>(&size), sizeof(size));
+    sumTmp.pathName.resize(size);
+    inputFile.read(reinterpret_cast<char *>(&sumTmp.pathName[0]), size);
+
 
     inputFile.close();
     return sumTmp;
 
 }
 
-bool Application::createSaveFile(std::string newSaveName){
-    if (newSaveName == ""){
+bool Application::createSave(std::string newSaveName, menuPopUps *menuWarning){
+    if (availableSaveFiles.size() >= 5){
+        *menuWarning = menuPopUps::TooManySaves;
         return false;
     }
-    //find a valid savename
-    std::string newFileName = "WORLD_";
-    std::string pathName = "sav/"+newFileName;
-    int i = 0;
-    while (fileExists(pathName+std::to_string(i)+".SAV")){
-        i++;
+    for (gameSaveSummary tmp : availableSaveFiles){
+        if (tmp.saveName == newSaveName){
+            *menuWarning = menuPopUps::InvalidName;
+            return false;
+        }
     }
-    
-    newFileName = newFileName+std::to_string(i);
-    pathName = pathName+std::to_string(i);
-    std::cout <<pathName <<std::endl;
-    //set up the newly created save as the active one
-    activeSave.initialized = false;
-    activeSave.saveName = newSaveName;
-    activeSave.filename = newFileName;
-    activeSave.owner = userKey;
-    activeSave.playerNumber = 0;
-
-    //save like a normal save file
-    saveSave(activeSave, pathName);
+    activeSave = new gameSave(newSaveName);
     return true;
 }
-void Application::saveSave(gameSave Save, const std::string &path){
-    std::ofstream file(path+".SAV", std::ios::binary);
 
-    size_t size = Save.saveName.size();
-    //Save the saveName (name given by player)
-    file.write(reinterpret_cast<char *>(&size), sizeof(size));
-    file.write(reinterpret_cast<char*>(Save.saveName.data()), size);
-    //Save the filename (name of the file)
 
-    //Save whether save has been initialized
-    file.write(reinterpret_cast<char*>(&Save.initialized), sizeof(bool));
-    if (Save.initialized){
-        std::cout<< "SAVING EVERYTHING\n";
-    }
-    
-
-    file.close();
-}
-gameSave Application::loadSave(const std::string &filename){
-    gameSave tmp;
-    return tmp;
-}
 
 bool Application::loadTextures(void){
     //Get Menu Textures
@@ -240,21 +206,28 @@ bool Application::loadTextures(void){
     return true;
 }
 
+void Application::setUpTextureAssets(void){
+    textures.menu_sprites[textureIdxS::background].setTexture(textures.menu[textureIdxS::background]);
+    textures.menu_sprites[textureIdxS::background].setPosition(0, 0);
+    textures.menu_sprites[textureIdxS::background].setScale(resolution.x/textures.menu_sprites[textureIdxS::background].getGlobalBounds().getSize().x, resolution.y/textures.menu_sprites[textureIdxS::background].getGlobalBounds().getSize().y);
+}
+
 void Application::setUpCursorAssets(void){
     for (int i = 0; i < nr_cursor_textures; i++){
         cursor.sprite[i].setTexture(textures.cursors[i]);
     }
-    cursor.sprite[0].setScale(100/cursor.sprite[0].getGlobalBounds().getSize().x, 100/cursor.sprite[0].getGlobalBounds().getSize().y);
-    cursor.changeSprite(0);
+    cursor.sprite[cursorSpriteIndexes::menu].setScale(100/cursor.sprite[cursorSpriteIndexes::menu].getGlobalBounds().getSize().x, 100/cursor.sprite[cursorSpriteIndexes::menu].getGlobalBounds().getSize().y);
+    cursor.changeSprite(cursorSpriteIndexes::menu);
 }
 
 ////////////////////////////////////////////
 // CURSOR CLASS
 ////////////////////////////////////////////
-void CursorSprite::changeSprite(int i){
+void CursorSprite::changeSprite(cursorSpriteIndexes i){
     activeSprite = i;
-
 }
+
+
 void CursorSprite::update(void){
     sprite[activeSprite].setPosition(sf::Vector2f(sf::Mouse::getPosition()));
     pressed = sf::Mouse::isButtonPressed(sf::Mouse::Left);
@@ -270,4 +243,13 @@ sf::Vector2f CursorSprite::returnPosition(void){
 
 sf::Vector2f CursorSprite::returnSize(void){
     return sprite[activeSprite].getGlobalBounds().getSize();
+}
+
+////OUT OF SCOPE FUNCTIONS
+
+bool fileExists(const std::string &filename){
+    std::ifstream file(filename);
+    bool works = file.good();
+    file.close();
+    return works;
 }

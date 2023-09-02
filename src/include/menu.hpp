@@ -14,7 +14,12 @@ enum layersId{
     Host = 5, 
     final = 6
 };
-
+enum menuPopUps {
+    NoPopUp,
+    InvalidName,
+    TooManySaves,
+    deleteSave
+};
 #define InputMax_IpAdress 15
 #define InputMax_Port 5
 
@@ -47,15 +52,10 @@ class ClickButton : public button {
     ~ClickButton(void);
 };
 
-class SavefileButton : public ClickButton {
-    public:
-    std::string fileName;
-};
 
 //Or you are able to write
 class WriteButton : public button {
     public:
-    int maxInput;
     std::string userText = "";
     float ogPosition[2];
     bool activeInput;

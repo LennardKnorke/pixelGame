@@ -2,7 +2,7 @@
 #include "menu.hpp"
 
 GAME_STATE Application::menuLoop(void){
-    readAllSaveFiles();
+    readAllSaveSummaries();
     
     //Set up menu layers
     std::vector<menuLayer*> Layers;
@@ -13,19 +13,30 @@ GAME_STATE Application::menuLoop(void){
     
 
     //actual menu loop
-    layersId currentLayer = Base;
+    layersId currentLayer = layersId::Base;
+    menuPopUps currentMenuPopUp = menuPopUps::NoPopUp;
     bool allowTextInput = false;
-    while (currentLayer != final && currentLayer != leave){
+    while (currentLayer != layersId::final && currentLayer != layersId::leave){
 
         ////BEGIN DRAWING
         window.clear(sf::Color::Black);
-        for (button *obj : Layers[currentLayer]->LayerButtons){
-            obj->draw(&window);
-        }
+        window.draw(textures.menu_sprites[textureIdxS::background]);
 
-        if (!allowTextInput){
-            cursor.draw(&window);
+        if (currentMenuPopUp == menuPopUps::NoPopUp){
+            for (button *obj : Layers[currentLayer]->LayerButtons){
+                obj->draw(&window);
+            }
+            if (currentLayer == Host){
+                //Draw instructions. Click to select, del for removing
+            }
+            if (!allowTextInput){
+                cursor.draw(&window);
+            }
         }
+        else {
+            //drawPopUpMessage
+        }
+        
         window.display();
         ////END DRAWING
 
@@ -35,9 +46,9 @@ GAME_STATE Application::menuLoop(void){
         ////BEING EVENTS
         sf::Event event;
         while (window.pollEvent(event)){
+            if (currentMenuPopUp == menuPopUps::NoPopUp){
             //KEYS PRESSED
             if (event.type == sf::Event::KeyPressed){
-
 ////INPUT EVENTS
                 //escape button pressed
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){
@@ -57,8 +68,8 @@ GAME_STATE Application::menuLoop(void){
                                 childPtr1->resetInput();
                             }
                         }
-                        if (currentLayer == Host && mode == Single){
-                            currentLayer = Type;
+                        if (currentLayer == layersId::Host && mode == gameMode::Single){
+                            currentLayer = layersId::Type;
                         }
                         else {
                             currentLayer = Layers[currentLayer]->previousLayer;
@@ -77,20 +88,23 @@ GAME_STATE Application::menuLoop(void){
                             childPtr1->activeInput = false;
                             if (childPtr1->userText == ""){
                                 childPtr1->resetInput();
-                                if (currentLayer == Join && cursor.sprite[cursor.activeSprite].getPosition().y < resolution.y/2){
+                                if (currentLayer == layersId::Join && cursor.sprite[cursor.activeSprite].getPosition().y < resolution.y/2){
                                         //Entered HOST IP ADRESS
                                         hostIp = "";
-                                    }
-                                    else {
+                                }
+                                else if (currentLayer == Join) {
                                         //ENTERED HOST PORT
                                         hostPort = "";
-                                    }
+                                }
+                                else if (currentLayer == layersId::Host){
+                                    currentMenuPopUp = menuPopUps::InvalidName;
+                                }
                             }
                             else {
-                                if (currentLayer == Host){
+                                if (currentLayer == layersId::Host){
                                     //Create a new Play save
                                     std::string newSaveName = childPtr1->userText;
-                                    if (createSaveFile(newSaveName)){
+                                    if (createSave(newSaveName, &currentMenuPopUp)){
                                         currentLayer = childPtr1->nextLayer;
                                     }
                                     else {
@@ -98,7 +112,7 @@ GAME_STATE Application::menuLoop(void){
                                     }
 
                                 }
-                                else if (currentLayer == Join){
+                                else if (currentLayer == layersId::Join){
                                     if (cursor.sprite[cursor.activeSprite].getPosition().y < resolution.y/2){
                                         //Entered HOST IP ADRESS
                                         hostIp = childPtr1->userText;
@@ -107,8 +121,9 @@ GAME_STATE Application::menuLoop(void){
                                         //ENTERED HOST PORT
                                         hostPort = childPtr1->userText;
                                     }
+                                    childPtr1->text.setFillColor(sf::Color::Red);
                                     if (hostIp != "" && hostPort != ""){
-                                        currentLayer = final;
+                                        currentLayer = layersId::final;
                                     }
                                 }
                             }
@@ -125,7 +140,10 @@ GAME_STATE Application::menuLoop(void){
                     ClickButton *childPtr1 = dynamic_cast<ClickButton*>(buttTmp);
                     WriteButton *childPtr2 = dynamic_cast<WriteButton*>(buttTmp);
                     //Either just change the layer
-                    if (childPtr1 && buttTmp->focus){                            
+                    if (childPtr1 && buttTmp->focus){   
+                        if (currentLayer == layersId::Host){
+                            setActiveSafe(childPtr1->stringText);
+                        }                         
                         currentLayer = childPtr1->nextLayer;
                     }
                     //or activate text input
@@ -154,12 +172,18 @@ GAME_STATE Application::menuLoop(void){
                     }
                 }
             }
+            }
+            else if (currentMenuPopUp == menuPopUps::InvalidName){
+                if (event.type == sf::Event::KeyPressed && (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)||sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))){
+                    currentMenuPopUp = menuPopUps::NoPopUp;
+                }
+            }
         }
         ////END INPUT EVENTS
 
 
         ////BEGIN UPDATES (to avoid bugs and crashes.. only update valid layers)
-        if (currentLayer != final && currentLayer != leave){
+        if (currentLayer != layersId::final && currentLayer != layersId::leave && currentMenuPopUp == menuPopUps::NoPopUp){
             Layers[currentLayer]->update(cursor.returnPosition());
             if (!allowTextInput){
                 cursor.update();
@@ -173,51 +197,51 @@ GAME_STATE Application::menuLoop(void){
         delete objc;
     }
     ////Return new gameState
-    if (currentLayer == final){
-        std::cout<< "Playing:";
-        if (mode == Online){
+    if (currentLayer == layersId::final){
+        std::cout<< "Playing: ";
+        if (mode == gameMode::Online){
             std::cout << "Online\n";
         }
-        else if (mode == Single){
+        else if (mode == gameMode::Single){
             std::cout << "Alone\n";
         }
         else {
             std::cout << "Locally\n";
         }
-        if (wantsHost || mode == Single){
-            std::cout << "Active Game: " << activeSave.saveName <<std::endl;
+        if (wantsHost || mode == gameMode::Single){
+            std::cout << "Active Game: " << activeSave->getSaveName() <<std::endl;
         }
         else {
             std::cout << "Joining to: ";
-            std::cout << hostIp << "\t" << hostPort <<std::endl;
+            std::cout << hostIp << "::" << hostPort <<std::endl;
         }
         
-        return GAME;
+        return GAME_STATE::GAME;
     }
 
     std::cout << "Leaving Application!\n";
-    return QUIT;
+    return GAME_STATE::QUIT;
 }
 
 void Application::getMenuPicks(sf::Vector2f cursorPosition, layersId currentLayer, menuLayer *Lay){
-    if (currentLayer == Type){
+    if (currentLayer == layersId::Type){
         int i = 0;
         for (button *iterator : Lay->LayerButtons){
             if (iterator->focus){
                 if (i == 0){
-                    mode = Single;
+                    mode = gameMode::Single;
                 }
                 else if (i == 1){
-                    mode = Local;
+                    mode = gameMode::Local;
                 }
                 else {
-                    mode = Online;
+                    mode = gameMode::Online;
                 }
             }
             i++;
         }
     }
-    else if (currentLayer == Multiplayer){
+    else if (currentLayer == layersId::Multiplayer){
         if (cursorPosition.y < resolution.y/2){
             wantsHost = true;
         }
@@ -228,7 +252,7 @@ void Application::getMenuPicks(sf::Vector2f cursorPosition, layersId currentLaye
 }
 
 bool Application::checkCharacterInput(layersId activeLayer, sf::Uint32 c, int activeLength){
-    if (activeLayer == Host){//Entering a new savename only allow "a-z", "A-Z", "0-9".
+    if (activeLayer == layersId::Host){//Entering a new savename only allow "a-z", "A-Z", "0-9".
         if (activeLength >= MAX_LENGTH_SAVENAME){
             return false;
         }
@@ -236,13 +260,36 @@ bool Application::checkCharacterInput(layersId activeLayer, sf::Uint32 c, int ac
             return false;
         }
     }
-    else {//Entering "0-9", "." , ":" for the ip
+    if (activeLayer == layersId::Join) {//Entering "0-9", "." , ":" for the ip
         if (activeLength >=MAX_LENGTH_IPPORT){
             return false;
         }
     }
+    if (activeLayer == layersId::Settings){
+
+    }
     
     return true;
+}
+
+void Application::setActiveSafe(std::string saveName){
+    for (gameSaveSummary sum : availableSaveFiles){
+        if (sum.saveName == saveName){
+            activeSave = new gameSave(sum.saveName,sum.pathName);
+        }
+    }
+}
+
+void Application::drawMenuPopUp(menuPopUps PopUp, sf::RenderWindow *window){
+    if (PopUp == menuPopUps::InvalidName){
+
+    }
+    else if (PopUp == menuPopUps::TooManySaves){
+
+    }
+    else if (PopUp == menuPopUps::deleteSave){
+
+    }
 }
 ///////////////////////
 //LAYER CLASS
@@ -252,57 +299,57 @@ menuLayer::menuLayer(layersId assignedLayer, Application *applicationPointer){
     layerInformation info;
     info.lay = assignedLayer;
     layerType = assignedLayer;
-    if (assignedLayer == Base){
+    if (assignedLayer == layersId::Base){
         info.nButtons = 3;
         info.buttonTexts.push_back(std::string("Play"));
         info.buttonTexts.push_back(std::string("Settings"));//16:9 1920x1080, 1280x720, 960x540
         info.buttonTexts.push_back(std::string("Exit"));
-        info.followUpLay.push_back(Type);
-        info.followUpLay.push_back(Settings);
-        info.followUpLay.push_back(leave);
-        previousLayer = leave;
+        info.followUpLay.push_back(layersId::Type);
+        info.followUpLay.push_back(layersId::Settings);
+        info.followUpLay.push_back(layersId::leave);
+        previousLayer = layersId::leave;
     }
-    else if (assignedLayer == Settings){
+    else if (assignedLayer == layersId::Settings){
         info.nButtons = 0;
 
-        previousLayer = Base;
+        previousLayer = layersId::Base;
     }
-    else if (assignedLayer == Multiplayer){
+    else if (assignedLayer == layersId::Multiplayer){
         info.nButtons = 2;
         info.buttonTexts.push_back(std::string("Host"));
         info.buttonTexts.push_back(std::string("Join"));
-        info.followUpLay.push_back(Host);
-        info.followUpLay.push_back(Join);
-        previousLayer = Type;
+        info.followUpLay.push_back(layersId::Host);
+        info.followUpLay.push_back(layersId::Join);
+        previousLayer = layersId::Type;
 
     }
-    else if (assignedLayer == Type){
+    else if (assignedLayer == layersId::Type){
         info.nButtons = 3;
         info.buttonTexts.push_back(std::string("Alone"));
         info.buttonTexts.push_back(std::string("Local"));
         info.buttonTexts.push_back(std::string("Online"));
-        info.followUpLay.push_back(Host);
-        info.followUpLay.push_back(Multiplayer);
-        info.followUpLay.push_back(Multiplayer);
-        previousLayer = Base;
+        info.followUpLay.push_back(layersId::Host);
+        info.followUpLay.push_back(layersId::Multiplayer);
+        info.followUpLay.push_back(layersId::Multiplayer);
+        previousLayer = layersId::Base;
     }
-    else if (assignedLayer == Join){
+    else if (assignedLayer == layersId::Join){
         info.nButtons = 2;
         info.buttonTexts.push_back(std::string("Host Ip"));
         info.buttonTexts.push_back(std::string("Host Port"));
-        info.followUpLay.push_back(final);
-        info.followUpLay.push_back(final);
-        previousLayer = Multiplayer;
+        info.followUpLay.push_back(layersId::final);
+        info.followUpLay.push_back(layersId::final);
+        previousLayer = layersId::Multiplayer;
     }
-    else if (assignedLayer == Host){
+    else if (assignedLayer == layersId::Host){
         info.buttonTexts.push_back(std::string("Create New Save"));
-        info.followUpLay.push_back(final);
+        info.followUpLay.push_back(layersId::final);
         for (int i = 0; i < applicationPointer->availableSaveFiles.size(); i++){
             info.buttonTexts.push_back(applicationPointer->availableSaveFiles[i].saveName);
-            info.followUpLay.push_back(final);
+            info.followUpLay.push_back(layersId::final);
         }
         info.nButtons = 1 + info.buttonTexts.size();
-        previousLayer = Multiplayer;
+        previousLayer = layersId::Multiplayer;
     }
     else {
         assert(("ERROR: Attempted to create invalid menu layer!\n", false));
@@ -314,14 +361,14 @@ menuLayer::menuLayer(layersId assignedLayer, Application *applicationPointer){
 
 void menuLayer::init(layerInformation setUpInfo, Application *applicationPointer){
     //Load click buttons for each savefile and new writing button to create a new one
-    if (layerType == Host){
+    if (layerType == layersId::Host){
         LayerButtons.push_back(new WriteButton(setUpInfo.buttonTexts[0], setUpInfo.followUpLay[0], applicationPointer, setUpInfo.nButtons, 0));
         for (int i = 1; i < setUpInfo.buttonTexts.size(); i++){
             LayerButtons.push_back(new ClickButton(setUpInfo.buttonTexts[i], setUpInfo.followUpLay[i], applicationPointer, setUpInfo.nButtons, i));
         }
     } 
     //Only layer with 2 writing buttons
-    else if (layerType == Join){
+    else if (layerType == layersId::Join){
         for (int i = 0; i < setUpInfo.nButtons; i++){
             LayerButtons.push_back(new WriteButton(setUpInfo.buttonTexts[i], setUpInfo.followUpLay[i], applicationPointer, setUpInfo.nButtons, i));
         }
@@ -379,15 +426,17 @@ void ClickButton::update(sf::Vector2f mousePos){
     sf::Vector2f rec = text.getPosition();
     if (mousePos.x > rec.x && mousePos.x < rec.x + text.getLocalBounds().width
     && mousePos.y > rec.y && mousePos.y < rec.y + text.getLocalBounds().height){
-        focus = true;
-        if (text.getStyle() != sf::Text::Style::Bold){
+        if (!focus){
+            focus = true;
             text.setStyle(sf::Text::Style::Underlined);
+            text.setFillColor(sf::Color::Red);
         }
     }    
     else {
-        focus = false;
-        if (text.getStyle() != sf::Text::Style::Regular){
+        if (focus){
+            focus = false;
             text.setStyle(sf::Text::Style::Regular);
+            text.setFillColor(sf::Color::White);
         }
     }
 }
@@ -415,16 +464,23 @@ void WriteButton::update(sf::Vector2f mousePos){
         sf::Vector2f rec = text.getPosition();
         if (mousePos.x > rec.x && mousePos.x < rec.x + text.getLocalBounds().width
         && mousePos.y > rec.y && mousePos.y < rec.y + text.getLocalBounds().height){
-            focus = true;
-            if (text.getStyle() != sf::Text::Style::Bold){
+            if (!focus){
+                focus = true;
                 text.setStyle(sf::Text::Style::Underlined);
+                text.setFillColor(sf::Color::Red);
+            }
+        }    
+        else {
+            if (focus){
+                focus = false;
+                text.setStyle(sf::Text::Style::Regular);
+                text.setFillColor(sf::Color::White);
             }
         }
-        else {
-            focus = false;
-            if (text.getStyle() != sf::Text::Style::Regular){
-                text.setStyle(sf::Text::Style::Regular);
-            }
+    }
+    else {
+        if (text.getFillColor() != sf::Color::Green){
+            text.setFillColor(sf::Color::Green);
         }
     }
 }
@@ -432,6 +488,7 @@ void WriteButton::update(sf::Vector2f mousePos){
 void WriteButton::resetInput(void){
     text.setString(stringText);
     text.setPosition(ogPosition[0], ogPosition[1]);
+    text.setFillColor(sf::Color::Red);
     userText = "";
     activeInput = false;
 }

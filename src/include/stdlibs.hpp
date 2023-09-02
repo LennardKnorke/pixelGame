@@ -20,23 +20,6 @@
 #include <SFML/Window.hpp>
 #include <SFML/System.hpp>
 
-typedef struct Player{
-    std::string name;
-    std::string key;
-}Player;
 
-typedef struct gameSaveSummary{
-    std::string saveName;
-    std::string filename;
-    bool initialized;
-}gameSaveSummary;
 
-typedef struct gameSave{
-    std::string saveName;
-    std::string filename;
-    bool initialized;
-    std::string owner;
-    int playerNumber;
-    std::vector<Player> PlayerData;
-}gameSave;
 #endif //STDLIBS_HPP

@@ -3,7 +3,9 @@
 #define APPLICATON_HPP
 #include "stdlibs.hpp"
 #include "menu.hpp"
+#include "gamesave.hpp"
 
+bool fileExists(const std::string &filename);
 
 #define MAX_LENGTH_KEY 14
 #define MAX_LENGTH_SAVENAME 12
@@ -15,6 +17,7 @@ enum GAME_STATE {
 enum errorCodes{
     ConnectErr, FileLoadErr, InvalidSaveNameErr, NoErr
 };
+
 enum gameMode{
     Single, Local, Online
 };
@@ -22,20 +25,26 @@ enum gameMode{
 //overview of how much textures we want to load
 #define nr_cursor_textures 2
 #define nr_menu_textures 1
+enum textureIdxS {
+    background =0
+};
 typedef struct Textures {
     sf::Texture cursors[nr_cursor_textures];
     sf::Texture menu[nr_menu_textures];
-    //sf::Texture character[nr_character_textures];
+    sf::Sprite menu_sprites[nr_menu_textures];
     //sf::
 } Textures;
 
 #define GAMESTATE_QUIT 0
+enum cursorSpriteIndexes {
+    menu = 0, game_base = 1
+};
 class CursorSprite {    
     public:
-    int activeSprite;
+    cursorSpriteIndexes activeSprite;
     sf::Sprite sprite[nr_cursor_textures];
     bool pressed;
-    void changeSprite(int i);
+    void changeSprite(cursorSpriteIndexes i);
     void update(void);
     void draw(sf::RenderWindow *renderwindow);
     sf::Vector2f returnPosition(void);
@@ -65,7 +74,7 @@ class Application{
     //Application variables
     GAME_STATE State;
     errorCodes error = NoErr;
-    gameSave activeSave;
+    gameSave *activeSave;
     bool wantsHost;
     gameMode mode;
     char userKey[MAX_LENGTH_KEY + 1];
@@ -73,6 +82,9 @@ class Application{
     //SavefileManagement
 
     ////////////////FUNCTIONS////////////////
+    //game(client) functions
+    GAME_STATE menuLoop(void);
+    GAME_STATE gameLoop(void);
     //Boot ups
     void initWindow(void);
     void initSettings(void);
@@ -80,27 +92,24 @@ class Application{
     //assets loading
     bool loadTextures(void);
     void setUpCursorAssets(void);
+    void setUpTextureAssets(void);
     //save functions
     void setUpSaveFolder(void);
-    void readAllSaveFiles(void);
+    void readAllSaveSummaries(void);
     gameSaveSummary loadSaveSummary(const std::string &filename);
-    bool createSaveFile(std::string newSaveName);
-    void saveSave(gameSave Save, const std::string &path);
-    gameSave loadSave(const std::string &filename);
+    bool createSave(std::string newSaveName, menuPopUps *menuWarning);
     //Orga Stuff
     void loadSettings(const std::string &filename);
     void createSettings(const std::string &filename);
     void saveSettings(const std::string &filename);
 
-    bool fileExists(const std::string &filename);
 
-    //Menu functions
+    //Menu functions. found in menu.cpp
     void getMenuPicks(sf::Vector2f cursorPosition, layersId currentLayer, menuLayer *Lay);
     bool checkCharacterInput(layersId activeLayer, sf::Uint32 c, int activeLength);
+    void setActiveSafe(std::string saveName);
+    void drawMenuPopUp(menuPopUps PopUp, sf::RenderWindow *window);
     
-    //game(client) functions
-    GAME_STATE menuLoop(void);
-    GAME_STATE gameLoop(void);
 
 
     //?server functions?
