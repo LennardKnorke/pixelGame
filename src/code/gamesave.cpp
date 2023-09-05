@@ -40,6 +40,8 @@ gameSave::gameSave(std::string newSafeName){
     file.close(); 
 }
 
+
+
 //Create an instance: existing save file
 gameSave::gameSave(std::string SafeName, const std::string &path){
     std::ifstream file(path+".SAV", std::ios::binary);
@@ -65,10 +67,14 @@ gameSave::gameSave(std::string SafeName, const std::string &path){
     file.close();
 }
 
+
+
 //Create an instance: through the host (fill with necessary parameters)
 gameSave::gameSave(void){
     return;
 }
+
+
 
 //loads all the data of an already initialzed gamesave
 void gameSave::loadCompleteSafe(void){
@@ -81,8 +87,8 @@ bool gameSave::saveSave(void){
     return true;
 }
 
+
+
 std::string gameSave::getSaveName(void){
     return saveName;
 }
-
-

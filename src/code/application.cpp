@@ -1,5 +1,7 @@
 #include "application.hpp"
 
+
+
 ////////////////////////////////////////////
 //APPLICATION CLASS
 ////////////////////////////////////////////
@@ -32,12 +34,15 @@ Application::Application(void){
 }
 
 
+
 void Application::initWindow(void){
     window.create(sf::VideoMode(resolution.x, resolution.y, 32), "ReFrAcTuReD", sf::Style::Fullscreen);
     window.setFramerateLimit(60);
     window.setMouseCursorVisible(false);
     window.setMouseCursorGrabbed(true);
 }
+
+
 
 //SETTINGS FUNCTIONS
 void Application::initSettings(void){
@@ -51,6 +56,7 @@ void Application::initSettings(void){
 }
 
 
+
 void Application::loadSettings(const std::string &filename){
     std::ifstream inputFile(filename, std::ios::binary);
     inputFile.read(reinterpret_cast<char *>(&userKey), sizeof(userKey));
@@ -60,6 +66,7 @@ void Application::loadSettings(const std::string &filename){
                 << resolution.y << std::endl;
     inputFile.close();
 }
+
 
 
 void Application::createSettings(const std::string &filename){
@@ -83,13 +90,15 @@ void Application::createSettings(const std::string &filename){
 }
 
 
+
 void Application::saveSettings(const std::string &filename){
     std::ofstream outputFile("settings.bin", std::ios::binary);
     outputFile.write(reinterpret_cast<const char *>(&userKey), sizeof(userKey));
     outputFile.write(reinterpret_cast<const char *>(&resolution), sizeof(sf::Vector2u));
     outputFile.close();
 }
-///
+
+
 
 //MANAGE ASSETS
 bool Application::loadAssets(void){
@@ -110,6 +119,8 @@ bool Application::loadAssets(void){
     return true;
 }
 
+
+
 void Application::setUpSaveFolder(void){
     std::filesystem::path pathDirectory = std::string("sav/");
     if (!std::filesystem::exists(pathDirectory)){
@@ -117,6 +128,7 @@ void Application::setUpSaveFolder(void){
         std::filesystem::create_directory(pathDirectory);
     }
 }
+
 
 
 void Application::readAllSaveSummaries(void){
@@ -127,6 +139,7 @@ void Application::readAllSaveSummaries(void){
         }
     }
 }
+
 
 
 gameSaveSummary Application::loadSaveSummary(const std::string &filename){
@@ -151,6 +164,8 @@ gameSaveSummary Application::loadSaveSummary(const std::string &filename){
     return sumTmp;
 
 }
+
+
 
 bool Application::createSave(std::string newSaveName, menuPopUps *menuWarning){
     if (availableSaveFiles.size() >= 5){
@@ -206,11 +221,15 @@ bool Application::loadTextures(void){
     return true;
 }
 
+
+
 void Application::setUpTextureAssets(void){
-    textures.menu_sprites[textureIdxS::background].setTexture(textures.menu[textureIdxS::background]);
-    textures.menu_sprites[textureIdxS::background].setPosition(0, 0);
-    textures.menu_sprites[textureIdxS::background].setScale(resolution.x/textures.menu_sprites[textureIdxS::background].getGlobalBounds().getSize().x, resolution.y/textures.menu_sprites[textureIdxS::background].getGlobalBounds().getSize().y);
+    textures.menu_sprites[menuTextureIdxS::background].setTexture(textures.menu[menuTextureIdxS::background]);
+    textures.menu_sprites[menuTextureIdxS::background].setPosition(0, 0);
+    textures.menu_sprites[menuTextureIdxS::background].setScale(resolution.x/textures.menu_sprites[menuTextureIdxS::background].getGlobalBounds().getSize().x, resolution.y/textures.menu_sprites[menuTextureIdxS::background].getGlobalBounds().getSize().y);
 }
+
+
 
 void Application::setUpCursorAssets(void){
     for (int i = 0; i < nr_cursor_textures; i++){
@@ -220,6 +239,8 @@ void Application::setUpCursorAssets(void){
     cursor.changeSprite(cursorSpriteIndexes::menu);
 }
 
+
+
 ////////////////////////////////////////////
 // CURSOR CLASS
 ////////////////////////////////////////////
@@ -228,25 +249,33 @@ void CursorSprite::changeSprite(cursorSpriteIndexes i){
 }
 
 
+
 void CursorSprite::update(void){
     sprite[activeSprite].setPosition(sf::Vector2f(sf::Mouse::getPosition()));
     pressed = sf::Mouse::isButtonPressed(sf::Mouse::Left);
 }
 
+
+
 void CursorSprite::draw(sf::RenderWindow *renderwindow){
     renderwindow->draw(sprite[activeSprite]);
 }
+
+
 
 sf::Vector2f CursorSprite::returnPosition(void){
     return sprite[activeSprite].getPosition();
 }
 
+
+
 sf::Vector2f CursorSprite::returnSize(void){
     return sprite[activeSprite].getGlobalBounds().getSize();
 }
 
-////OUT OF SCOPE FUNCTIONS
 
+
+////OUT OF SCOPE FUNCTIONS
 bool fileExists(const std::string &filename){
     std::ifstream file(filename);
     bool works = file.good();

@@ -3,6 +3,9 @@
 #define MENU_HPP
 class Application;
 
+
+
+//Makros for Menu Layers
 #define MaxVisibleLayers 6
 enum layersId{
     leave = -1, 
@@ -14,15 +17,25 @@ enum layersId{
     Host = 5, 
     final = 6
 };
+
+
+
+//Makros for menu pop up/ error messages
 enum menuPopUps {
     NoPopUp,
     InvalidName,
     TooManySaves,
     deleteSave
 };
+
+
+
 #define InputMax_IpAdress 15
 #define InputMax_Port 5
 
+
+
+//Summarizes information about each menu layer, used to construct instances of layer class
 typedef struct layerInformation{
     layersId lay;
     layersId prevLay;
@@ -33,6 +46,7 @@ typedef struct layerInformation{
 
 
 
+//Base class of a text button
 class button{
     public:
     layersId nextLayer;
@@ -44,6 +58,10 @@ class button{
     virtual void draw(sf::RenderWindow *window);
     virtual void update(sf::Vector2f mousePos);
 };
+
+
+
+//child class of a clickable button
 class ClickButton : public button {
     public:
     ClickButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt);
@@ -53,7 +71,8 @@ class ClickButton : public button {
 };
 
 
-//Or you are able to write
+
+//childclass for a button which accepts text input
 class WriteButton : public button {
     public:
     std::string userText = "";
@@ -69,6 +88,8 @@ class WriteButton : public button {
 };
 
 
+
+//menu layer class. contains
 class menuLayer {
     public:
     layersId layerType;
@@ -81,5 +102,7 @@ class menuLayer {
     
     ~menuLayer(void);
 };
+
+
 
 #endif //MENU_HPP

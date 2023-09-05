@@ -5,29 +5,52 @@
 #include "menu.hpp"
 #include "gamesave.hpp"
 
+
+
+//checks if a relative file exists
 bool fileExists(const std::string &filename);
 
+
+
+//Makros
 #define MAX_LENGTH_KEY 14
 #define MAX_LENGTH_SAVENAME 12
 #define MAX_LENGTH_IPPORT 20
 
+
+
+//makros about the gamestate
 enum GAME_STATE {
     MENU, GAME, QUIT
 };
+
+
+
+//makro for additional error codes (unused so far)
 enum errorCodes{
     ConnectErr, FileLoadErr, InvalidSaveNameErr, NoErr
 };
 
+
+
+//tracks whether the user wants to play locally, online or alone
 enum gameMode{
     Single, Local, Online
 };
 
+
+
 //overview of how much textures we want to load
 #define nr_cursor_textures 2
 #define nr_menu_textures 1
-enum textureIdxS {
+//makro the menu textures
+enum menuTextureIdxS {
     background =0
 };
+
+
+
+//One instance for all the textures
 typedef struct Textures {
     sf::Texture cursors[nr_cursor_textures];
     sf::Texture menu[nr_menu_textures];
@@ -35,10 +58,16 @@ typedef struct Textures {
     //sf::
 } Textures;
 
-#define GAMESTATE_QUIT 0
+
+
+//makro to index the cursorsprites
 enum cursorSpriteIndexes {
     menu = 0, game_base = 1
 };
+
+
+
+//class for the cursor
 class CursorSprite {    
     public:
     cursorSpriteIndexes activeSprite;
@@ -51,6 +80,9 @@ class CursorSprite {
     sf::Vector2f returnSize(void);
 };
 
+
+
+//Application. Main thing
 class Application{
     public:
     Application(void);
@@ -108,12 +140,14 @@ class Application{
     void getMenuPicks(sf::Vector2f cursorPosition, layersId currentLayer, menuLayer *Lay);
     bool checkCharacterInput(layersId activeLayer, sf::Uint32 c, int activeLength);
     void setActiveSafe(std::string saveName);
-    void drawMenuPopUp(menuPopUps PopUp, sf::RenderWindow *window);
+    void setMenuPopUpMessage(menuPopUps PopUp, sf::Text *warningMessage, sf::Vector2u res);
+    void drawMenuPopUp(menuPopUps PopUp, sf::RenderWindow *window, sf::Text *warningMessage);
     
 
 
     //?server functions?
 };
+
 
 
 #endif //APPLICATION_HPP

@@ -3,13 +3,22 @@
 #define GAMESAVE_HPP
 #include "stdlibs.hpp"
 
+
+
+//checks if a relative file exists
 bool fileExists(const std::string &filename);
 
+
+
+//struct to summarize relevant player information
 typedef struct clientPlayer{
     std::string name;
     std::string key;
 }Player;
 
+
+
+//struct:saves the filename, savename, pathname
 typedef struct gameSaveSummary{
     std::string saveName;
     std::string fileName;
@@ -17,6 +26,8 @@ typedef struct gameSaveSummary{
 }gameSaveSummary;
 
 
+
+//game save class. manipulate, load, create or safe a world/game instance
 class gameSave {
     private:
     //Variable of uninitialized saves
@@ -43,6 +54,7 @@ class gameSave {
     std::string getSaveName(void);
     
 };
+
 
 
 #endif //GAMESAVE_HPP

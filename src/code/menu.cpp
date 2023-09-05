@@ -2,6 +2,7 @@
 #include "menu.hpp"
 
 GAME_STATE Application::menuLoop(void){
+
     readAllSaveSummaries();
     
     //Set up menu layers
@@ -16,11 +17,18 @@ GAME_STATE Application::menuLoop(void){
     layersId currentLayer = layersId::Base;
     menuPopUps currentMenuPopUp = menuPopUps::NoPopUp;
     bool allowTextInput = false;
+    sf::Text warningMessage;
+    warningMessage.setString("");
+    warningMessage.setFillColor(sf::Color::White);
+    warningMessage.setFont(gameFont);
+    warningMessage.setStyle(sf::Text::Style::Regular);
+    warningMessage.setCharacterSize(42);
+
     while (currentLayer != layersId::final && currentLayer != layersId::leave){
 
         ////BEGIN DRAWING
         window.clear(sf::Color::Black);
-        window.draw(textures.menu_sprites[textureIdxS::background]);
+        window.draw(textures.menu_sprites[menuTextureIdxS::background]);
 
         if (currentMenuPopUp == menuPopUps::NoPopUp){
             for (button *obj : Layers[currentLayer]->LayerButtons){
@@ -34,7 +42,7 @@ GAME_STATE Application::menuLoop(void){
             }
         }
         else {
-            //drawPopUpMessage
+            drawMenuPopUp(currentMenuPopUp, &window, &warningMessage);
         }
         
         window.display();
@@ -92,12 +100,13 @@ GAME_STATE Application::menuLoop(void){
                                         //Entered HOST IP ADRESS
                                         hostIp = "";
                                 }
-                                else if (currentLayer == Join) {
+                                else if (currentLayer == layersId::Join) {
                                         //ENTERED HOST PORT
                                         hostPort = "";
                                 }
                                 else if (currentLayer == layersId::Host){
                                     currentMenuPopUp = menuPopUps::InvalidName;
+                                    setMenuPopUpMessage(currentMenuPopUp, &warningMessage, resolution);
                                 }
                             }
                             else {
@@ -108,6 +117,7 @@ GAME_STATE Application::menuLoop(void){
                                         currentLayer = childPtr1->nextLayer;
                                     }
                                     else {
+                                        setMenuPopUpMessage(currentMenuPopUp, &warningMessage, resolution);
                                         childPtr1->resetInput();
                                     }
 
@@ -223,6 +233,8 @@ GAME_STATE Application::menuLoop(void){
     return GAME_STATE::QUIT;
 }
 
+
+
 void Application::getMenuPicks(sf::Vector2f cursorPosition, layersId currentLayer, menuLayer *Lay){
     if (currentLayer == layersId::Type){
         int i = 0;
@@ -251,6 +263,8 @@ void Application::getMenuPicks(sf::Vector2f cursorPosition, layersId currentLaye
     }
 }
 
+
+
 bool Application::checkCharacterInput(layersId activeLayer, sf::Uint32 c, int activeLength){
     if (activeLayer == layersId::Host){//Entering a new savename only allow "a-z", "A-Z", "0-9".
         if (activeLength >= MAX_LENGTH_SAVENAME){
@@ -272,6 +286,8 @@ bool Application::checkCharacterInput(layersId activeLayer, sf::Uint32 c, int ac
     return true;
 }
 
+
+
 void Application::setActiveSafe(std::string saveName){
     for (gameSaveSummary sum : availableSaveFiles){
         if (sum.saveName == saveName){
@@ -280,21 +296,33 @@ void Application::setActiveSafe(std::string saveName){
     }
 }
 
-void Application::drawMenuPopUp(menuPopUps PopUp, sf::RenderWindow *window){
-    if (PopUp == menuPopUps::InvalidName){
 
+
+void Application::setMenuPopUpMessage(menuPopUps PopUp, sf::Text *warningMessage, sf::Vector2u res){
+    if (PopUp == menuPopUps::InvalidName){
+        warningMessage->setString("Choose a new/valid name for your save\nPress Enter\\Escape to continue");
     }
     else if (PopUp == menuPopUps::TooManySaves){
-
+        warningMessage->setString("Too many saves. Delete at least one save to create a new one");
     }
     else if (PopUp == menuPopUps::deleteSave){
-
+        warningMessage->setString("TMP");
     }
+    else if (PopUp == menuPopUps::NoPopUp){
+        warningMessage->setString("");
+    }
+    warningMessage->setPosition((res.x/2) - (warningMessage->getGlobalBounds().getSize().x / 2), (res.y / 2) - (warningMessage->getGlobalBounds().getSize().y / 2));
 }
+
+void Application::drawMenuPopUp(menuPopUps PopUp, sf::RenderWindow *window, sf::Text *warningMessage){
+    window->draw(*warningMessage);
+}
+
+
+
 ///////////////////////
 //LAYER CLASS
 ///////////////////////
-
 menuLayer::menuLayer(layersId assignedLayer, Application *applicationPointer){
     layerInformation info;
     info.lay = assignedLayer;
@@ -359,6 +387,8 @@ menuLayer::menuLayer(layersId assignedLayer, Application *applicationPointer){
     init(info, applicationPointer);
 }
 
+
+
 void menuLayer::init(layerInformation setUpInfo, Application *applicationPointer){
     //Load click buttons for each savefile and new writing button to create a new one
     if (layerType == layersId::Host){
@@ -389,6 +419,8 @@ void menuLayer::update(sf::Vector2f mousePos){
     }
 }
 
+
+
 menuLayer::~menuLayer(void){
     for (button *obj : LayerButtons){
         delete obj;
@@ -406,6 +438,7 @@ void button::update(sf::Vector2f mousePos){}
 //Pretending over
 
 
+
 ClickButton::ClickButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt){
     stringText = t;
     nextLayer = followLayer;
@@ -416,12 +449,19 @@ ClickButton::ClickButton(std::string t, layersId followLayer, Application *appli
     text.setPosition(((*applicationPointer).resolution.x/2.0) - (text.getLocalBounds().width/2.0), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (text.getLocalBounds().height / 2));
     text.setStyle(sf::Text::Style::Regular);
 };
+
+
+
 ClickButton::~ClickButton(void){};
+
 
 
 void ClickButton::draw(sf::RenderWindow *window){
     window->draw(text);
 }
+
+
+
 void ClickButton::update(sf::Vector2f mousePos){
     sf::Vector2f rec = text.getPosition();
     if (mousePos.x > rec.x && mousePos.x < rec.x + text.getLocalBounds().width
@@ -441,6 +481,8 @@ void ClickButton::update(sf::Vector2f mousePos){
     }
 }
 
+
+
 WriteButton::WriteButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt){
     stringText = t;
     nextLayer = followLayer;
@@ -454,11 +496,19 @@ WriteButton::WriteButton(std::string t, layersId followLayer, Application *appli
     ogPosition[1] = text.getPosition().y;
     text.setStyle(sf::Text::Style::Regular);
 }
+
+
+
 WriteButton::~WriteButton(void){};
+
+
 
 void WriteButton::draw(sf::RenderWindow *window){
     window->draw(text);
 }
+
+
+
 void WriteButton::update(sf::Vector2f mousePos){
     if (!activeInput){
         sf::Vector2f rec = text.getPosition();
@@ -485,6 +535,8 @@ void WriteButton::update(sf::Vector2f mousePos){
     }
 }
 
+
+
 void WriteButton::resetInput(void){
     text.setString(stringText);
     text.setPosition(ogPosition[0], ogPosition[1]);
@@ -493,11 +545,15 @@ void WriteButton::resetInput(void){
     activeInput = false;
 }
 
+
+
 void WriteButton::addInput(sf::Uint32 input, sf::Vector2u res){
     userText += input;
     text.setString(userText);
     text.setPosition((res.x/2.0) - (text.getLocalBounds().width/2.0), text.getPosition().y);
 }
+
+
 
 void WriteButton::delLastInput(sf::Vector2u res){
     if (userText.size() != 0){
