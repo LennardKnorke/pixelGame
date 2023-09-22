@@ -4,7 +4,7 @@
 #include "stdlibs.hpp"
 #include "menu.hpp"
 #include "gamesave.hpp"
-
+#include "local_game_client.hpp"
 
 
 //checks if a relative file exists
@@ -42,10 +42,13 @@ enum gameMode{
 
 //overview of how much textures we want to load
 #define nr_cursor_textures 2
-#define nr_menu_textures 1
+#define nr_menu_textures 4
 //makro the menu textures
 enum menuTextureIdxS {
-    background =0
+    background = 0,
+    button_silver = 1,
+    button_red = 2,
+    button_green = 3
 };
 
 
@@ -54,9 +57,41 @@ enum menuTextureIdxS {
 typedef struct Textures {
     sf::Texture cursors[nr_cursor_textures];
     sf::Texture menu[nr_menu_textures];
-    sf::Sprite menu_sprites[nr_menu_textures];
-    //sf::
 } Textures;
+
+
+//User set controls
+union attackKeyUnion{
+    sf::Keyboard::Key key;
+    sf::Mouse::Button butt;
+};
+ 
+typedef struct userKeys{
+    sf::Keyboard::Key Jump;
+    sf::Keyboard::Key Down;
+    sf::Keyboard::Key Left;
+    sf::Keyboard::Key Right;
+    sf::Keyboard::Key nextItem;
+    sf::Keyboard::Key prevItem;
+
+    attackKeyUnion attack;
+}userKeys;
+
+
+
+//structure to track all possible gameplay related input
+typedef struct userInputData{
+    bool Jump;
+    bool Down;
+    bool Left;
+    bool Right;
+    bool nextItem;
+    bool prevItem;
+
+    bool attack;
+    sf::Vector2i aim;//indicates the position of the cursor relative to the position of the controlled char
+
+}userInputData;
 
 
 
@@ -73,9 +108,11 @@ class CursorSprite {
     cursorSpriteIndexes activeSprite;
     sf::Sprite sprite[nr_cursor_textures];
     bool pressed;
+    bool print;
     void changeSprite(cursorSpriteIndexes i);
     void update(void);
     void draw(sf::RenderWindow *renderwindow);
+    void changeRes(void);
     sf::Vector2f returnPosition(void);
     sf::Vector2f returnSize(void);
 };
@@ -90,6 +127,7 @@ class Application{
     sf::RenderWindow window;
 
     sf::Vector2u resolution;
+    float ratioScaling;
     CursorSprite cursor;
     //////
     //Grafik Variables
@@ -105,10 +143,14 @@ class Application{
     std::string hostPort = "";
     //Application variables
     GAME_STATE State;
-    errorCodes error = NoErr;
-    gameSave *activeSave;
     bool wantsHost;
     gameMode mode;
+    errorCodes error = NoErr;
+
+    gameSave *activeSave;
+    userKeys inGameControls;
+    userInputData gamePlayInput;
+
     char userKey[MAX_LENGTH_KEY + 1];
 
     //SavefileManagement
@@ -124,7 +166,6 @@ class Application{
     //assets loading
     bool loadTextures(void);
     void setUpCursorAssets(void);
-    void setUpTextureAssets(void);
     //save functions
     void setUpSaveFolder(void);
     void readAllSaveSummaries(void);
@@ -142,10 +183,26 @@ class Application{
     void setActiveSafe(std::string saveName);
     void setMenuPopUpMessage(menuPopUps PopUp, sf::Text *warningMessage, sf::Vector2u res);
     void drawMenuPopUp(menuPopUps PopUp, sf::RenderWindow *window, sf::Text *warningMessage);
-    
 
 
     //?server functions?
+
+
+    //GameLoopFunctions
+    gameLoopState loadingScreen(void);
+    void readUserGameInput(sf::Vector2i origin);
+
+    void drawGame(void);
+    void registerGameInput(gameLoopState *s);
+    void updateGame(void);
+
+    void drawMenu(std::vector<inGameMenuButton*> v);
+    void registerMenuInput(gameLoopState *s, std::vector<inGameMenuButton*> v);
+    void updateMenu(std::vector<inGameMenuButton*> v);
+
+    void drawTree(void);
+    void registerTreeInput(gameLoopState *s);
+    void updateTree(void);
 };
 
 

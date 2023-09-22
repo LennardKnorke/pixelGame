@@ -1,6 +1,6 @@
 #include "gamesave.hpp"
 
-//Create an instance: new 'raw' safe
+//Create an instance: a new 'raw' safe
 gameSave::gameSave(std::string newSafeName){
     //Find a new name available for the file.
     std::string newFileName = "WORLD_";
@@ -88,7 +88,7 @@ bool gameSave::saveSave(void){
 }
 
 
-
-std::string gameSave::getSaveName(void){
-    return saveName;
-}
+//Return of information from private variables
+std::string gameSave::getSaveName(void){return saveName;}
+std::string gameSave::getSavePath(void){return pathName;}
+std::string gameSave::getFileName(void){return fileName;}

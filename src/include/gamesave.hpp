@@ -3,7 +3,7 @@
 #define GAMESAVE_HPP
 #include "stdlibs.hpp"
 
-
+#define MAX_LENGTH_KEY 14
 
 //checks if a relative file exists
 bool fileExists(const std::string &filename);
@@ -37,11 +37,12 @@ class gameSave {
         std::string pathName;
     bool initialized;
     //Others
-    std::string owner;
+    Tile tileMap[10000][10000];
     std::vector<clientPlayer> clientsData;
-
+    std::vector<int> seed;
     //Variables which do no get saved in the savefile
     bool loadedComplete;
+
 
     public:
     
@@ -51,7 +52,19 @@ class gameSave {
     void loadByHost(void);
     bool saveSave(void);
     void loadCompleteSafe(void);
+
+    //Initialize save
+    void initUninitialized(void);
+
+
+    //
+    clientPlayer addPlayer(char userKey[MAX_LENGTH_KEY]);
+
+    //Return functions to get private variables
+    //saveName
     std::string getSaveName(void);
+    std::string getSavePath(void);
+    std::string getFileName(void);
     
 };
 

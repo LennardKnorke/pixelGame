@@ -7,28 +7,35 @@ GAME_STATE Application::menuLoop(void){
     
     //Set up menu layers
     std::vector<menuLayer*> Layers;
-    layersId visibLayers[MaxVisibleLayers] = {Base, Settings, Type, Multiplayer, Join, Host};
+    layersId visibLayers[MaxVisibleLayers] = {Base, Settings, Type, Multiplayer, Join, Host, Graphic, Controls};//
     for (int i =0; i < MaxVisibleLayers; i++){
         Layers.push_back(new menuLayer(visibLayers[i], this));
     }
-    
+
+    //SetUpBackgroundSprite (set as class variable?)
+    sf::Sprite backgroundSprite;
+    backgroundSprite.setTexture(textures.menu[menuTextureIdxS::background]);
+    backgroundSprite.setPosition(0, 0);
+    backgroundSprite.setScale(resolution.x/backgroundSprite.getGlobalBounds().getSize().x, resolution.y/backgroundSprite.getGlobalBounds().getSize().y);
 
     //actual menu loop
     layersId currentLayer = layersId::Base;
     menuPopUps currentMenuPopUp = menuPopUps::NoPopUp;
     bool allowTextInput = false;
+
+    //prepare a warning message for errors
     sf::Text warningMessage;
     warningMessage.setString("");
     warningMessage.setFillColor(sf::Color::White);
     warningMessage.setFont(gameFont);
     warningMessage.setStyle(sf::Text::Style::Regular);
-    warningMessage.setCharacterSize(42);
+    warningMessage.setCharacterSize(30 * ratioScaling);
 
     while (currentLayer != layersId::final && currentLayer != layersId::leave){
 
         ////BEGIN DRAWING
-        window.clear(sf::Color::Black);
-        window.draw(textures.menu_sprites[menuTextureIdxS::background]);
+        window.clear(sf::Color::Transparent);
+        window.draw(backgroundSprite);
 
         if (currentMenuPopUp == menuPopUps::NoPopUp){
             for (button *obj : Layers[currentLayer]->LayerButtons){
@@ -149,6 +156,7 @@ GAME_STATE Application::menuLoop(void){
                 for (button *buttTmp : Layers[currentLayer]->LayerButtons){
                     ClickButton *childPtr1 = dynamic_cast<ClickButton*>(buttTmp);
                     WriteButton *childPtr2 = dynamic_cast<WriteButton*>(buttTmp);
+                    GraphicButton *childPtr3 = dynamic_cast<GraphicButton*>(buttTmp);
                     //Either just change the layer
                     if (childPtr1 && buttTmp->focus){   
                         if (currentLayer == layersId::Host){
@@ -161,6 +169,24 @@ GAME_STATE Application::menuLoop(void){
                         allowTextInput = true;
                         childPtr2->activeInput = true;
                         childPtr2->text.setString(childPtr2->userText);
+                    }
+                    //update resolution settings and menu ui elements
+                    else if (childPtr3 && buttTmp->focus && resolution != childPtr3->newResolution){
+                        /*
+                        resolution = childPtr3->newResolution;
+                        ratioScaling = 1920.0/ resolution.x;
+                        std::cout << resolution.x<< "\t";
+                        std::cout << resolution.y<< "\t";
+                        std::cout << ratioScaling<< std::endl;
+                        window.setSize(resolution);
+                        
+                        backgroundSprite.setScale(resolution.x/backgroundSprite.getGlobalBounds().getSize().x, resolution.y / backgroundSprite.getGlobalBounds().getSize().y);
+                        saveSettings("settings.bin");
+                        
+                        for (menuLayer *tmp : Layers){
+                            tmp->changeRes(this);
+                        }
+                        */
                     }
                 }
             }
@@ -176,7 +202,6 @@ GAME_STATE Application::menuLoop(void){
                             childPtr1->delLastInput(resolution);
                         }
                         else if (checkCharacterInput(currentLayer, event.text.unicode, childPtr1->userText.size())){
-                            
                             childPtr1->addInput(event.text.unicode, resolution);
                         }
                     }
@@ -206,6 +231,7 @@ GAME_STATE Application::menuLoop(void){
     for (menuLayer* objc : Layers){
         delete objc;
     }
+    availableSaveFiles.clear();
     ////Return new gameState
     if (currentLayer == layersId::final){
         std::cout<< "Playing: ";
@@ -338,9 +364,32 @@ menuLayer::menuLayer(layersId assignedLayer, Application *applicationPointer){
         previousLayer = layersId::leave;
     }
     else if (assignedLayer == layersId::Settings){
-        info.nButtons = 0;
-
+        info.nButtons = 2;
+        info.buttonTexts.push_back(std::string("Graphics"));
+        info.buttonTexts.push_back(std::string("Controls"));
+        info.followUpLay.push_back(layersId::Graphic);
+        info.followUpLay.push_back(layersId::Controls);
         previousLayer = layersId::Base;
+    }
+    else if (assignedLayer == layersId::Graphic){
+        info.nButtons = 5;
+        info.buttonTexts.push_back(std::string("1920 x 1080"));
+        info.buttonTexts.push_back(std::string("1600 x 900"));
+        info.buttonTexts.push_back(std::string("1280 x 720"));
+        info.buttonTexts.push_back(std::string("1024 x 576"));
+        info.buttonTexts.push_back(std::string("960 x 540"));
+
+        info.followUpLay.push_back(layersId::Graphic);    
+        info.followUpLay.push_back(layersId::Graphic);    
+        info.followUpLay.push_back(layersId::Graphic);    
+        info.followUpLay.push_back(layersId::Graphic);    
+        info.followUpLay.push_back(layersId::Graphic);    
+
+        previousLayer = layersId::Settings;
+    }
+    else if (assignedLayer == layersId::Controls){
+        info.nButtons = 0;
+        previousLayer = layersId::Settings;
     }
     else if (assignedLayer == layersId::Multiplayer){
         info.nButtons = 2;
@@ -403,6 +452,12 @@ void menuLayer::init(layerInformation setUpInfo, Application *applicationPointer
             LayerButtons.push_back(new WriteButton(setUpInfo.buttonTexts[i], setUpInfo.followUpLay[i], applicationPointer, setUpInfo.nButtons, i));
         }
     }    
+    else if (layerType == layersId::Graphic){
+        sf::Vector2u rtmp[5] = {sf::Vector2u(1920,1080),sf::Vector2u(1600,900),sf::Vector2u(1280,720),sf::Vector2u(1024,576),sf::Vector2u(960,540)};
+        for (int i = 0; i < setUpInfo.nButtons; i++){
+            LayerButtons.push_back(new GraphicButton(setUpInfo.buttonTexts[i], setUpInfo.followUpLay[i], applicationPointer, setUpInfo.nButtons, i, rtmp[i]));
+        }
+    }
     //everything else is just clicking
     else {
         for (int i = 0; i < setUpInfo.nButtons; i++){
@@ -421,6 +476,14 @@ void menuLayer::update(sf::Vector2f mousePos){
 
 
 
+void menuLayer::changeRes(Application *applicationPointer){
+    int i = 0;
+    for (button *obj : LayerButtons){
+        obj->changeRes(applicationPointer, LayerButtons.size(), i);
+        i++;
+    }
+}
+
 menuLayer::~menuLayer(void){
     for (button *obj : LayerButtons){
         delete obj;
@@ -435,9 +498,9 @@ menuLayer::~menuLayer(void){
 //pretending we define the parent class functions
 void button::draw(sf::RenderWindow *window){std::cout << stringText << " parent class" <<std::endl;};
 void button::update(sf::Vector2f mousePos){}
+void button::changeRes(Application *applicationPointer, int maxButt, int currButt){}
+
 //Pretending over
-
-
 
 ClickButton::ClickButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt){
     stringText = t;
@@ -445,27 +508,38 @@ ClickButton::ClickButton(std::string t, layersId followLayer, Application *appli
     text.setString(stringText);
     text.setFillColor(sf::Color::White);
     text.setFont(applicationPointer->gameFont);
-    text.setCharacterSize(42);
-    text.setPosition(((*applicationPointer).resolution.x/2.0) - (text.getLocalBounds().width/2.0), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (text.getLocalBounds().height / 2));
+    text.setCharacterSize(30 / applicationPointer->ratioScaling);
     text.setStyle(sf::Text::Style::Regular);
-};
+
+    imageSprite.setTexture(applicationPointer->textures.menu[menuTextureIdxS::button_red]);
+    imageSprite.setScale((300 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().x, (100 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().y);
+    imageSprite.setPosition(((*applicationPointer).resolution.x/2.0) - (imageSprite.getGlobalBounds().getSize().x/2), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (imageSprite.getGlobalBounds().getSize().y / 2));
+
+    text.setPosition(((*applicationPointer).resolution.x/2.0) - (text.getGlobalBounds().getSize().x/2.0), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (text.getGlobalBounds().getSize().y/2));
+
+};ClickButton::~ClickButton(void){};
 
 
 
-ClickButton::~ClickButton(void){};
+void ClickButton::changeRes(Application *applicationPointer, int maxButt, int currButt){
+    text.setCharacterSize(30 / applicationPointer->ratioScaling);
+    imageSprite.setScale((300 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().x, (100 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().y);
+    imageSprite.setPosition(((*applicationPointer).resolution.x/2.0) - (imageSprite.getGlobalBounds().getSize().x/2), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (imageSprite.getGlobalBounds().getSize().y / 2));
+    text.setPosition(((*applicationPointer).resolution.x/2.0) - (text.getGlobalBounds().getSize().x/2.0), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (text.getGlobalBounds().getSize().y/2));
 
+}
 
 
 void ClickButton::draw(sf::RenderWindow *window){
+    window->draw(imageSprite);
     window->draw(text);
 }
 
 
 
 void ClickButton::update(sf::Vector2f mousePos){
-    sf::Vector2f rec = text.getPosition();
-    if (mousePos.x > rec.x && mousePos.x < rec.x + text.getLocalBounds().width
-    && mousePos.y > rec.y && mousePos.y < rec.y + text.getLocalBounds().height){
+    if (mousePos.x > imageSprite.getPosition().x && mousePos.x < imageSprite.getPosition().x + imageSprite.getGlobalBounds().getSize().x
+    && mousePos.y > imageSprite.getPosition().y && mousePos.y < imageSprite.getPosition().y + imageSprite.getGlobalBounds().getSize().y){
         if (!focus){
             focus = true;
             text.setStyle(sf::Text::Style::Underlined);
@@ -490,8 +564,14 @@ WriteButton::WriteButton(std::string t, layersId followLayer, Application *appli
     text.setString(stringText);
     text.setFillColor(sf::Color::White);
     text.setFont(applicationPointer->gameFont);
-    text.setCharacterSize(42);
-    text.setPosition(((*applicationPointer).resolution.x/2.0) - (text.getLocalBounds().width/2.0), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (text.getLocalBounds().height / 2));
+    text.setCharacterSize(30 / applicationPointer->ratioScaling);
+    
+
+    imageSprite.setTexture(applicationPointer->textures.menu[menuTextureIdxS::button_red]);
+    imageSprite.setScale((300 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().x, (100 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().y);
+    imageSprite.setPosition(((*applicationPointer).resolution.x/2.0) - (imageSprite.getGlobalBounds().getSize().x/2), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (imageSprite.getGlobalBounds().getSize().y / 2));
+
+    text.setPosition(((*applicationPointer).resolution.x/2.0) - (text.getGlobalBounds().getSize().x/2.0), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (text.getGlobalBounds().getSize().y/2));
     ogPosition[0] = text.getPosition().x;
     ogPosition[1] = text.getPosition().y;
     text.setStyle(sf::Text::Style::Regular);
@@ -504,6 +584,7 @@ WriteButton::~WriteButton(void){};
 
 
 void WriteButton::draw(sf::RenderWindow *window){
+    window->draw(imageSprite);
     window->draw(text);
 }
 
@@ -561,4 +642,79 @@ void WriteButton::delLastInput(sf::Vector2u res){
         text.setString(userText);
         text.setPosition((res.x/2.0) - (text.getLocalBounds().width/2.0), text.getPosition().y);
     }   
+}
+
+
+
+void WriteButton::changeRes(Application *applicationPointer, int maxButt, int currButt){
+    text.setCharacterSize(30 / applicationPointer->ratioScaling);
+    
+    imageSprite.setScale((300 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().x, (100 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().y);
+    imageSprite.setPosition(((*applicationPointer).resolution.x/2.0) - (imageSprite.getGlobalBounds().getSize().x/2), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (imageSprite.getGlobalBounds().getSize().y / 2));
+
+    text.setPosition(((*applicationPointer).resolution.x/2.0) - (text.getGlobalBounds().getSize().x/2.0), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (text.getGlobalBounds().getSize().y/2));
+    ogPosition[0] = text.getPosition().x;
+    ogPosition[1] = text.getPosition().y;
+}
+//
+GraphicButton::GraphicButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt, sf::Vector2u newRes){
+    newResolution = newRes;
+
+    stringText = t;
+    nextLayer = followLayer;
+    text.setString(stringText);
+    text.setFillColor(sf::Color::White);
+    text.setFont(applicationPointer->gameFont);
+    text.setCharacterSize(30 / applicationPointer->ratioScaling);
+    text.setStyle(sf::Text::Style::Regular);
+
+    imageSprite.setTexture(applicationPointer->textures.menu[menuTextureIdxS::button_red]);
+    imageSprite.setScale((300 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().x, (100 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().y);
+    imageSprite.setPosition(((*applicationPointer).resolution.x/2.0) - (imageSprite.getGlobalBounds().getSize().x/2), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (imageSprite.getGlobalBounds().getSize().y / 2));
+
+    text.setPosition(((*applicationPointer).resolution.x/2.0) - (text.getGlobalBounds().getSize().x/2.0), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (text.getGlobalBounds().getSize().y/2));
+
+};
+
+
+
+GraphicButton::~GraphicButton(void){};
+
+
+
+void GraphicButton::update(sf::Vector2f mousePos){
+    if (mousePos.x > imageSprite.getPosition().x && mousePos.x < imageSprite.getPosition().x + imageSprite.getGlobalBounds().getSize().x
+    && mousePos.y > imageSprite.getPosition().y && mousePos.y < imageSprite.getPosition().y + imageSprite.getGlobalBounds().getSize().y){
+        if (!focus){
+            focus = true;
+            text.setStyle(sf::Text::Style::Underlined);
+            text.setFillColor(sf::Color::Red);
+        }
+    }    
+    else {
+        if (focus){
+            focus = false;
+            text.setStyle(sf::Text::Style::Regular);
+            text.setFillColor(sf::Color::White);
+        }
+    }
+}
+
+
+
+void GraphicButton::draw(sf::RenderWindow *window){
+    window->draw(imageSprite);
+    window->draw(text);
+}
+
+
+
+void GraphicButton::changeRes(Application *applicationPointer, int maxButt, int currButt){
+    text.setCharacterSize(30 / applicationPointer->ratioScaling);
+
+    imageSprite.setScale((300 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().x, (100 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().y);
+    imageSprite.setPosition(((*applicationPointer).resolution.x/2.0) - (imageSprite.getGlobalBounds().getSize().x/2), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (imageSprite.getGlobalBounds().getSize().y / 2));
+
+    text.setPosition(((*applicationPointer).resolution.x/2.0) - (text.getGlobalBounds().getSize().x/2.0), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (text.getGlobalBounds().getSize().y/2));
+
 }

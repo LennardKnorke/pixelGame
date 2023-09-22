@@ -13,7 +13,7 @@ Application::Application(void){
     if (!loadAssets()){
         State = GAME_STATE::QUIT;
     }
-    setUpTextureAssets();
+
     setUpCursorAssets();
     setUpSaveFolder();
 
@@ -53,17 +53,22 @@ void Application::initSettings(void){
     else {
         createSettings(setting_file);
     }
+    ratioScaling = 1920.0/resolution.x;
 }
 
 
 
 void Application::loadSettings(const std::string &filename){
     std::ifstream inputFile(filename, std::ios::binary);
+
     inputFile.read(reinterpret_cast<char *>(&userKey), sizeof(userKey));
     inputFile.read(reinterpret_cast<char *>(&resolution), sizeof(sf::Vector2u));
+    inputFile.read(reinterpret_cast<char*>(&inGameControls), sizeof(userKeys));
+
     std::cout   <<"Loaded user: " << userKey << std::endl
                 << resolution.x << "\t"
                 << resolution.y << std::endl;
+    
     inputFile.close();
 }
 
@@ -73,6 +78,27 @@ void Application::createSettings(const std::string &filename){
     //Get Screen Size
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
     resolution = sf::Vector2u(desktop.width, desktop.height);
+    if (desktop.width >= 1920 && desktop.height >= 1080){
+        resolution.x = 1920;
+        resolution.y = 1080;
+    }
+    else if (desktop.width >= 1600 && desktop.height >= 900){
+        resolution.x = 1600;
+        resolution.y = 900;
+    }
+    else if (desktop.width >= 1280 && desktop.height >= 720){
+        resolution.x = 1280;
+        resolution.y = 720;
+    }else if (desktop.width >= 1024 && desktop.height >= 576){
+        resolution.x = 1024;
+        resolution.y = 576;
+    }
+    else {
+        resolution.x = 960;
+        resolution.y = 540;
+    }
+    
+
     //Generate A key
     const std::string alphabet = "!#$%^&*(){}=-+/abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     std::mt19937 rng(std::random_device{}());
@@ -85,7 +111,15 @@ void Application::createSettings(const std::string &filename){
                 << resolution.x << "\t"
                 << resolution.y << std::endl;
 
-    //
+    //set default controls
+    inGameControls.Jump = sf::Keyboard::W;
+    inGameControls.Down = sf::Keyboard::S;
+    inGameControls.Left = sf::Keyboard::A;
+    inGameControls.Right = sf::Keyboard::D;
+    inGameControls.nextItem = sf::Keyboard::E;
+    inGameControls.prevItem = sf::Keyboard::Q;
+
+    inGameControls.attack.butt = sf::Mouse::Button::Left;
     saveSettings(filename);
 }
 
@@ -95,6 +129,7 @@ void Application::saveSettings(const std::string &filename){
     std::ofstream outputFile("settings.bin", std::ios::binary);
     outputFile.write(reinterpret_cast<const char *>(&userKey), sizeof(userKey));
     outputFile.write(reinterpret_cast<const char *>(&resolution), sizeof(sf::Vector2u));
+    outputFile.write(reinterpret_cast<char*>(&inGameControls), sizeof(userKeys));
     outputFile.close();
 }
 
@@ -223,20 +258,14 @@ bool Application::loadTextures(void){
 
 
 
-void Application::setUpTextureAssets(void){
-    textures.menu_sprites[menuTextureIdxS::background].setTexture(textures.menu[menuTextureIdxS::background]);
-    textures.menu_sprites[menuTextureIdxS::background].setPosition(0, 0);
-    textures.menu_sprites[menuTextureIdxS::background].setScale(resolution.x/textures.menu_sprites[menuTextureIdxS::background].getGlobalBounds().getSize().x, resolution.y/textures.menu_sprites[menuTextureIdxS::background].getGlobalBounds().getSize().y);
-}
-
-
 
 void Application::setUpCursorAssets(void){
     for (int i = 0; i < nr_cursor_textures; i++){
         cursor.sprite[i].setTexture(textures.cursors[i]);
     }
-    cursor.sprite[cursorSpriteIndexes::menu].setScale(100/cursor.sprite[cursorSpriteIndexes::menu].getGlobalBounds().getSize().x, 100/cursor.sprite[cursorSpriteIndexes::menu].getGlobalBounds().getSize().y);
+    cursor.sprite[cursorSpriteIndexes::menu].setScale((100 / ratioScaling)/cursor.sprite[cursorSpriteIndexes::menu].getGlobalBounds().getSize().x, (100 / ratioScaling)/cursor.sprite[cursorSpriteIndexes::menu].getGlobalBounds().getSize().y);
     cursor.changeSprite(cursorSpriteIndexes::menu);
+    cursor.print = true;
 }
 
 
@@ -258,7 +287,10 @@ void CursorSprite::update(void){
 
 
 void CursorSprite::draw(sf::RenderWindow *renderwindow){
-    renderwindow->draw(sprite[activeSprite]);
+    if (print){
+        renderwindow->draw(sprite[activeSprite]);
+    }
+    
 }
 
 

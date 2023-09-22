@@ -2,20 +2,22 @@
 #ifndef MENU_HPP
 #define MENU_HPP
 class Application;
-
+class menuLayer;
 
 
 //Makros for Menu Layers
-#define MaxVisibleLayers 6
+#define MaxVisibleLayers 8
 enum layersId{
     leave = -1, 
     Base = 0, 
-    Settings = 1, 
+    Settings = 1,
     Type = 2, 
     Multiplayer = 3, 
     Join = 4, 
     Host = 5, 
-    final = 6
+    Graphic = 6,
+    Controls = 7,
+    final = 8
 };
 
 
@@ -52,22 +54,43 @@ class button{
     layersId nextLayer;
     std::string stringText;
     sf::Text text;
-    sf::IntRect rec;
+    sf::Sprite imageSprite;
     bool focus;
     bool pressed;
     virtual void draw(sf::RenderWindow *window);
     virtual void update(sf::Vector2f mousePos);
+
+    virtual void changeRes(Application *applicationPointer, int maxButt, int currButt);
 };
 
 
 
 //child class of a clickable button
 class ClickButton : public button {
+    
     public:
     ClickButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt);
     void draw(sf::RenderWindow *window);
     void update(sf::Vector2f mousePos);
+
+    void changeRes(Application *applicationPointer, int maxButt, int currButt);
+    
     ~ClickButton(void);
+};
+
+
+
+//
+class GraphicButton : public button{
+    public:
+    sf::Vector2u newResolution;
+    GraphicButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt, sf::Vector2u newRes);
+    ~GraphicButton(void);
+    void draw(sf::RenderWindow *window);
+    void update(sf::Vector2f mousePos);
+
+    void changeRes(Application *applicationPointer, int maxButt, int currButt);
+
 };
 
 
@@ -81,6 +104,9 @@ class WriteButton : public button {
     WriteButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt);
     void update(sf::Vector2f mousePos);
     void draw(sf::RenderWindow *window);
+
+    void changeRes(Application *applicationPointer, int maxButt, int currButt);
+    
     void addInput(sf::Uint32 input, sf::Vector2u res);
     void delLastInput(sf::Vector2u res);
     void resetInput(void);
@@ -99,6 +125,8 @@ class menuLayer {
     menuLayer(layersId assignedLayer, Application *applicationPointer);//For most basic layers
     void init(layerInformation setUpInfo, Application *applicationPointer);
     void update(sf::Vector2f mousePos);
+
+    void changeRes(Application *applicationPointer);
     
     ~menuLayer(void);
 };
