@@ -17,7 +17,7 @@ Application::Application(void){
     setUpCursorAssets();
     setUpSaveFolder();
 
-    std::cout << publicAdress << "\t" << localAdress <<  std::endl;
+    std::cout << machinePublicAdress << "\t" << machineLocalAdress <<  std::endl;
 
     //Main Game Loop. Switch between gamestates
     while (State != GAME_STATE::QUIT){
@@ -63,11 +63,22 @@ void Application::loadSettings(const std::string &filename){
 
     inputFile.read(reinterpret_cast<char *>(&userKey), sizeof(userKey));
     inputFile.read(reinterpret_cast<char *>(&resolution), sizeof(sf::Vector2u));
-    inputFile.read(reinterpret_cast<char*>(&inGameControls), sizeof(userKeys));
+    //inputFile.read(reinterpret_cast<char*>(&inGameControls), sizeof(userKeys));
 
     std::cout   <<"Loaded user: " << userKey << std::endl
                 << resolution.x << "\t"
                 << resolution.y << std::endl;
+
+    //load control settings
+    for (int i = 0; i < 7; i++){
+        inputFile.read(reinterpret_cast<char *>(&inGameControls[i].iType), sizeof(inputType));
+        if (inGameControls[i].iType == inputType::KEYBOARD){
+            inputFile.read(reinterpret_cast<char *>(&inGameControls[i].input.keyInput),sizeof(sf::Keyboard::Key));
+        }
+        else if (inGameControls[i].iType == inputType::MOUSE_BUTTON){
+            inputFile.read(reinterpret_cast<char *>(&inGameControls[i].input.mouseInput),sizeof(sf::Mouse::Button));
+        }
+    }
     
     inputFile.close();
 }
@@ -112,14 +123,26 @@ void Application::createSettings(const std::string &filename){
                 << resolution.y << std::endl;
 
     //set default controls
-    inGameControls.Jump = sf::Keyboard::W;
-    inGameControls.Down = sf::Keyboard::S;
-    inGameControls.Left = sf::Keyboard::A;
-    inGameControls.Right = sf::Keyboard::D;
-    inGameControls.nextItem = sf::Keyboard::E;
-    inGameControls.prevItem = sf::Keyboard::Q;
+    inGameControls[up].iType = inputType::KEYBOARD;
+    inGameControls[up].input.keyInput = sf::Keyboard::W;
 
-    inGameControls.attack.butt = sf::Mouse::Button::Left;
+    inGameControls[down].iType = inputType::KEYBOARD;
+    inGameControls[down].input.keyInput = sf::Keyboard::S;
+
+    inGameControls[left].iType = inputType::KEYBOARD;
+    inGameControls[left].input.keyInput = sf::Keyboard::A;
+
+    inGameControls[right].iType = inputType::KEYBOARD;
+    inGameControls[right].input.keyInput = sf::Keyboard::D;
+
+    inGameControls[prevItem].iType = inputType::KEYBOARD;
+    inGameControls[prevItem].input.keyInput = sf::Keyboard::Q;
+
+    inGameControls[nextItem].iType = inputType::KEYBOARD;
+    inGameControls[nextItem].input.keyInput = sf::Keyboard::E;
+
+    inGameControls[attack].iType = inputType::MOUSE_BUTTON;
+    inGameControls[attack].input.mouseInput = sf::Mouse::Button::Left;
     saveSettings(filename);
 }
 
@@ -129,7 +152,17 @@ void Application::saveSettings(const std::string &filename){
     std::ofstream outputFile("settings.bin", std::ios::binary);
     outputFile.write(reinterpret_cast<const char *>(&userKey), sizeof(userKey));
     outputFile.write(reinterpret_cast<const char *>(&resolution), sizeof(sf::Vector2u));
-    outputFile.write(reinterpret_cast<char*>(&inGameControls), sizeof(userKeys));
+    //Save Control settings
+    for (int i = 0; i < 7; i++){
+        outputFile.write(reinterpret_cast<const char*>(&inGameControls[i].iType), sizeof(inputType));
+        if (inGameControls[i].iType == inputType::KEYBOARD){
+            outputFile.write(reinterpret_cast<const char*>(&inGameControls[i].input.keyInput), sizeof(sf::Keyboard::Key));
+        }
+        else if (inGameControls[i].iType == inputType::MOUSE_BUTTON){
+            outputFile.write(reinterpret_cast<const char*>(&inGameControls[i].input.mouseInput), sizeof(sf::Mouse::Button));
+        }        
+    }
+
     outputFile.close();
 }
 

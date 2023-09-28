@@ -5,7 +5,7 @@
 #include "menu.hpp"
 #include "gamesave.hpp"
 #include "local_game_client.hpp"
-
+#include "client.hpp"
 
 //checks if a relative file exists
 bool fileExists(const std::string &filename);
@@ -61,22 +61,19 @@ typedef struct Textures {
 
 
 //User set controls
-union attackKeyUnion{
-    sf::Keyboard::Key key;
-    sf::Mouse::Button butt;
+enum gameInputOptions {
+    up = 0, down = 1, left = 2, right  =3, nextItem = 4, prevItem = 5, attack = 6
 };
- 
-typedef struct userKeys{
-    sf::Keyboard::Key Jump;
-    sf::Keyboard::Key Down;
-    sf::Keyboard::Key Left;
-    sf::Keyboard::Key Right;
-    sf::Keyboard::Key nextItem;
-    sf::Keyboard::Key prevItem;
-
-    attackKeyUnion attack;
-}userKeys;
-
+enum inputType {
+    KEYBOARD, MOUSE_BUTTON
+};
+typedef struct inGameInputKey {
+    inputType iType;
+    union inputUnion{
+        sf::Keyboard::Key keyInput;
+        sf::Mouse::Button mouseInput;
+    }input;
+}inGameInputKey;
 
 
 //structure to track all possible gameplay related input
@@ -136,29 +133,27 @@ class Application{
     
     std::vector<gameSaveSummary> availableSaveFiles;
     //Socket variables
-    sf::IpAddress publicAdress = sf::IpAddress::getPublicAddress();
-    sf::IpAddress localAdress = sf::IpAddress::getLocalAddress();
+    sf::IpAddress machinePublicAdress = sf::IpAddress::getPublicAddress();
+    sf::IpAddress machineLocalAdress = sf::IpAddress::getLocalAddress();
     
-    std::string hostIp = "";
-    std::string hostPort = "";
+    struct socketAdress {
+        sf::IpAddress ip = sf::IpAddress::None;   
+        unsigned short port = 0;
+    }hostAdress;
     //Application variables
-    GAME_STATE State;
-    bool wantsHost;
-    gameMode mode;
+    GAME_STATE State;               //Main Menu, Gameloop or Ending Game
+    bool wantsHost;                 //Important if playing not alone.
+    gameMode mode;                  //Online, Local or Alone
     errorCodes error = NoErr;
 
     gameSave *activeSave;
-    userKeys inGameControls;
-    userInputData gamePlayInput;
-
+    inGameInputKey inGameControls[7];
+    
     char userKey[MAX_LENGTH_KEY + 1];
 
-    //SavefileManagement
-
     ////////////////FUNCTIONS////////////////
-    //game(client) functions
-    GAME_STATE menuLoop(void);
-    GAME_STATE gameLoop(void);
+    
+    
     //Boot ups
     void initWindow(void);
     void initSettings(void);
@@ -178,31 +173,32 @@ class Application{
 
 
     //Menu functions. found in menu.cpp
-    void getMenuPicks(sf::Vector2f cursorPosition, layersId currentLayer, menuLayer *Lay);
-    bool checkCharacterInput(layersId activeLayer, sf::Uint32 c, int activeLength);
-    void setActiveSafe(std::string saveName);
-    void setMenuPopUpMessage(menuPopUps PopUp, sf::Text *warningMessage, sf::Vector2u res);
-    void drawMenuPopUp(menuPopUps PopUp, sf::RenderWindow *window, sf::Text *warningMessage);
+    GAME_STATE menuLoop(void);
+        void getMenuPicks(sf::Vector2f cursorPosition, layersId currentLayer, menuLayer *Lay);
+        bool checkCharacterInput(layersId activeLayer, sf::Uint32 c, int activeLength);
+        void setActiveSafe(std::string saveName);
+        void setMenuPopUpMessage(menuPopUps PopUp, sf::Text *warningMessage, sf::Vector2u res);
+        void drawMenuPopUp(menuPopUps PopUp, sf::RenderWindow *window, sf::Text *warningMessage);
 
 
     //?server functions?
 
 
     //GameLoopFunctions
-    gameLoopState loadingScreen(void);
-    void readUserGameInput(sf::Vector2i origin);
+    GAME_STATE gameLoop(void);
+        gameLoopState loadingScreen(Clients *socket);
+        void drawGame(void);
+        void registerGameInput(gameLoopState *s, bool *gamePlayInput);
+            void readUserGameInput(sf::Vector2i origin, bool *gamePlayInput);
+        void updateGame(void);
 
-    void drawGame(void);
-    void registerGameInput(gameLoopState *s);
-    void updateGame(void);
+        void drawMenu(std::vector<inGameMenuButton*> v);
+        void registerMenuInput(gameLoopState *s, std::vector<inGameMenuButton*> v);
+        void updateMenu(std::vector<inGameMenuButton*> v);
 
-    void drawMenu(std::vector<inGameMenuButton*> v);
-    void registerMenuInput(gameLoopState *s, std::vector<inGameMenuButton*> v);
-    void updateMenu(std::vector<inGameMenuButton*> v);
-
-    void drawTree(void);
-    void registerTreeInput(gameLoopState *s);
-    void updateTree(void);
+        void drawTree(void);
+        void registerTreeInput(gameLoopState *s);
+        void updateTree(void);
 };
 
 

@@ -22,4 +22,11 @@
 
 #include "tilesMakros.hpp"
 
+
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif
+
 #endif //STDLIBS_HPP

@@ -3,7 +3,7 @@
 
 GAME_STATE Application::gameLoop(void){
 
-    
+    Clients ClientSocket;
     if (mode == gameMode::Local  && wantsHost){
         if (wantsHost){
             //Start a new threat/process for the host server
@@ -21,24 +21,26 @@ GAME_STATE Application::gameLoop(void){
     }
     
     
-
+    bool gamePlayInput[7] = {false, false, false, false, false, false, false};
 
     //loading screen... wait for connection with host
-    gameLoopState state = loadingScreen();
+    gameLoopState state = loadingScreen(&ClientSocket);
         //return menu with error if timeout
 
 
+    //MENU WILL NEED UPDATES ARE CAREFUL ADDITIONS!!
     //variables to display the menu
     std::vector<inGameMenuButton*> menuButtons;
     for (int i  = 0; i < n_menugameButtons; i++){
         menuButtons.push_back(new inGameMenuButton(i, this));
     }
 
-
-    while (state != gameLoopState::QuitGame && state != gameLoopState::QuitMenu){    
+    //Package to fill to send to host server/socket
+    sf::Packet communicationPacket;
+    while (state != gameLoopState::QuitGame && state != gameLoopState::QuitMenu){
         if (state == gameLoopState::Game){
            drawGame();
-           registerGameInput(&state);
+           registerGameInput(&state, gamePlayInput);
            updateGame();// will exchange data with host/server/savethread
         }
         else if(state == gameLoopState::SkillTree){
@@ -62,7 +64,7 @@ GAME_STATE Application::gameLoop(void){
     }
     //at the end. dereference the current game, preparing for either ending game or going to the menu
     delete activeSave;
-
+    ClientSocket.disconnect();
     if (state == gameLoopState::QuitMenu){
         return GAME_STATE::MENU;
     }
@@ -72,13 +74,13 @@ GAME_STATE Application::gameLoop(void){
 
 
 //displays the loading screen while waiting for the client/host to connect
-gameLoopState Application::loadingScreen(void){
+gameLoopState Application::loadingScreen(Clients *socket){
     
     window.clear(sf::Color::Black);
     window.display();
-    //setUp singleplayer
-    if (mode == gameMode::Single){
-        
+    bool settingUp = true;
+    while (settingUp){
+        settingUp = false;
     }
 
     //everything alright? then the game can start
@@ -87,18 +89,16 @@ gameLoopState Application::loadingScreen(void){
 
 
 
-void Application::readUserGameInput(sf::Vector2i origin){
+void Application::readUserGameInput(sf::Vector2i origin, bool *gamePlayInput){
     //Read key input
-    gamePlayInput.Jump = sf::Keyboard::isKeyPressed(inGameControls.Jump);
-    gamePlayInput.Down = sf::Keyboard::isKeyPressed(inGameControls.Down);
-    gamePlayInput.Left = sf::Keyboard::isKeyPressed(inGameControls.Left);
-    gamePlayInput.Right = sf::Keyboard::isKeyPressed(inGameControls.Right);
-    gamePlayInput.nextItem = sf::Keyboard::isKeyPressed(inGameControls.nextItem);
-    gamePlayInput.prevItem = sf::Keyboard::isKeyPressed(inGameControls.prevItem);
-    //read attack input
-    gamePlayInput.attack = sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
-    //calculate aim
-    gamePlayInput.aim = sf::Mouse::getPosition() - origin;
+    for (int i =0; i < 7; i++){
+        if (inGameControls[i].iType == inputType::KEYBOARD){
+            gamePlayInput[i] = sf::Keyboard::isKeyPressed(inGameControls[i].input.keyInput);
+        }
+        else if (inGameControls[i].iType == inputType::MOUSE_BUTTON){
+            gamePlayInput[i] = sf::Mouse::isButtonPressed(inGameControls[i].input.mouseInput);
+        }
+    }
 }
 
 
@@ -109,14 +109,14 @@ void Application::drawGame(void){
 
 
 
-void Application::registerGameInput(gameLoopState *s){
+void Application::registerGameInput(gameLoopState *s, bool *gamePlayInput){
     sf::Event ev;
     while (window.pollEvent(ev)){
         if (ev.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){
             *s = gameLoopState::Menu; 
         }
         else if (ev.type == sf::Event::KeyPressed || ev.type == sf::Event::MouseButtonPressed){
-            readUserGameInput(sf::Vector2i(resolution.x/2, resolution.y/2));
+            readUserGameInput(sf::Vector2i(resolution.x/2, resolution.y/2), gamePlayInput);
         }
     }
 }

@@ -105,11 +105,11 @@ GAME_STATE Application::menuLoop(void){
                                 childPtr1->resetInput();
                                 if (currentLayer == layersId::Join && cursor.sprite[cursor.activeSprite].getPosition().y < resolution.y/2){
                                         //Entered HOST IP ADRESS
-                                        hostIp = "";
+                                        hostAdress.ip = sf::IpAddress::None;
                                 }
                                 else if (currentLayer == layersId::Join) {
                                         //ENTERED HOST PORT
-                                        hostPort = "";
+                                        hostAdress.port = 0;
                                 }
                                 else if (currentLayer == layersId::Host){
                                     currentMenuPopUp = menuPopUps::InvalidName;
@@ -132,14 +132,14 @@ GAME_STATE Application::menuLoop(void){
                                 else if (currentLayer == layersId::Join){
                                     if (cursor.sprite[cursor.activeSprite].getPosition().y < resolution.y/2){
                                         //Entered HOST IP ADRESS
-                                        hostIp = childPtr1->userText;
+                                        hostAdress.ip = sf::IpAddress(childPtr1->userText);
                                     }
                                     else {
                                         //ENTERED HOST PORT
-                                        hostPort = childPtr1->userText;
+                                        hostAdress.port = static_cast<unsigned short>(std::strtoul(childPtr1->userText.c_str(), NULL, 0));
                                     }
                                     childPtr1->text.setFillColor(sf::Color::Red);
-                                    if (hostIp != "" && hostPort != ""){
+                                    if (hostAdress.ip != sf::IpAddress::None && hostAdress.port != 0){
                                         currentLayer = layersId::final;
                                     }
                                 }
@@ -249,7 +249,7 @@ GAME_STATE Application::menuLoop(void){
         }
         else {
             std::cout << "Joining to: ";
-            std::cout << hostIp << "::" << hostPort <<std::endl;
+            std::cout << hostAdress.ip.toString() << "::" << hostAdress.port <<std::endl;
         }
         
         return GAME_STATE::GAME;
