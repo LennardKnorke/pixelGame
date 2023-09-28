@@ -251,6 +251,7 @@ GAME_STATE Application::menuLoop(void){
             while (hostAdress.port < USHRT_MAX && tmpListener.listen(hostAdress.port) != sf::Socket::Done){
                 hostAdress.port++;
             }
+            tmpListener.close();
             //use machine adress as host adress
             if (mode == gameMode::Online){
                 hostAdress.ip = machinePublicAdress;
