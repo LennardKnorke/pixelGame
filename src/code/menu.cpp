@@ -245,11 +245,28 @@ GAME_STATE Application::menuLoop(void){
             std::cout << "Locally\n";
         }
         if (wantsHost || mode == gameMode::Single){
-            std::cout << "Active Game: " << activeSave->getSaveName() <<std::endl;
+            //search for a free port
+            hostAdress.port = 1024;
+            sf::TcpListener tmpListener;
+            while (hostAdress.port < USHRT_MAX && tmpListener.listen(hostAdress.port) != sf::Socket::Done){
+                hostAdress.port++;
+            }
+            //use machine adress as host adress
+            if (mode == gameMode::Online){
+                hostAdress.ip = machinePublicAdress;
+            }
+            else {
+                hostAdress.ip = machineLocalAdress;
+            }
+            std::cout << "Hosting Game: " << activeSave->getSaveName() <<std::endl;
+            std::cout << "Using IP:"; 
+            std::cout << hostAdress.ip.toString() << "::" << hostAdress.port <<std::endl;
+
         }
         else {
             std::cout << "Joining to: ";
             std::cout << hostAdress.ip.toString() << "::" << hostAdress.port <<std::endl;
+
         }
         
         return GAME_STATE::GAME;
