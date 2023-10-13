@@ -11,12 +11,13 @@ unsigned short Clients::findFreePort(void){
         }
         port_tmp++;
     }
+    listener.close();
     return 0;
 }
 
 
 
-bool Clients::connect(const std::string& hostIp, unsigned short hostPort){
+bool Clients::connect(sf::IpAddress hostIp, unsigned short hostPort){
     port = findFreePort();
     //Found no free port
     if (port == 0){
@@ -24,9 +25,8 @@ bool Clients::connect(const std::string& hostIp, unsigned short hostPort){
         return false;
     }
     //Connect with host
-    sf::IpAddress hostAdress = hostIp;
-    if (socket.connect(hostAdress, hostPort) == sf::Socket::Done){
-        std::cout << "Connected to: " << hostAdress << ":" << hostPort<<std::endl;
+    if (socket.connect(hostIp, hostPort) == sf::Socket::Done){
+        std::cout << "Connected to: " << hostIp << ":" << hostPort<<std::endl;
         socket.setBlocking(false);
         return true;
     }

@@ -4,22 +4,12 @@
 GAME_STATE Application::gameLoop(void){
 
     Clients ClientSocket;
-    if (mode == gameMode::Local  && wantsHost){
-        if (wantsHost){
-            //Start a new threat/process for the host server
-        }
-        //Set up client socket
-    }
-    else if (mode == gameMode::Online){//joining local or online
-        if (wantsHost){
-            //Start a new threat/process for the host server
-        }
-        //Set up client socket
-    }
-    else if (mode == gameMode::Single){
-        //Start a new process to
+    //Initiate Server Process
+    if ((mode == gameMode::Local  && wantsHost) || (mode == gameMode::Online && wantsHost) || mode == gameMode::Single){
+    
     }
     
+    ClientSocket.connect(hostAdress.ip, hostAdress.port);
     
     bool gamePlayInput[7] = {false, false, false, false, false, false, false};
 

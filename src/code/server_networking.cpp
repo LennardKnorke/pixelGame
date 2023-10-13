@@ -1,5 +1,33 @@
-#include <SFML/Network.hpp>
-#include <iostream>
+#include "server_networking.hpp"
+
+void server_thread_function(unsigned short port, sf::IpAddress adress, std::string savePath){
+    Server RunningServer(port, adress, savePath);
+}
+
+Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath){
+    //SET UP SERVER
+    this->serverPort = port;
+    this->serverAdress = adress;
+    
+    if (serverSocket.listen(serverPort) != sf::Socket::Done){
+        std::cout << "ERROR CONNECTING PORT AND SOCKET\n";
+        return;
+    }
+    //LOAD GAMESAVE
+
+
+
+    //SERVER LOOP
+    std::cout << "Server ready. Listening on adress: " << serverAdress.toString() << ":" << serverPort <<std::endl;
+    bool SERVER_RUNNING = false;
+    while (SERVER_RUNNING){
+
+
+
+    }
+
+    return;
+}
 
 //// Server side
 // Start a TCP server
@@ -24,6 +52,7 @@ sf::IpAddress startServer(int port = 5426, bool online = false){
 }
 
 // Accept a new connection from client to listener (TCP port)
+/*
 void acceptConnection(sf::TcpListener listener){
     sf::TcpSocket client;
     if (listener.accept(client) != sf::Socket::Done){
@@ -39,15 +68,4 @@ void sendPacket(){
     sf::Packet packet;
     packet << x << s << d;
 }
-
-//// Client side
-void startClient(const char* serverIP){
-    //instead of serverIP as input, box that asks for IP address 
-    sf::TcpSocket socket;
-    sf::Socket::Status status = socket.connect(serverIP, 5426);
-    if (status != sf::Socket::Done)
-    {
-        // error...
-    }
-
-}
+*/

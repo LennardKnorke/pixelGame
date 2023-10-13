@@ -13,7 +13,7 @@ class Clients {
 
     public:
 
-    bool connect(const std::string& hostIp, unsigned short hostPort);
+    bool connect(sf::IpAddress hostIp, unsigned short hostPort);
     bool sendData(sf::Packet &OutGoingPacket);
     bool receiveData(sf::Packet &incomingDestination);
     void disconnect(void);
