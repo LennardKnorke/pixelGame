@@ -1,6 +1,7 @@
 #pragma once
-#ifndef LOCAL_GAME_CLIENT_HPP
-#define LOCAL_GAME_CLIENT_HPP
+#ifndef LOCAL_GAME_HPP
+#define LOCAL_GAME_HPP
+#include "stdlibs.hpp"
 class Application;
 
 enum gameLoopState {

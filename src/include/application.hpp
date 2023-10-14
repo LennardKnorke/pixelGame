@@ -4,7 +4,7 @@
 #include "stdlibs.hpp"
 #include "menu.hpp"
 #include "gamesave.hpp"
-#include "local_game_client.hpp"
+#include "local_game.hpp"
 #include "client.hpp"
 
 //checks if a relative file exists

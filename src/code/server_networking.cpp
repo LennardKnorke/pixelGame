@@ -4,6 +4,11 @@ void server_thread_function(unsigned short port, sf::IpAddress adress, std::stri
     Server RunningServer(port, adress, savePath);
 }
 
+int main(void){
+    server_thread_function(0, sf::IpAddress("192.168.2.199"), "");
+}
+
+
 Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath){
     //SET UP SERVER
     this->serverPort = port;
@@ -69,3 +74,9 @@ void sendPacket(){
     packet << x << s << d;
 }
 */
+
+
+
+int main (int arg, char *argv){
+
+}

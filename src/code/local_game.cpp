@@ -1,5 +1,5 @@
 #include "application.hpp"
-#include "local_game_client.hpp"
+#include "local_game.hpp"
 
 GAME_STATE Application::gameLoop(void){
 
