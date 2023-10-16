@@ -1,12 +1,28 @@
 #include "server_networking.hpp"
 
-void server_thread_function(unsigned short port, sf::IpAddress adress, std::string savePath){
-    Server RunningServer(port, adress, savePath);
-}
 
-int main(void){
-    server_thread_function(0, sf::IpAddress("192.168.2.199"), "");
+int main(int argc, char *argv[]){
+    std::cout<<"Server process started\n";
+    if (argc != 4) {
+        std::cerr << "Usage: " << argv[0] << " <string1> <unsigned short> <string2>" << std::endl;
+        system("pause");
+        return -1;
+    }
+    unsigned short port = static_cast<unsigned short>(std::stoi(argv[0]));
+    sf::IpAddress adress = sf::IpAddress(argv[1]);
+    std::string savePath = argv[2];
+    std::string hostId = argv[3];
+    std::cout <<argv << std::endl;
+    //Server RunningServer(port, adress, savePath);
+    std::cout<<"Server was running und succesfully ended\n";
+    system("pause");
+    return 0;
 }
+/*
+void server_thread_function(unsigned short port, sf::IpAddress adress, std::string savePath){
+    
+}
+*/
 
 
 Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath){
@@ -74,9 +90,3 @@ void sendPacket(){
     packet << x << s << d;
 }
 */
-
-
-
-int main (int arg, char *argv){
-
-}

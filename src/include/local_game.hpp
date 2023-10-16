@@ -2,6 +2,7 @@
 #ifndef LOCAL_GAME_HPP
 #define LOCAL_GAME_HPP
 #include "stdlibs.hpp"
+//#include "application.hpp"
 class Application;
 
 enum gameLoopState {

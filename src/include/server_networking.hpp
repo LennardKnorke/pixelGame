@@ -4,7 +4,7 @@
 #include "stdlibs.hpp"
 #include "gamesave.hpp"
 
-void server_thread_function(unsigned short port, sf::IpAddress adress, std::string savePath);
+//void server_thread_function(unsigned short port, sf::IpAddress adress, std::string savePath);
 
 class Server {
     protected:

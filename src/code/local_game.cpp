@@ -2,19 +2,38 @@
 #include "local_game.hpp"
 
 GAME_STATE Application::gameLoop(void){
-
+    gameLoopState state = gameLoopState::Game;
     Clients ClientSocket;
     //Initiate Server Process
     if ((mode == gameMode::Local  && wantsHost) || (mode == gameMode::Online && wantsHost) || mode == gameMode::Single){
-    
+        const char* path = "./Server.exe";
+        std::string p = std::to_string(hostAdress.port);
+        std::string command = "start Server.exe " 
+                                + p + " " 
+                                + hostAdress.ip.toString() + " "
+                                + "GAMESAVELOCATION" + " "
+                                + std::string(userKey)
+                                ;
+        std::cout << command <<std::endl;
+        if (std::system(command.c_str()) != 0){
+            std::cout << "Failed to initalize server thread\n";
+            state = gameLoopState::QuitGame;
+        }
+        else {
+            std::cout << "Started server process\n";
+        }
     }
     
-    ClientSocket.connect(hostAdress.ip, hostAdress.port);
+
+    //ClientSocket.connect(hostAdress.ip, hostAdress.port);
     
     bool gamePlayInput[7] = {false, false, false, false, false, false, false};
 
     //loading screen... wait for connection with host
-    gameLoopState state = loadingScreen(&ClientSocket);
+    if (state == gameLoopState::Game){
+        state = loadingScreen(&ClientSocket);
+    }
+    
         //return menu with error if timeout
 
 
@@ -68,13 +87,29 @@ gameLoopState Application::loadingScreen(Clients *socket){
     
     window.clear(sf::Color::Black);
     window.display();
-    bool settingUp = true;
-    while (settingUp){
-        settingUp = false;
+    
+    for (int i = 0; i < 4; i++){
+        std::cout << "Attempting to connect with host no: " << i+1 <<std::endl;
+        if (socket->connect(hostAdress.ip, hostAdress.port)){
+            return gameLoopState::Game; 
+        }
+
+        
+        auto start_time = std::chrono::high_resolution_clock::now();
+        // Calculate the elapsed time
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+        while (elapsed_time.count() < 1){
+            end_time = std::chrono::high_resolution_clock::now();
+            elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);  
+            
+        }
+        
     }
+    return gameLoopState::QuitMenu;
 
     //everything alright? then the game can start
-    return gameLoopState::Game;
+    
 }
 
 
