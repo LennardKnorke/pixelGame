@@ -1,0 +1,9 @@
+application.o
+client.o
+Game.exe
+gamesave.o
+local_game.o
+main.o
+menu.o
+Server.exe
+settings.bin
