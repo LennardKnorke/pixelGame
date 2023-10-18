@@ -260,10 +260,10 @@ GAME_STATE Application::menuLoop(void){
             tmpListener.close();
             //use machine adress as host adress
             if (mode == gameMode::Online){
-                hostAdress.ip = machinePublicAdress;
+                hostAdress.ip = sf::IpAddress::getLocalAddress();
             }
             else {
-                hostAdress.ip = machineLocalAdress;
+                hostAdress.ip= sf::IpAddress::getPublicAddress();
             }
             std::cout << "Hosting Game: " << hostAdress.pathSave <<std::endl;
             std::cout << "Using IP: " << hostAdress.ip.toString() << "::" << hostAdress.port <<std::endl;
