@@ -4,6 +4,8 @@
 GAME_STATE Application::gameLoop(void){
     gameLoopState state = gameLoopState::Game;
     Clients ClientSocket;
+    gameSave *activeGame;
+
     //Initiate Server Process
     if ((mode == gameMode::Local  && wantsHost) || (mode == gameMode::Online && wantsHost) || mode == gameMode::Single){
         const char* path = "./Server.exe";
@@ -32,9 +34,8 @@ GAME_STATE Application::gameLoop(void){
     //loading screen... wait for connection with host
     if (state == gameLoopState::Game){
         state = loadingScreen(&ClientSocket);
-    }
+    }//return menu with error if timeout
     
-        //return menu with error if timeout
 
 
     //MENU WILL NEED UPDATES ARE CAREFUL ADDITIONS!!
@@ -72,7 +73,7 @@ GAME_STATE Application::gameLoop(void){
         delete tmp;
     }
     //at the end. dereference the current game, preparing for either ending game or going to the menu
-    delete activeSave;
+    delete activeGame;
     ClientSocket.disconnect();
     if (state == gameLoopState::QuitMenu){
         return GAME_STATE::MENU;

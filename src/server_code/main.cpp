@@ -3,29 +3,33 @@
 
 int main(int argc, char *argv[]){
     std::cout<<"Server process started\n";
-    if (argc != 4) {
+    std::cout << argc << std::endl;
+    for (int i = 0; i < argc; i++){
+        std::cout << argv[i] << std::endl;
+    }
+    if (argc != 5) {
         std::cerr << "Usage: " << argv[0] << " <string1> <unsigned short> <string2>" << std::endl;
         system("pause");
         return -1;
     }
-    unsigned short port = static_cast<unsigned short>(std::stoi(argv[0]));
-    sf::IpAddress adress = sf::IpAddress(argv[1]);
-    std::string savePath = argv[2];
-    std::string hostId = argv[3];
-    std::cout <<argv << std::endl;
-    //Server RunningServer(port, adress, savePath);
+    
+    unsigned short port = static_cast<unsigned short>(std::stoi(argv[1]));
+    sf::IpAddress adress = sf::IpAddress(argv[2]);
+    std::string savePath = argv[3];
+    std::string hostId = argv[4];
+    std::cout << "Adress: " << adress.toString() << std::endl;
+    std::cout << "Port: " << port << std::endl;
+    std::cout << "Savepath: " << savePath << std::endl;
+    std::cout << "HostId: " << hostId << std::endl;
+
+    Server RunningServer(port, adress, savePath, hostId);
     std::cout<<"Server was running und succesfully ended\n";
     system("pause");
     return 0;
 }
-/*
-void server_thread_function(unsigned short port, sf::IpAddress adress, std::string savePath){
-    
-}
-*/
 
 
-Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath){
+Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath, std::string hostId){
     //SET UP SERVER
     this->serverPort = port;
     this->serverAdress = adress;
@@ -37,14 +41,24 @@ Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath){
     //LOAD GAMESAVE
 
 
-
+    auto start_time = std::chrono::high_resolution_clock::now();
+    // Calculate the elapsed time
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    bool host_joined = false;
     //SERVER LOOP
     std::cout << "Server ready. Listening on adress: " << serverAdress.toString() << ":" << serverPort <<std::endl;
-    bool SERVER_RUNNING = false;
+    bool SERVER_RUNNING = true;
     while (SERVER_RUNNING){
+        sf::TcpSocket client;
+        if (serverSocket.accept(client) == sf::Socket::Done) {
+            std::cout << "New client connected" << std::endl;
 
-
-
+            // Start a new thread to handle the client
+            //std::thread clientThread(HandleClient, std::move(client));
+            //clientThread.detach(); // Detach the thread to run independently
+        }
+        SERVER_RUNNING = false;
     }
 
     return;

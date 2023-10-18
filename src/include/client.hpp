@@ -7,8 +7,6 @@ class Clients {
 
     protected:
     sf::TcpSocket socket;
-    unsigned short port;
-    unsigned short findFreePort(void);
     bool isConnected;
 
     public:

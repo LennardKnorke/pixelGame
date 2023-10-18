@@ -7,16 +7,18 @@
 //void server_thread_function(unsigned short port, sf::IpAddress adress, std::string savePath);
 
 class Server {
-    protected:
+    private:
     unsigned short serverPort;
     sf::IpAddress serverAdress;
     sf::TcpListener serverSocket;
-
-    gameSave *GAME;
-    public:
-    Server(unsigned short port, sf::IpAddress adress, std::string savePath);
+    std::string hostId;
     void acceptConnection();
     void sendPacket();
+    void HandleClient(sf::TcpSocket clientSocket);
+    gameSave *GAME;
+    public:
+    Server(unsigned short port, sf::IpAddress adress, std::string savePath, std::string hostId);
+    
 
 
 };

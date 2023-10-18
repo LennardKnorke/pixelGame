@@ -6,17 +6,9 @@
 #include "gamesave.hpp"
 #include "local_game.hpp"
 #include "client.hpp"
-
+#include "gameSaveSummary.hpp"
 //checks if a relative file exists
 bool fileExists(const std::string &filename);
-
-
-
-//Makros
-#define MAX_LENGTH_KEY 14
-#define MAX_LENGTH_SAVENAME 12
-#define MAX_LENGTH_IPPORT 20
-
 
 
 //makros about the gamestate
@@ -43,6 +35,7 @@ enum gameMode{
 //overview of how much textures we want to load
 #define nr_cursor_textures 2
 #define nr_menu_textures 4
+#define MAX_N_SAVES 5
 //makro the menu textures
 enum menuTextureIdxS {
     background = 0,
@@ -139,6 +132,7 @@ class Application{
     struct socketAdress {
         sf::IpAddress ip = sf::IpAddress::None;   
         unsigned short port = 0;
+        std::string pathSave;
     }hostAdress;
     //Application variables
     GAME_STATE State;               //Main Menu, Gameloop or Ending Game
@@ -146,7 +140,6 @@ class Application{
     gameMode mode;                  //Online, Local or Alone
     errorCodes error = NoErr;
 
-    gameSave *activeSave;
     inGameInputKey inGameControls[7];
     
     char userKey[MAX_LENGTH_KEY + 1];
@@ -163,9 +156,7 @@ class Application{
     void setUpCursorAssets(void);
     //save functions
     void setUpSaveFolder(void);
-    void readAllSaveSummaries(void);
-    gameSaveSummary loadSaveSummary(const std::string &filename);
-    bool createSave(std::string newSaveName, menuPopUps *menuWarning);
+    
     //Orga Stuff
     void loadSettings(const std::string &filename);
     void createSettings(const std::string &filename);
@@ -174,11 +165,11 @@ class Application{
 
     //Menu functions. found in menu.cpp
     GAME_STATE menuLoop(void);
-        void getMenuPicks(sf::Vector2f cursorPosition, layersId currentLayer, menuLayer *Lay);
+        void getMenuPicks(sf::Vector2f cursorPosition, layersId currentLayer, std::vector<button*> *buttonList);
         bool checkCharacterInput(layersId activeLayer, sf::Uint32 c, int activeLength);
         void setActiveSafe(std::string saveName);
         void setMenuPopUpMessage(menuPopUps PopUp, sf::Text *warningMessage, sf::Vector2u res);
-        void drawMenuPopUp(menuPopUps PopUp, sf::RenderWindow *window, sf::Text *warningMessage);
+        bool createSave(std::string newSaveName, menuPopUps *menuWarning);
 
 
     //?server functions?

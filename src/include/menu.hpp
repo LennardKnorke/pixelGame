@@ -2,8 +2,12 @@
 #ifndef MENU_HPP
 #define MENU_HPP
 class Application;
-class menuLayer;
 
+
+//Makros
+#define MAX_LENGTH_KEY 14
+#define MAX_LENGTH_SAVENAME 12
+#define MAX_LENGTH_IP_PUBLIC 15
 
 //Makros for Menu Layers
 #define MaxVisibleLayers 8
@@ -11,16 +15,15 @@ enum layersId{
     leave = -1, 
     Base = 0, 
     Settings = 1,
-    Type = 2, 
-    Multiplayer = 3, 
-    Join = 4, 
-    Host = 5, 
+    GameMode = 2, 
+    HostVsClient = 3,
+    Joining = 4,
+    Hosting = 5, 
     Graphic = 6,
     Controls = 7,
-    final = 8
+    final = 12
 };
-
-
+layersId getPreviousLayer(layersId currentLayer);
 
 //Makros for menu pop up/ error messages
 enum menuPopUps {
@@ -31,27 +34,11 @@ enum menuPopUps {
 };
 
 
-
-#define InputMax_IpAdress 15
-#define InputMax_Port 5
-
-
-
-//Summarizes information about each menu layer, used to construct instances of layer class
-typedef struct layerInformation{
-    layersId lay;
-    layersId prevLay;
-    int nButtons;//Only default buttons. In host Layer, nondefault buttons are loaded
-    std::vector<std::string> buttonTexts;
-    std::vector<layersId>followUpLay;
-}layerInformation;
-
-
-
 //Base class of a text button
 class button{
     public:
     layersId nextLayer;
+    layersId layer;
     std::string stringText;
     sf::Text text;
     sf::Sprite imageSprite;
@@ -69,7 +56,7 @@ class button{
 class ClickButton : public button {
     
     public:
-    ClickButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt);
+    ClickButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt, layersId currentLayer);
     void draw(sf::RenderWindow *window);
     void update(sf::Vector2f mousePos);
 
@@ -84,7 +71,7 @@ class ClickButton : public button {
 class GraphicButton : public button{
     public:
     sf::Vector2u newResolution;
-    GraphicButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt, sf::Vector2u newRes);
+    GraphicButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt, sf::Vector2u newRes, layersId currentLayer);
     ~GraphicButton(void);
     void draw(sf::RenderWindow *window);
     void update(sf::Vector2f mousePos);
@@ -101,7 +88,7 @@ class WriteButton : public button {
     std::string userText = "";
     float ogPosition[2];
     bool activeInput;
-    WriteButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt);
+    WriteButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt, layersId given_layer);
     void update(sf::Vector2f mousePos);
     void draw(sf::RenderWindow *window);
 
@@ -114,23 +101,7 @@ class WriteButton : public button {
 };
 
 
-
-//menu layer class. contains
-class menuLayer {
-    public:
-    layersId layerType;
-    layersId previousLayer;
-    std::vector<button*> LayerButtons;
-    
-    menuLayer(layersId assignedLayer, Application *applicationPointer);//For most basic layers
-    void init(layerInformation setUpInfo, Application *applicationPointer);
-    void update(sf::Vector2f mousePos);
-
-    void changeRes(Application *applicationPointer);
-    
-    ~menuLayer(void);
-};
-
-
-
+void drawMenuButtons(std::vector<button*> *MenuButtons, layersId currentLayer, sf::RenderWindow *window);
+void drawMenuPopUp(menuPopUps PopUp, sf::RenderWindow *window, sf::Text *warningMessage);
+void setUpMenuButtons(std::vector<button*> *buttonList, Application *applicationPointer);
 #endif //MENU_HPP

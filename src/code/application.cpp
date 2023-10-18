@@ -198,45 +198,8 @@ void Application::setUpSaveFolder(void){
 }
 
 
-
-void Application::readAllSaveSummaries(void){
-    std::filesystem::path pathDirectory = std::string("sav/");
-    for (auto &iterator : std::filesystem::recursive_directory_iterator(pathDirectory)){
-        if (iterator.path().extension() == std::filesystem::path(".SAV")){
-            availableSaveFiles.push_back(loadSaveSummary(iterator.path().string()));
-        }
-    }
-}
-
-
-
-gameSaveSummary Application::loadSaveSummary(const std::string &filename){
-    std::ifstream inputFile(filename, std::ios::binary);
-    gameSaveSummary sumTmp;
-    size_t size;
-
-    inputFile.read(reinterpret_cast<char *>(&size), sizeof(size));
-    sumTmp.saveName.resize(size);
-    inputFile.read(reinterpret_cast<char *>(&sumTmp.saveName[0]), size);
-
-    inputFile.read(reinterpret_cast<char *>(&size), sizeof(size));
-    sumTmp.fileName.resize(size);
-    inputFile.read(reinterpret_cast<char *>(&sumTmp.fileName[0]), size);
-
-    inputFile.read(reinterpret_cast<char *>(&size), sizeof(size));
-    sumTmp.pathName.resize(size);
-    inputFile.read(reinterpret_cast<char *>(&sumTmp.pathName[0]), size);
-
-
-    inputFile.close();
-    return sumTmp;
-
-}
-
-
-
 bool Application::createSave(std::string newSaveName, menuPopUps *menuWarning){
-    if (availableSaveFiles.size() >= 5){
+    if (availableSaveFiles.size() >= MAX_N_SAVES){
         *menuWarning = menuPopUps::TooManySaves;
         return false;
     }
@@ -246,8 +209,7 @@ bool Application::createSave(std::string newSaveName, menuPopUps *menuWarning){
             return false;
         }
     }
-    activeSave = new gameSave(newSaveName);
-    return true;
+    return createNewSafeFile(newSaveName, &hostAdress.pathSave);
 }
 
 

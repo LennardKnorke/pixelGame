@@ -18,15 +18,6 @@ typedef struct clientPlayer{
 
 
 
-//struct:saves the filename, savename, pathname
-typedef struct gameSaveSummary{
-    std::string saveName;
-    std::string fileName;
-    std::string pathName;
-}gameSaveSummary;
-
-
-
 //game save class. manipulate, load, create or safe a world/game instance
 class gameSave {
     private:
