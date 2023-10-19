@@ -1,11 +1,13 @@
 #include "application.hpp"
-
-
-
+#include "gameSaveSummary.hpp"
 ////////////////////////////////////////////
 //APPLICATION CLASS
-////////////////////////////////////////////
+
+
+//Application main function
 Application::Application(void){
+
+    //Set up assets, settings etc.
     State = GAME_STATE::MENU;
     initSettings();
     initWindow();
@@ -16,10 +18,10 @@ Application::Application(void){
 
     setUpCursorAssets();
     setUpSaveFolder();
-
     std::cout << machinePublicAdress << "\t" << machineLocalAdress <<  std::endl;
 
-    //Main Game Loop. Switch between gamestates
+
+    //Main application loop. Switches between the main menu, game and exit
     while (State != GAME_STATE::QUIT){
         if (State == GAME_STATE::MENU){
             State = menuLoop();
@@ -29,12 +31,15 @@ Application::Application(void){
             State = gameLoop();
         }
     }
+
+    //Finish and close everything
     window.close();
     return;
 }
 
 
 
+//Set up render window
 void Application::initWindow(void){
     window.create(sf::VideoMode(resolution.x, resolution.y, 32), "ReFrAcTuReD", sf::Style::Fullscreen);
     window.setFramerateLimit(60);
@@ -44,7 +49,7 @@ void Application::initWindow(void){
 
 
 
-//SETTINGS FUNCTIONS
+//find or create settings
 void Application::initSettings(void){
     std::string setting_file = "settings.bin";
     if (fileExists(setting_file)){
@@ -57,15 +62,18 @@ void Application::initSettings(void){
 }
 
 
-
+//load
 void Application::loadSettings(const std::string &filename){
     std::ifstream inputFile(filename, std::ios::binary);
 
-    inputFile.read(reinterpret_cast<char *>(&userKey), sizeof(userKey));
+    size_t size;
+    inputFile.read(reinterpret_cast<char *>(&size), sizeof(size));
+    localUserID.resize(size);
+    inputFile.read(reinterpret_cast<char *>(&localUserID[0]), size);
     inputFile.read(reinterpret_cast<char *>(&resolution), sizeof(sf::Vector2u));
     //inputFile.read(reinterpret_cast<char*>(&inGameControls), sizeof(userKeys));
 
-    std::cout   <<"Loaded user: " << userKey << std::endl
+    std::cout   <<"Loaded user: " << localUserID << std::endl
                 << resolution.x << "\t"
                 << resolution.y << std::endl;
 
@@ -85,6 +93,7 @@ void Application::loadSettings(const std::string &filename){
 
 
 
+//First create settings/controls/userId and then run save function
 void Application::createSettings(const std::string &filename){
     //Get Screen Size
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
@@ -111,14 +120,13 @@ void Application::createSettings(const std::string &filename){
     
 
     //Generate A key
-    const std::string alphabet = "!#$%^&*(){}=-+/abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const std::string alphabet = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     std::mt19937 rng(std::random_device{}());
     std::uniform_int_distribution<std::string::size_type> dist(0, alphabet.size()-1);
     for (int i = 0 ; i < MAX_LENGTH_KEY; i++){
-        userKey[i] = alphabet[dist(rng)];
+        localUserID += alphabet[dist(rng)];
     }
-    userKey[MAX_LENGTH_KEY] = '\0';
-    std::cout   << "Created User:  "<< userKey << std::endl
+    std::cout   << "Created User:  "<< localUserID << std::endl
                 << resolution.x << "\t"
                 << resolution.y << std::endl;
 
@@ -150,7 +158,9 @@ void Application::createSettings(const std::string &filename){
 
 void Application::saveSettings(const std::string &filename){
     std::ofstream outputFile("settings.bin", std::ios::binary);
-    outputFile.write(reinterpret_cast<const char *>(&userKey), sizeof(userKey));
+    size_t size = localUserID.size();
+    outputFile.write(reinterpret_cast<const char *>(&size), sizeof(size_t));
+    outputFile.write(reinterpret_cast<const char *>(localUserID.data()), size);
     outputFile.write(reinterpret_cast<const char *>(&resolution), sizeof(sf::Vector2u));
     //Save Control settings
     for (int i = 0; i < 7; i++){
@@ -196,22 +206,6 @@ void Application::setUpSaveFolder(void){
         std::filesystem::create_directory(pathDirectory);
     }
 }
-
-
-bool Application::createSave(std::string newSaveName, menuPopUps *menuWarning){
-    if (availableSaveFiles.size() >= MAX_N_SAVES){
-        *menuWarning = menuPopUps::TooManySaves;
-        return false;
-    }
-    for (gameSaveSummary tmp : availableSaveFiles){
-        if (tmp.saveName == newSaveName){
-            *menuWarning = menuPopUps::InvalidName;
-            return false;
-        }
-    }
-    return createNewSafeFile(newSaveName, &hostAdress.pathSave);
-}
-
 
 
 bool Application::loadTextures(void){

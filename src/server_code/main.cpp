@@ -7,7 +7,7 @@ int main(int argc, char *argv[]){
     for (int i = 0; i < argc; i++){
         std::cout << argv[i] << std::endl;
     }
-    if (argc != 5) {
+    if (argc != 6) {
         std::cerr << "Usage: " << argv[0] << " <string1> <unsigned short> <string2>" << std::endl;
         system("pause");
         return -1;

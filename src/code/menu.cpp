@@ -1,42 +1,45 @@
-#include "application.hpp"
 #include "menu.hpp"
+#include "application.hpp"
 #include "gameSaveSummary.hpp"
+#include "menuButtons.hpp"
+/////////////////////////////////////////////////////////////////////////////////
+//APPLICATION HPP DEFINITIONS
+/////////////////////////////////////////////////////////////////////////////////
 GAME_STATE Application::menuLoop(void){
 
+    //Variables to control what to display in menu
+    mainMenuLayerId currentLayer = mainMenuLayerId::Base;
+    menuPopUps currentMenuPopUp = menuPopUps::NoPopUp;
+    bool allowTextInput = false;
+
+    //Read every save name/path for ingame buttons
     readAllSaveSummaries(&availableSaveFiles);
-    
-    //Set up menu layers
+
+    //Set up menu buttons
     std::vector<button*> MenuButtons;
     setUpMenuButtons(&MenuButtons, this);
 
-    //SetUpBackgroundSprite (set as class variable?)
+    //SetUpBackgroundSprite
     sf::Sprite backgroundSprite;
     backgroundSprite.setTexture(textures.menu[menuTextureIdxS::background]);
     backgroundSprite.setPosition(0, 0);
     backgroundSprite.setScale(resolution.x/backgroundSprite.getGlobalBounds().getSize().x, resolution.y/backgroundSprite.getGlobalBounds().getSize().y);
 
-    //actual menu loop
-    layersId currentLayer = layersId::Base;
-    menuPopUps currentMenuPopUp = menuPopUps::NoPopUp;
-    bool allowTextInput = false;
-
     //prepare a warning message for errors
-    sf::Text warningMessage;
-    warningMessage.setString("");
-    warningMessage.setFillColor(sf::Color::White);
-    warningMessage.setFont(gameFont);
-    warningMessage.setStyle(sf::Text::Style::Regular);
-    warningMessage.setCharacterSize(30 * ratioScaling);
-
-    while (currentLayer != layersId::final && currentLayer != layersId::leave){
-
-        ////BEGIN DRAWING
+    sf::Text warningMessage = initErrorMessage(&gameFont, ratioScaling);
+    
+    //  MAIN MENU LOOP
+    //      1. DRAW
+    //      2. Register Key/Mouse Input
+    //      3. Update buttons/application features 
+    while (currentLayer != mainMenuLayerId::final && currentLayer != mainMenuLayerId::leave){
+    
+        //  1. DRAW
         window.clear(sf::Color::Transparent);
         window.draw(backgroundSprite);
-
         if (currentMenuPopUp == menuPopUps::NoPopUp){
             drawMenuButtons(&MenuButtons, currentLayer, &window);
-            if (!allowTextInput){
+            if (!allowTextInput){//No text input?->Draw cursor
                 cursor.draw(&window);
             }
         }
@@ -45,182 +48,37 @@ GAME_STATE Application::menuLoop(void){
         }
         
         window.display();
-        ////END DRAWING
 
 
-
-
-        ////BEING EVENTS
+        //  2. Handle Events
         sf::Event event;
         while (window.pollEvent(event)){
-            if (currentMenuPopUp == menuPopUps::NoPopUp){
-                //KEYS PRESSED
-                if (event.type == sf::Event::KeyPressed){
-                ////INPUT EVENTS
-                    //escape button pressed
-                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){
-                        if (allowTextInput){
-                            allowTextInput = false;
-                            for (button *buttTmp : MenuButtons){
-                                WriteButton *childPtr1 = dynamic_cast<WriteButton*>(buttTmp);
-                                if (childPtr1 && childPtr1->activeInput){
-                                    childPtr1->resetInput();
-                                }
-                            }
-                        }
-                        else {
-                            for (button *buttTmp : MenuButtons){
-                                WriteButton *childPtr1 = dynamic_cast<WriteButton*>(buttTmp);
-                                if (childPtr1){
-                                    childPtr1->resetInput();
-                                }
-                            }
-                            if (currentLayer == layersId::Hosting && mode == gameMode::Single){
-                                currentLayer = layersId::GameMode;
-                            }
-                            else {
-                                currentLayer = getPreviousLayer(currentLayer);
-                            } 
-                        }
-                    }
-
-
-////INPUT EVENTS
-                    //enter button pressed
-                    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter) && allowTextInput){
-                        for (button *buttTmp : MenuButtons){
-                            WriteButton *childPtr1 = dynamic_cast<WriteButton*>(buttTmp);
-                            if (childPtr1 && childPtr1->focus && childPtr1->activeInput){
-                                allowTextInput = false;
-                                childPtr1->activeInput = false;
-                                if (childPtr1->userText == ""){
-                                    childPtr1->resetInput();
-                                    if (currentLayer == layersId::Joining && cursor.sprite[cursor.activeSprite].getPosition().y < resolution.y/2){
-                                            //Entered HOST IP ADRESS
-                                            hostAdress.ip = sf::IpAddress::None;
-                                    }
-                                    else if (currentLayer == layersId::Joining) {
-                                            //ENTERED HOST PORT
-                                            hostAdress.port = 0;
-                                    }
-                                    else if (currentLayer == layersId::Hosting){
-                                        hostAdress.pathSave.clear();
-                                        currentMenuPopUp = menuPopUps::InvalidName;
-                                        setMenuPopUpMessage(currentMenuPopUp, &warningMessage, resolution);
-                                    }
-                                }
-                                else {
-                                    if (currentLayer == layersId::Hosting){
-                                        //Create a new Play save
-                                        std::string newSaveName = childPtr1->userText;
-                                        if (createSave(newSaveName, &currentMenuPopUp)){
-                                            currentLayer = childPtr1->nextLayer;
-                        
-                                        }
-                                        else {
-                                            setMenuPopUpMessage(currentMenuPopUp, &warningMessage, resolution);
-                                            childPtr1->resetInput();
-                                        }
-
-                                    }
-                                    else if (currentLayer == layersId::Joining){
-                                        if (cursor.sprite[cursor.activeSprite].getPosition().y < resolution.y/2){
-                                            //Entered HOST IP ADRESS
-                                            hostAdress.ip = sf::IpAddress(childPtr1->userText);
-                                        }
-                                        else {
-                                            //ENTERED HOST PORT
-                                            hostAdress.port = static_cast<unsigned short>(std::strtoul(childPtr1->userText.c_str(), NULL, 0));
-                                        }
-                                        childPtr1->text.setFillColor(sf::Color::Red);
-                                        if (hostAdress.ip != sf::IpAddress::None && hostAdress.port != 0){
-                                            currentLayer = layersId::final;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-
-////INPUT EVENTS
-                //Mouse is pressed
-                else if (event.type == sf::Event::MouseButtonPressed && sf::Mouse::isButtonPressed(sf::Mouse::Left) && !allowTextInput){
-                    for (button *buttTmp : MenuButtons){
-                        if (buttTmp->layer == currentLayer){
-                            ClickButton *childPtr1 = dynamic_cast<ClickButton*>(buttTmp);
-                            WriteButton *childPtr2 = dynamic_cast<WriteButton*>(buttTmp);
-                            GraphicButton *childPtr3 = dynamic_cast<GraphicButton*>(buttTmp);
-                            //Either just change the layer
-                            if (childPtr1 && buttTmp->focus){   
-                                if (currentLayer == layersId::Hosting){
-                                    setActiveSafe(childPtr1->stringText);
-                                }                         
-                                currentLayer = childPtr1->nextLayer;
-                                break;
-                            }
-                            //or activate text input
-                            else if (childPtr2 && buttTmp->focus){
-                                allowTextInput = true;
-                                childPtr2->activeInput = true;
-                                childPtr2->text.setString(childPtr2->userText);
-                                break;
-                            }
-                            //update resolution settings and menu ui elements
-                            else if (childPtr3 && buttTmp->focus && resolution != childPtr3->newResolution){
-                                /*
-                                resolution = childPtr3->newResolution;
-                                ratioScaling = 1920.0/ resolution.x;
-                                std::cout << resolution.x<< "\t";
-                                std::cout << resolution.y<< "\t";
-                                std::cout << ratioScaling<< std::endl;
-                                window.setSize(resolution);
-
-                                backgroundSprite.setScale(resolution.x/backgroundSprite.getGlobalBounds().getSize().x, resolution.y / backgroundSprite.getGlobalBounds().getSize().y);
-                                saveSettings("settings.bin");
-
-                                for (menuLayer *tmp : Layers){
-                                    tmp->changeRes(this);
-                                }
-                                */
-                            }
-                        }
-
-                    }
-                }
-
-
-////INPUT EVENTS
-                //Text is entered
-                else if (event.type == sf::Event::TextEntered && allowTextInput){
-                    for (button *buttTmp : MenuButtons){
-                        if (buttTmp->layer == currentLayer){
-                            WriteButton *childPtr1 = dynamic_cast<WriteButton*>(buttTmp);
-                            if (childPtr1 && childPtr1->activeInput && childPtr1->focus){
-                                if (event.text.unicode == 8){
-                                    childPtr1->delLastInput(resolution);
-                                }
-                                else if (checkCharacterInput(currentLayer, event.text.unicode, childPtr1->userText.size())){
-                                    childPtr1->addInput(event.text.unicode, resolution);
-                                }
-                            }
-                        }
-
-                    }
-                }
+            if (currentMenuPopUp != menuPopUps::NoPopUp){
+                inputErrorDisplay(&currentMenuPopUp, &event);
             }
-            else if (currentMenuPopUp == menuPopUps::InvalidName){
-                if (event.type == sf::Event::KeyPressed && (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)||sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))){
-                    currentMenuPopUp = menuPopUps::NoPopUp;
+            else {
+                if (event.type == sf::Event::KeyPressed){
+                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){
+                        escapeKeyPressed(&allowTextInput, &MenuButtons, &currentLayer, mode);
+                    }
+                    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)){
+                        enterKeyPressed(&allowTextInput, &MenuButtons, &currentLayer, &currentMenuPopUp, this);
+                    }
+                    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Delete)){
+                        deleteKeyPressed(&allowTextInput,&MenuButtons, currentLayer, this);
+                    }
+                }
+                else if (event.type == sf::Event::TextEntered){
+                    textEntered(&allowTextInput,&MenuButtons, currentLayer, this, event, mode);
+                }
+                else if (event.type == sf::Event::MouseButtonPressed ){
+                    mouseButtonPressed(&allowTextInput, &MenuButtons, &currentLayer, this, mode);
                 }
             }
         }
-        ////END INPUT EVENTS
-
-
-        ////BEGIN UPDATES (to avoid bugs and crashes.. only update valid layers)
-        if (currentLayer != layersId::final && currentLayer != layersId::leave && currentMenuPopUp == menuPopUps::NoPopUp){
+                        
+        //  3. UPDATE BUTTONS
+        if (currentLayer != mainMenuLayerId::final && currentLayer != mainMenuLayerId::leave && currentMenuPopUp == menuPopUps::NoPopUp){
             for (button* butt : MenuButtons){
                 if (butt->layer == currentLayer){
                     butt->update(cursor.returnPosition());
@@ -229,261 +87,100 @@ GAME_STATE Application::menuLoop(void){
             if (!allowTextInput){
                 cursor.update();
             }
-            getMenuPicks(cursor.returnPosition(), currentLayer, &MenuButtons);
+            getMenuPicks(&MenuButtons, currentLayer, &mode);
         }
-        ////END UPDATES
-    }////END OF MENULOPP!
+    }
+    //End of visual menu loop. user chose either to exit or play
 
+    //Dereference and clear everything
     for (button* objc : MenuButtons){
         delete objc;
     }
     availableSaveFiles.clear();
-    ////Return new gameState
-    if (currentLayer == layersId::final){
-        std::cout<< "Playing: ";
-        if (mode == gameMode::Online){
-            std::cout << "Online\n";
-        }
-        else if (mode == gameMode::Single){
-            std::cout << "Alone\n";
-        }
-        else {
-            std::cout << "Locally\n";
-        }
-        if (wantsHost || mode == gameMode::Single){
-            //search for a free port
-            hostAdress.port = 5426;
-            sf::TcpListener tmpListener;
-            while (hostAdress.port < USHRT_MAX && tmpListener.listen(hostAdress.port) != sf::Socket::Done){
-                hostAdress.port++;
-            }
-            tmpListener.close();
-            //use machine adress as host adress
-            if (mode == gameMode::Online){
-                hostAdress.ip = sf::IpAddress::getPublicAddress();
-            }
-            else {
-                hostAdress.ip= sf::IpAddress::getLocalAddress();
-            }
-            std::cout << "Hosting Game: " << hostAdress.pathSave <<std::endl;
-            std::cout << "Using IP: " << hostAdress.ip.toString() << "::" << hostAdress.port <<std::endl;
-
-        }
-        else {
-            std::cout << "Joining to: ";
-            std::cout << hostAdress.ip.toString() << "::" << hostAdress.port <<std::endl;
-
-        }
-        
-        return GAME_STATE::GAME;
+    if (currentLayer == mainMenuLayerId::leave){
+        std::cout << "Leaving Application!\n";
+        return GAME_STATE::QUIT;
     }
-
-    std::cout << "Leaving Application!\n";
-    return GAME_STATE::QUIT;
+    return GAME_STATE::GAME;
 }
 
 
 
-void Application::getMenuPicks(sf::Vector2f cursorPosition, layersId currentLayer, std::vector<button*> *buttonList){
-    if (currentLayer == layersId::GameMode){
-        int i = 0;
-        for (button *iterator : *buttonList){
-            if (iterator->focus){
-                if (i == 0){
-                    mode = gameMode::Single;
-                }
-                else if (i == 1){
-                    mode = gameMode::Local;
-                }
-                else {
-                    mode = gameMode::Online;
-                }
-            }
-            i++;
-        }
-    }
-    else if (currentLayer == layersId::HostVsClient){
-        if (cursorPosition.y < resolution.y/2){
-            wantsHost = true;
-        }
-        else {
-            wantsHost = false;
-        }
-    }
+/////////////////////////////////////////////////////////////////////////////////
+//MENU HPP DEFINITIONS
+/////////////////////////////////////////////////////////////////////////////////
+sf::Text initErrorMessage(sf::Font *font, float scaling){
+    sf::Text newText;
+    newText.setString("");
+    newText.setFillColor(sf::Color::White);
+    newText.setFont(*font);
+    newText.setStyle(sf::Text::Style::Regular);
+    newText.setCharacterSize(30 * scaling);
+    return newText;
 }
 
 
 
-bool Application::checkCharacterInput(layersId activeLayer, sf::Uint32 c, int activeLength){
-    if (activeLayer == layersId::Hosting){//Entering a new savename only allow "a-z", "A-Z", "0-9".
-        if (activeLength >= MAX_LENGTH_SAVENAME){
-            return false;
-        }
-        if ((c < 48 || c > 57) && (c < 65 || c > 90) && (c < 97 || c > 122) && c != 32){
-            return false;
-        }
-    }
-    if (activeLayer == layersId::Joining) {//Entering "0-9", "." , ":" for the ip
-        if (activeLength >=MAX_LENGTH_IP_PUBLIC){
-            return false;
-        }
-    }
-    if (activeLayer == layersId::Settings){
-
-    }
-    
-    return true;
-}
-
-
-
-void Application::setActiveSafe(std::string saveName){
-    for (gameSaveSummary sum : availableSaveFiles){
-        if (sum.saveName == saveName){
-            hostAdress.pathSave = sum.pathName;
-        }
-    }
-}
-
-
-
-void Application::setMenuPopUpMessage(menuPopUps PopUp, sf::Text *warningMessage, sf::Vector2u res){
-    if (PopUp == menuPopUps::InvalidName){
-        warningMessage->setString("Choose a new/valid name for your save\nPress Enter\\Escape to continue");
-    }
-    else if (PopUp == menuPopUps::TooManySaves){
-        warningMessage->setString("Too many saves. Delete at least one save to create a new one");
-    }
-    else if (PopUp == menuPopUps::deleteSave){
-        warningMessage->setString("TMP");
-    }
-    else if (PopUp == menuPopUps::NoPopUp){
-        warningMessage->setString("");
-    }
-    warningMessage->setPosition((res.x/2) - (warningMessage->getGlobalBounds().getSize().x / 2), (res.y / 2) - (warningMessage->getGlobalBounds().getSize().y / 2));
-}
-
-
-//"FREE FUNCTIONS"
 void drawMenuPopUp(menuPopUps PopUp, sf::RenderWindow *window, sf::Text *warningMessage){
     window->draw(*warningMessage);
 }
 
 
-void drawMenuButtons(std::vector<button*> *MenuButtons, layersId currentLayer, sf::RenderWindow *window){
-    for (button* buttTmp : *MenuButtons){
-        if (buttTmp->layer == currentLayer){
-            buttTmp->draw(window);
+
+void inputErrorDisplay(menuPopUps *menuPopUp, sf::Event *ev){
+    if (*menuPopUp == menuPopUps::InvalidName){
+        if(ev->type == sf::Event::KeyPressed && (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)||sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))){
+            *menuPopUp = menuPopUps::NoPopUp;
         }
     }
-}
-
-void setUpMenuButtons(std::vector<button*> *buttonList, Application *applicationPointer){
-    //layersId::Base
-    layersId currentLayer = layersId::Base;
-    int maxButtons = 3;
-    std::vector<std::string> text = {"Play", "Settings", "Exit"};
-    std::vector<layersId> followUpsLayers = {layersId::GameMode, layersId::Settings, layersId::leave};
-    for (int i = 0; i < maxButtons; i++){
-        buttonList->push_back(new ClickButton(text[i], followUpsLayers[i], applicationPointer, maxButtons, i, currentLayer));
-    }
-    text.clear();
-    followUpsLayers.clear();
-
-
-    //layersId::Settings
-    currentLayer = layersId::Settings;
-    maxButtons = 2;
-    text = {"Graphics", "Controls"};
-    followUpsLayers = {layersId::Graphic, layersId::Controls};
-    for (int i = 0; i < maxButtons; i++){
-
-    }
-    text.clear();
-    followUpsLayers.clear();
-
-
-    //layersId::Graphic
-    /*
-    layersId currentLayer = layersId::Graphic;
-    maxButtons = 5;
-    text.push_back("1920 x 1080"); text.push_back("1600 x 900"); "1280 x 720";"1024 x 576";"960 x 540";
-    followUpsLayers.push_back(layersId::Graphic);
-    followUpsLayers.push_back(layersId::Graphic);
-    followUpsLayers.push_back(layersId::Graphic);
-    followUpsLayers.push_back(layersId::Graphic);
-    followUpsLayers.push_back(layersId::Graphic);
-    for (int i = 0; i < maxButtons; i++){
-
-    }
-    text.clear();
-    followUpsLayers.clear();
-    */
-
-
-    //layersId::Control
-    maxButtons = 0;
-    for (int i = 0; i < maxButtons; i++){
-
-    }
-    text.clear();
-    followUpsLayers.clear();
-
-
-    //layersId::GameMode
-    currentLayer = layersId::GameMode;
-    maxButtons = 3;
-    text = {"Singleplayer", "Locally", "Online"};
-    followUpsLayers = {layersId::Hosting, layersId::HostVsClient, layersId::HostVsClient};
-    for (int i = 0; i < maxButtons; i++){
-        buttonList->push_back(new ClickButton(text[i], followUpsLayers[i], applicationPointer, maxButtons, i, currentLayer));
-    }
-    text.clear();
-    followUpsLayers.clear();
-
-
-    //layersId::HostVsClient
-    currentLayer = layersId::HostVsClient;
-    maxButtons = 2;
-    text = {"Host", "Join"};
-    followUpsLayers = {layersId::Hosting, layersId::Joining};
-    for (int i = 0; i < maxButtons; i++){
-        buttonList->push_back(new ClickButton(text[i], followUpsLayers[i], applicationPointer, maxButtons, i, currentLayer));
-    }
-    text.clear();
-    followUpsLayers.clear();
-
-
-    //layersId::Joining
-    currentLayer = layersId::Joining;
-    maxButtons = 2;
-    text = {"Enter Host Ip", "Enter Host Port"};
-    followUpsLayers = {layersId::final, layersId::final};
-    for (int i = 0; i < maxButtons; i++){
-        buttonList->push_back(new WriteButton(text[i], followUpsLayers[i], applicationPointer, maxButtons, i, currentLayer));
-    }
-    text.clear();
-    followUpsLayers.clear();
-
-
-    //layersId::Hosting
-    currentLayer = layersId::Hosting;
-    maxButtons = 1;
-    text = {"Create new world"};
-    followUpsLayers = {layersId::final};
-    for (int i = 0; i < maxButtons; i++){
-    }
-    for (int i = 0; i < applicationPointer->availableSaveFiles.size(); i++){
-        buttonList->push_back(new ClickButton(applicationPointer->availableSaveFiles[i].saveName, layersId::final, applicationPointer, applicationPointer->availableSaveFiles.size()+maxButtons, i+1, layersId::Hosting));
-    }
-    buttonList->push_back(new WriteButton(text[0], followUpsLayers[0], applicationPointer, maxButtons + applicationPointer->availableSaveFiles.size(), 0, currentLayer));
-
-    text.clear();
-    followUpsLayers.clear();
+    return;
 }
 
 
-layersId getPreviousLayer(layersId currentLayer){
+
+void escapeKeyPressed(bool *activeText, std::vector<button *> *menuButtons, mainMenuLayerId *currentLayer, gameMode mode){
+    //1. cancel input given
+    if (*activeText){
+        for (button *buttTmp : *menuButtons){
+            if (buttTmp->layer == *currentLayer && buttTmp->focus){
+                newSafeButton *newSavePointer = dynamic_cast<newSafeButton*>(buttTmp);
+                if (newSavePointer && newSavePointer->activeInput){
+                    newSavePointer->resetInput();
+                    *activeText = false;
+                    return;
+                }
+                adressButton *adressPointer = dynamic_cast<adressButton*>(buttTmp);
+                if (adressPointer && adressPointer->activeInput){
+                    adressPointer->resetInput();
+                    *activeText = false;
+                    return;
+                }
+            }
+        }
+        return;
+    }
+
+    //2. Otherwise reset all input and go back a layer
+    if (*currentLayer == mainMenuLayerId::Hosting || *currentLayer == mainMenuLayerId::Joining){
+        for (button *buttTmp : *menuButtons){
+            if (buttTmp->layer == *currentLayer){
+                newSafeButton *newSavePointer = dynamic_cast<newSafeButton*>(buttTmp);
+                adressButton *adressPointer = dynamic_cast<adressButton*>(buttTmp);
+                if (newSavePointer && *currentLayer == mainMenuLayerId::Hosting){
+                    newSavePointer->resetInput();
+                }
+                else if (adressPointer && *currentLayer == mainMenuLayerId::Joining){
+                    adressPointer->resetInput();
+                }
+            }
+        }
+    }
+    *currentLayer = getPreviousLayer(*currentLayer, mode);
+}
+
+
+
+mainMenuLayerId getPreviousLayer(mainMenuLayerId currentLayer, gameMode mode){
     if (currentLayer == Base){
         return leave;
     }
@@ -500,6 +197,9 @@ layersId getPreviousLayer(layersId currentLayer){
         return HostVsClient;
     }
     if (currentLayer == Hosting){
+        if (mode == gameMode::Single){
+            return GameMode;
+        }
         return HostVsClient;
     }
     if (currentLayer == Graphic){
@@ -514,231 +214,306 @@ layersId getPreviousLayer(layersId currentLayer){
 }
 
 
-///////////////////////
-//BUTTON CLASS(es)
-///////////////////////
-//pretending we define the parent class functions
-void button::draw(sf::RenderWindow *window){std::cout << stringText << " parent class" <<std::endl;};
-void button::update(sf::Vector2f mousePos){}
-void button::changeRes(Application *applicationPointer, int maxButt, int currButt){}
 
-//Pretending over
-
-ClickButton::ClickButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt, layersId currentLayer){
-    layer = currentLayer;
-    stringText = t;
-    nextLayer = followLayer;
-    text.setString(stringText);
-    text.setFillColor(sf::Color::White);
-    text.setFont(applicationPointer->gameFont);
-    text.setCharacterSize(30 / applicationPointer->ratioScaling);
-    text.setStyle(sf::Text::Style::Regular);
-
-    imageSprite.setTexture(applicationPointer->textures.menu[menuTextureIdxS::button_red]);
-    imageSprite.setScale((300 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().x, (100 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().y);
-    imageSprite.setPosition(((*applicationPointer).resolution.x/2.0) - (imageSprite.getGlobalBounds().getSize().x/2), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (imageSprite.getGlobalBounds().getSize().y / 2));
-
-    text.setPosition(((*applicationPointer).resolution.x/2.0) - (text.getGlobalBounds().getSize().x/2.0), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (text.getGlobalBounds().getSize().y/2));
-
-};ClickButton::~ClickButton(void){};
-
-
-
-void ClickButton::changeRes(Application *applicationPointer, int maxButt, int currButt){
-    text.setCharacterSize(30 / applicationPointer->ratioScaling);
-    imageSprite.setScale((300 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().x, (100 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().y);
-    imageSprite.setPosition(((*applicationPointer).resolution.x/2.0) - (imageSprite.getGlobalBounds().getSize().x/2), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (imageSprite.getGlobalBounds().getSize().y / 2));
-    text.setPosition(((*applicationPointer).resolution.x/2.0) - (text.getGlobalBounds().getSize().x/2.0), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (text.getGlobalBounds().getSize().y/2));
-
-}
-
-
-void ClickButton::draw(sf::RenderWindow *window){
-    window->draw(imageSprite);
-    window->draw(text);
-}
-
-
-
-void ClickButton::update(sf::Vector2f mousePos){
-    if (mousePos.x > imageSprite.getPosition().x && mousePos.x < imageSprite.getPosition().x + imageSprite.getGlobalBounds().getSize().x
-    && mousePos.y > imageSprite.getPosition().y && mousePos.y < imageSprite.getPosition().y + imageSprite.getGlobalBounds().getSize().y){
-        if (!focus){
-            focus = true;
-            text.setStyle(sf::Text::Style::Underlined);
-            text.setFillColor(sf::Color::Red);
-        }
-    }    
-    else {
-        if (focus){
-            focus = false;
-            text.setStyle(sf::Text::Style::Regular);
-            text.setFillColor(sf::Color::White);
-        }
+void enterKeyPressed(bool *activeText, std::vector<button *> *menuButtons, mainMenuLayerId *currentLayer, menuPopUps *menuWarning, Application *appPointer){
+    //1. Do nothing
+    if (*activeText == false){
+        return;
     }
-}
-
-
-
-WriteButton::WriteButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt, layersId given_layer){
-    stringText = t;
-    nextLayer = followLayer;
-    activeInput = false;
-    layer = given_layer;
-    text.setString(stringText);
-    text.setFillColor(sf::Color::White);
-    text.setFont(applicationPointer->gameFont);
-    text.setCharacterSize(30 / applicationPointer->ratioScaling);
     
+    for (button *buttTmp : *menuButtons){
+        if (buttTmp->layer == *currentLayer && buttTmp->focus){
 
-    imageSprite.setTexture(applicationPointer->textures.menu[menuTextureIdxS::button_red]);
-    imageSprite.setScale((300 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().x, (100 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().y);
-    imageSprite.setPosition(((*applicationPointer).resolution.x/2.0) - (imageSprite.getGlobalBounds().getSize().x/2), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (imageSprite.getGlobalBounds().getSize().y / 2));
-
-    text.setPosition(((*applicationPointer).resolution.x/2.0) - (text.getGlobalBounds().getSize().x/2.0), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (text.getGlobalBounds().getSize().y/2));
-    ogPosition[0] = text.getPosition().x;
-    ogPosition[1] = text.getPosition().y;
-    text.setStyle(sf::Text::Style::Regular);
-}
-
-
-
-WriteButton::~WriteButton(void){};
-
-
-
-void WriteButton::draw(sf::RenderWindow *window){
-    window->draw(imageSprite);
-    window->draw(text);
-}
-
-
-
-void WriteButton::update(sf::Vector2f mousePos){
-    if (!activeInput){
-        sf::Vector2f rec = text.getPosition();
-        if (mousePos.x > rec.x && mousePos.x < rec.x + text.getLocalBounds().width
-        && mousePos.y > rec.y && mousePos.y < rec.y + text.getLocalBounds().height){
-            if (!focus){
-                focus = true;
-                text.setStyle(sf::Text::Style::Underlined);
-                text.setFillColor(sf::Color::Red);
+            //2.EITHER INITIATE NEW SAFE
+            newSafeButton *safePointer = dynamic_cast<newSafeButton*>(buttTmp);
+            if (safePointer && safePointer->activeInput && *currentLayer == mainMenuLayerId::Hosting){
+                std::string newSaveName = safePointer->userText;
+                if (createSave(newSaveName, menuWarning, appPointer)){
+                    *currentLayer = mainMenuLayerId::final;
+                    safePointer->activeInput = false;
+                    *activeText = false;
+                    return;
+                }
+                safePointer->resetInput();
+                *activeText = false;
+                return;
             }
-        }    
-        else {
-            if (focus){
-                focus = false;
-                text.setStyle(sf::Text::Style::Regular);
-                text.setFillColor(sf::Color::White);
+
+            //3. OR FILL IN PORTS/ADRESS
+            adressButton *adressPointer = dynamic_cast<adressButton*>(buttTmp);
+            if (adressPointer && adressPointer->activeInput && *currentLayer == mainMenuLayerId::Joining){
+                if (adressPointer->n_button == 0){
+                    appPointer->hostAdress.ip = sf::IpAddress(adressPointer->userText);
+                }
+                else {
+                    appPointer->hostAdress.port = static_cast<unsigned short>(std::strtoul(adressPointer->userText.c_str(), NULL, 0));
+                }
+                safePointer->activeInput = false;
+                *activeText = false;
+                if (appPointer->hostAdress.ip != sf::IpAddress::None && appPointer->hostAdress.port != 0){
+                    *currentLayer = mainMenuLayerId::final;
+                }
+                return;
             }
         }
     }
-    else {
-        if (text.getFillColor() != sf::Color::Green){
-            text.setFillColor(sf::Color::Green);
+}
+ 
+
+
+bool createSave(std::string newSaveName, menuPopUps *menuWarning, Application *appPointer){
+    if (appPointer->availableSaveFiles.size() >= MAX_N_SAVES){
+        *menuWarning = menuPopUps::TooManySaves;
+        return false;
+    }
+    for (gameSaveSummary tmp : appPointer->availableSaveFiles){
+        if (tmp.saveName == newSaveName){
+            *menuWarning = menuPopUps::InvalidName;
+            return false;
+        }
+    }
+    return createNewSafeFile(newSaveName, &(appPointer->hostAdress.pathSave));
+}
+
+
+
+void deleteKeyPressed(bool *activeText, std::vector<button *> *menuButtons, mainMenuLayerId currentLayer, Application *appPointer){
+    //1. Remove Last input
+    if (*activeText){
+        for (button *buttTmp : *menuButtons){
+            if (buttTmp->layer == currentLayer && buttTmp->focus){
+                newSafeButton *newSavePointer = dynamic_cast<newSafeButton*>(buttTmp);
+                if (newSavePointer){
+                    newSavePointer->delLastInput(appPointer->resolution);
+                    return;
+                }
+
+                adressButton *adressPointer = dynamic_cast<adressButton*>(buttTmp);
+                if (adressPointer){
+                    adressPointer->delLastInput(appPointer->resolution);
+                    return;
+                }
+            }
+        }
+    }
+    //2. Do nothing
+    if (currentLayer != mainMenuLayerId::Hosting){
+        return;
+    }
+
+    //3. Delete Save
+    for (button *buttTmp : *menuButtons){
+        if (buttTmp->layer == currentLayer && buttTmp->focus){
+            newSafeButton *newSavePointer = dynamic_cast<newSafeButton*>(buttTmp);
+            if (newSavePointer){
+                //DELETE SAVE! PENDING
+                return;
+            }
         }
     }
 }
 
 
 
-void WriteButton::resetInput(void){
-    text.setString(stringText);
-    text.setPosition(ogPosition[0], ogPosition[1]);
-    text.setFillColor(sf::Color::Red);
-    userText = "";
-    activeInput = false;
-}
-
-
-
-void WriteButton::addInput(sf::Uint32 input, sf::Vector2u res){
-    userText += input;
-    text.setString(userText);
-    text.setPosition((res.x/2.0) - (text.getLocalBounds().width/2.0), text.getPosition().y);    
-}
-
-
-
-void WriteButton::delLastInput(sf::Vector2u res){
-    if (userText.size() != 0){
-        userText.erase(userText.size() - 1, 1);
-        text.setString(userText);
-        text.setPosition((res.x/2.0) - (text.getLocalBounds().width/2.0), text.getPosition().y);
-    }   
-}
-
-
-
-void WriteButton::changeRes(Application *applicationPointer, int maxButt, int currButt){
-    text.setCharacterSize(30 / applicationPointer->ratioScaling);
-    
-    imageSprite.setScale((300 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().x, (100 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().y);
-    imageSprite.setPosition(((*applicationPointer).resolution.x/2.0) - (imageSprite.getGlobalBounds().getSize().x/2), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (imageSprite.getGlobalBounds().getSize().y / 2));
-
-    text.setPosition(((*applicationPointer).resolution.x/2.0) - (text.getGlobalBounds().getSize().x/2.0), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (text.getGlobalBounds().getSize().y/2));
-    ogPosition[0] = text.getPosition().x;
-    ogPosition[1] = text.getPosition().y;
-}
-//
-GraphicButton::GraphicButton(std::string t, layersId followLayer, Application *applicationPointer, int maxButt, int currButt, sf::Vector2u newRes, layersId currentLayer){
-    newResolution = newRes;
-    layer = currentLayer;
-    stringText = t;
-    nextLayer = followLayer;
-    text.setString(stringText);
-    text.setFillColor(sf::Color::White);
-    text.setFont(applicationPointer->gameFont);
-    text.setCharacterSize(30 / applicationPointer->ratioScaling);
-    text.setStyle(sf::Text::Style::Regular);
-
-    imageSprite.setTexture(applicationPointer->textures.menu[menuTextureIdxS::button_red]);
-    imageSprite.setScale((300 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().x, (100 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().y);
-    imageSprite.setPosition(((*applicationPointer).resolution.x/2.0) - (imageSprite.getGlobalBounds().getSize().x/2), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (imageSprite.getGlobalBounds().getSize().y / 2));
-
-    text.setPosition(((*applicationPointer).resolution.x/2.0) - (text.getGlobalBounds().getSize().x/2.0), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (text.getGlobalBounds().getSize().y/2));
-
-};
-
-
-
-GraphicButton::~GraphicButton(void){};
-
-
-
-void GraphicButton::update(sf::Vector2f mousePos){
-    if (mousePos.x > imageSprite.getPosition().x && mousePos.x < imageSprite.getPosition().x + imageSprite.getGlobalBounds().getSize().x
-    && mousePos.y > imageSprite.getPosition().y && mousePos.y < imageSprite.getPosition().y + imageSprite.getGlobalBounds().getSize().y){
-        if (!focus){
-            focus = true;
-            text.setStyle(sf::Text::Style::Underlined);
-            text.setFillColor(sf::Color::Red);
-        }
-    }    
-    else {
-        if (focus){
-            focus = false;
-            text.setStyle(sf::Text::Style::Regular);
-            text.setFillColor(sf::Color::White);
+void textEntered(bool *activeText, std::vector<button *> *menuButtons, mainMenuLayerId currentLayer, Application *appPointer, sf::Event ev, gameMode mode){
+    //1. No text input allowed
+    if (*activeText == false){
+        return;
+    }
+    //2. add valid characters to display text
+    for (button *buttTmp : *menuButtons){
+        if (buttTmp->layer == currentLayer && buttTmp->focus){
+            newSafeButton *newSavePointer = dynamic_cast<newSafeButton*>(buttTmp);
+            adressButton *adressPointer = dynamic_cast<adressButton*>(buttTmp);
+            if (newSavePointer && validCharacterInput(currentLayer, ev.text.unicode, newSavePointer->userText.size(), mode, buttTmp->n_button)){
+                newSavePointer->addInput(ev.text.unicode, appPointer->resolution);
+                return;
+            }
+            if (adressPointer && validCharacterInput(currentLayer, ev.text.unicode, adressPointer->userText.size(), mode, buttTmp->n_button)){
+                adressPointer->addInput(ev.text.unicode, appPointer->resolution);
+                return;
+            }
+            return;
         }
     }
 }
 
 
 
-void GraphicButton::draw(sf::RenderWindow *window){
-    window->draw(imageSprite);
-    window->draw(text);
+bool validCharacterInput(mainMenuLayerId activeLayer, sf::Uint32 c, int activeLength, gameMode mode, int n){
+    //Allow only characters for the savename
+    if (activeLayer == mainMenuLayerId::Hosting){//Entering a new savename only allow "a-z", "A-Z", "0-9".
+        if (activeLength >= MAX_LENGTH_SAVENAME){
+            return false;
+        }
+        if ((c < 48 || c > 57) && (c < 65 || c > 90) && (c < 97 || c > 122) && c != 32){
+            return false;
+        }
+    }
+    //Allow only valid Ip's and Ports
+    if (activeLayer == mainMenuLayerId::Joining) {//Entering "0-9", "." , ":" for the ip
+        //First check port
+        if (n == 1){
+            if (activeLength >= MAX_LENGTH_PORT){
+                return false;
+            }
+            if (false){
+                return false;
+            }
+        }
+        //Then ip for either local or public validty
+        if (mode == gameMode::Local_client){
+            if (activeLength >= MAX_LENGTH_IP_LOCAL){
+                return false;
+            }
+            if (false){
+                return false;
+            }
+        }
+        if (mode == gameMode::Online_client){
+            if (activeLength >= MAX_LENGTH_IP_PUBLIC){
+                return false;
+            }
+            if (false){
+                return false;
+            }
+        }
+    }
+        
+    return true;
 }
 
 
 
-void GraphicButton::changeRes(Application *applicationPointer, int maxButt, int currButt){
-    text.setCharacterSize(30 / applicationPointer->ratioScaling);
+void mouseButtonPressed(bool *activeText, std::vector<button *> *menuButtons, mainMenuLayerId *currentLayer, Application *appPointer, gameMode mode){
+    if (sf::Mouse::isButtonPressed(sf::Mouse::Left) && *activeText == false){
+        for (button *buttTmp : *menuButtons){
+            if (buttTmp->layer == *currentLayer && buttTmp->focus){
+                ClickButton *clickPointer = dynamic_cast<ClickButton*>(buttTmp);
+                if (clickPointer){
+                    *currentLayer = buttTmp->nextLayer;
+                    return;
+                }
 
-    imageSprite.setScale((300 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().x, (100 / applicationPointer->ratioScaling)/imageSprite.getGlobalBounds().getSize().y);
-    imageSprite.setPosition(((*applicationPointer).resolution.x/2.0) - (imageSprite.getGlobalBounds().getSize().x/2), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (imageSprite.getGlobalBounds().getSize().y / 2));
+                adressButton *adressPointer = dynamic_cast<adressButton*>(buttTmp);
+                if (adressPointer){
+                    adressPointer->activeInput = true;
+                    *activeText = true;
+                    return;
+                }
 
-    text.setPosition(((*applicationPointer).resolution.x/2.0) - (text.getGlobalBounds().getSize().x/2.0), (((*applicationPointer).resolution.y/(maxButt + 1)) * (currButt + 1)) - (text.getGlobalBounds().getSize().y/2));
+                newSafeButton *safePointer = dynamic_cast<newSafeButton*>(buttTmp);
+                if (safePointer){
+                    safePointer->activeInput = true;
+                    *activeText = true;
+                    return;
+                }
+                
+                ProfileButton *profPointer = dynamic_cast<ProfileButton*>(buttTmp);
+                if (profPointer){
+                    setActiveSafe(profPointer->stringText, &(appPointer->hostAdress.pathSave), appPointer->availableSaveFiles);
+                    *currentLayer = buttTmp->nextLayer;
+                    return;
+                }
+                return;
+            }
+        }
+    }
+}
+
+
+
+void setActiveSafe(std::string saveName, std::string *pathToBeLoaded, std::vector<gameSaveSummary> availableSaveFiles){
+    for (gameSaveSummary sum : availableSaveFiles){
+        if (sum.saveName == saveName){
+            pathToBeLoaded->clear();
+            *pathToBeLoaded = sum.pathName;
+        }
+    }
+}
+
+
+
+void getMenuPicks(std::vector<button *> *menuButtons, mainMenuLayerId currentLayer, gameMode *mode){
+    if (*mode != gameMode::undefined && (currentLayer == mainMenuLayerId::Base || currentLayer == mainMenuLayerId::Settings || currentLayer == mainMenuLayerId::Controls ||currentLayer == mainMenuLayerId::Graphic)){
+        *mode = gameMode::undefined;
+        return;
+    }
+
+    if (currentLayer == mainMenuLayerId::GameMode){
+        for (button *buttTmp : *menuButtons){
+            if (buttTmp->layer == currentLayer && buttTmp->focus){
+                if (buttTmp->n_button == 0){
+                    *mode = gameMode::Single;
+                }
+                else if (buttTmp->n_button == 1){
+                    *mode = gameMode::local;
+                }
+                else if (buttTmp->n_button == 2){
+                    *mode = gameMode::online;
+                }
+                return;
+            }
+        }
+        *mode = gameMode::undefined;
+        return;
+    }
+
+    if (currentLayer == mainMenuLayerId::HostVsClient){
+        for (button *buttTmp : *menuButtons){
+            if (buttTmp->layer == currentLayer && buttTmp->focus){
+                //Choosing to be host
+                if (buttTmp->n_button == 0){
+                    if (*mode == gameMode::local|| *mode == gameMode::Local_client){
+                        *mode = gameMode::Local_host;
+                    }
+                    else if(*mode == gameMode::online|| *mode == gameMode::Online_client){
+                        *mode = gameMode::Online_host;
+                    }
+                    return;
+                }
+                //Choosing to be client
+                else if (buttTmp->n_button == 1){
+                    if (*mode == gameMode::local || *mode == gameMode::Local_host){
+                        *mode = gameMode::Local_client;
+                    }
+                    else if(*mode == gameMode::online|| *mode == gameMode::Online_host){
+                        *mode = gameMode::Online_client;
+                    }
+                    return;
+                }
+            }
+        }
+    }
 
 }
+
+
+void setMenuPopUpMessage(void){
+    /*
+    if (PopUp == menuPopUps::InvalidName){
+        warningMessage->setString("Choose a new/valid name for your save\nPress Enter\\Escape to continue");
+    }
+    else if (PopUp == menuPopUps::TooManySaves){
+        warningMessage->setString("Too many saves. Delete at least one save to create a new one");
+    }
+    else if (PopUp == menuPopUps::deleteSave){
+        warningMessage->setString("TMP");
+    }
+    else if (PopUp == menuPopUps::NoPopUp){
+        warningMessage->setString("");
+    }
+    warningMessage->setPosition((res.x/2) - (warningMessage->getGlobalBounds().getSize().x / 2), (res.y / 2) - (warningMessage->getGlobalBounds().getSize().y / 2));
+    */
+}
+
+
+
+
+
+
+
+
+
+
+

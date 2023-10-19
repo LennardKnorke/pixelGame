@@ -1,28 +1,33 @@
 #include "application.hpp"
 #include "local_game.hpp"
-
+#include "client.hpp"
 GAME_STATE Application::gameLoop(void){
     gameLoopState state = gameLoopState::Game;
     Clients ClientSocket;
-    gameSave *activeGame;
-
-    //Initiate Server Process
-    if ((mode == gameMode::Local  && wantsHost) || (mode == gameMode::Online && wantsHost) || mode == gameMode::Single){
-        const char* path = "./Server.exe";
-        std::string p = std::to_string(hostAdress.port);
-        std::string command = "start Server.exe " 
-                                + p + " " 
+    std::cout << mode << std::endl;
+    if (mode == gameMode::Local_host || mode == gameMode::Online_host || mode == gameMode::Single){
+        if (setHostAddress(mode, &hostAdress.ip, &hostAdress.port)){
+            const char* path = "./Server.exe";
+            std::string port_string = std::to_string(hostAdress.port);
+            std::string command = "start Server.exe " 
+                                + port_string + " " 
                                 + hostAdress.ip.toString() + " "
-                                + "GAMESAVELOCATION" + " "
-                                + std::string(userKey)
+                                + hostAdress.pathSave + " "
+                                + localUserID + " "
+                                + std::to_string(mode);
                                 ;
-        std::cout << command <<std::endl;
-        if (std::system(command.c_str()) != 0){
-            std::cout << "Failed to initalize server thread\n";
-            state = gameLoopState::QuitGame;
+            std::cout << command <<std::endl;
+            if (std::system(command.c_str()) != 0){
+                std::cout << "Failed to initalize server thread\n";
+                state = gameLoopState::QuitMenu;
+            }
+            else {
+                std::cout << "Initialized command\n";
+            }
         }
         else {
-            std::cout << "Started server process\n";
+            std::cout <<"Failed to set ip/port for server\n";
+            state = gameLoopState::QuitMenu;
         }
     }
     
@@ -30,23 +35,17 @@ GAME_STATE Application::gameLoop(void){
     //ClientSocket.connect(hostAdress.ip, hostAdress.port);
     
     bool gamePlayInput[7] = {false, false, false, false, false, false, false};
-
+    std::vector<inGameMenuButton*> menuButtons;
+    sf::Packet communicationPacket;
     //loading screen... wait for connection with host
     if (state == gameLoopState::Game){
+        for (int i  = 0; i < n_menugameButtons; i++){
+            menuButtons.push_back(new inGameMenuButton(i, this));
+        }
         state = loadingScreen(&ClientSocket);
     }//return menu with error if timeout
     
-
-
-    //MENU WILL NEED UPDATES ARE CAREFUL ADDITIONS!!
-    //variables to display the menu
-    std::vector<inGameMenuButton*> menuButtons;
-    for (int i  = 0; i < n_menugameButtons; i++){
-        menuButtons.push_back(new inGameMenuButton(i, this));
-    }
-
-    //Package to fill to send to host server/socket
-    sf::Packet communicationPacket;
+    
     while (state != gameLoopState::QuitGame && state != gameLoopState::QuitMenu){
         if (state == gameLoopState::Game){
            drawGame();
@@ -73,12 +72,40 @@ GAME_STATE Application::gameLoop(void){
         delete tmp;
     }
     //at the end. dereference the current game, preparing for either ending game or going to the menu
-    delete activeGame;
+
     ClientSocket.disconnect();
     if (state == gameLoopState::QuitMenu){
         return GAME_STATE::MENU;
     }
     return GAME_STATE::QUIT;
+}
+
+
+
+bool setHostAddress(gameMode mode, sf::IpAddress *ip, unsigned short *p){
+    if (mode == gameMode::Online_host){
+        std::cout << "Online!\n";
+        *ip = sf::IpAddress::getPublicAddress();
+    }
+    else {
+        std::cout << "Local or Single!\n";
+        *ip = sf::IpAddress::getLocalAddress();
+    }
+    unsigned short tmp = 1024;
+    sf::TcpListener listener;
+    while (tmp <= USHRT_MAX)
+    {
+        if (listener.listen(tmp) == sf::Socket::Done){
+            *p = tmp;
+            listener.close();
+            return true;
+        }
+        tmp++;
+    }
+    listener.close();
+    *p = 0;
+    *ip = sf::IpAddress::None;
+    return false;
 }
 
 

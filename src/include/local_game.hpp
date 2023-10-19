@@ -2,14 +2,9 @@
 #ifndef LOCAL_GAME_HPP
 #define LOCAL_GAME_HPP
 #include "stdlibs.hpp"
-//#include "application.hpp"
-class Application;
-
-enum gameLoopState {
-    Game, Menu, SkillTree,QuitGame, QuitMenu
-};
 
 #define n_menugameButtons 3
+
 class inGameMenuButton{
     public:
     bool focus;
@@ -23,5 +18,5 @@ class inGameMenuButton{
     void draw(sf::RenderWindow *window);
     ~inGameMenuButton(void);
 };
-
+bool setHostAddress(gameMode mode, sf::IpAddress *ip, unsigned short *p);
 #endif //LOCAL_GAME_CLIENT_HPP

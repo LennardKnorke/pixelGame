@@ -45,7 +45,7 @@ bool createNewSafeFile(std::string newSavename, std::string *path){
     newFileName = newFileName+std::to_string(i);
     newpathName = newpathName+std::to_string(i);
     std::cout <<newpathName <<std::endl;
-
+    *path = newpathName;
     //Set up variables for uninitialized World save files
     newSave.saveName = newSavename;
     newSave.fileName = newFileName;

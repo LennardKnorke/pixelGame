@@ -22,6 +22,55 @@
 
 #include "tilesMakros.hpp"
 
+#define MAX_LENGTH_KEY 14
+
+//Allows them to be used in other headerfiles!
+class Application;
+class Clients;
+class inGameMenuButton;
+class button;
+
+//structure to track playerinput
+typedef struct userInputData{
+    bool Jump;
+    bool Down;
+    bool Left;
+    bool Right;
+    bool nextItem;
+    bool prevItem;
+    bool attack;
+    sf::Vector2i aim;//indicates the position of the cursor relative to the position of the controlled char
+}userInputData;
+
+//struct saves: the name given, the pathname and filename(redundant?)
+typedef struct gameSaveSummary{
+    std::string saveName;
+    std::string fileName;
+    std::string pathName;
+}gameSaveSummary;
+
+//User set controls
+enum gameInputOptions {
+    up = 0, down = 1, left = 2, right  =3, nextItem = 4, prevItem = 5, attack = 6
+};
+enum gameLoopState {
+    Game, Menu, SkillTree,QuitGame, QuitMenu
+};
+
+enum mainMenuLayerId{
+    leave, Base, Settings,GameMode,HostVsClient,Joining,Hosting, Graphic,Controls,final
+};
+
+enum gameMode{
+    Single,local, Local_client, online, Online_client,Local_host, Online_host, undefined
+};
+
+enum menuPopUps {
+    NoPopUp,
+    InvalidName,
+    TooManySaves,
+    deleteSave
+};
 
 #ifdef _WIN32
 #include <Windows.h>
