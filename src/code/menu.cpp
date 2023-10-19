@@ -64,7 +64,7 @@ GAME_STATE Application::menuLoop(void){
                     else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)){
                         enterKeyPressed(&allowTextInput, &MenuButtons, &currentLayer, &currentMenuPopUp, this);
                     }
-                    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Delete)){
+                    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Delete) || sf::Keyboard::isKeyPressed(sf::Keyboard::BackSpace)){
                         deleteKeyPressed(&allowTextInput,&MenuButtons, currentLayer, this);
                     }
                 }
@@ -248,7 +248,7 @@ void enterKeyPressed(bool *activeText, std::vector<button *> *menuButtons, mainM
                 else {
                     appPointer->hostAdress.port = static_cast<unsigned short>(std::strtoul(adressPointer->userText.c_str(), NULL, 0));
                 }
-                safePointer->activeInput = false;
+                adressPointer->activeInput = false;
                 *activeText = false;
                 if (appPointer->hostAdress.ip != sf::IpAddress::None && appPointer->hostAdress.port != 0){
                     *currentLayer = mainMenuLayerId::final;
@@ -357,7 +357,7 @@ bool validCharacterInput(mainMenuLayerId activeLayer, sf::Uint32 c, int activeLe
             if (activeLength >= MAX_LENGTH_PORT){
                 return false;
             }
-            if (false){
+            if (c < 48 || c > 57){
                 return false;
             }
         }
@@ -366,7 +366,7 @@ bool validCharacterInput(mainMenuLayerId activeLayer, sf::Uint32 c, int activeLe
             if (activeLength >= MAX_LENGTH_IP_LOCAL){
                 return false;
             }
-            if (false){
+            if ((c < 48 || c > 57) && c != 46){
                 return false;
             }
         }
@@ -374,12 +374,11 @@ bool validCharacterInput(mainMenuLayerId activeLayer, sf::Uint32 c, int activeLe
             if (activeLength >= MAX_LENGTH_IP_PUBLIC){
                 return false;
             }
-            if (false){
+            if ((c < 48 || c > 57) && c != 46){
                 return false;
             }
         }
-    }
-        
+    } 
     return true;
 }
 

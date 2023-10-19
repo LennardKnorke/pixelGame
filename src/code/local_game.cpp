@@ -130,14 +130,10 @@ gameLoopState Application::loadingScreen(Clients *socket){
         while (elapsed_time.count() < 1){
             end_time = std::chrono::high_resolution_clock::now();
             elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);  
-            
         }
         
     }
-    return gameLoopState::QuitMenu;
-
-    //everything alright? then the game can start
-    
+    return gameLoopState::QuitMenu;    
 }
 
 

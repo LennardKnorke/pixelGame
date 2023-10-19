@@ -2,6 +2,7 @@
 
 bool Clients::connect(sf::IpAddress hostIp, unsigned short hostPort){
     //Connect with host
+    std::cout << "Attempting to connect to: " << hostIp.toString() << " : " << hostPort << std::endl;
     if (socket.connect(hostIp, hostPort) == sf::Socket::Done){
         std::cout << "Connected to: " << hostIp << ":" << hostPort<<std::endl;
         socket.setBlocking(false);
