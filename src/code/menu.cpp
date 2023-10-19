@@ -252,7 +252,7 @@ GAME_STATE Application::menuLoop(void){
         }
         if (wantsHost || mode == gameMode::Single){
             //search for a free port
-            hostAdress.port = 1024;
+            hostAdress.port = 5426;
             sf::TcpListener tmpListener;
             while (hostAdress.port < USHRT_MAX && tmpListener.listen(hostAdress.port) != sf::Socket::Done){
                 hostAdress.port++;
@@ -260,10 +260,10 @@ GAME_STATE Application::menuLoop(void){
             tmpListener.close();
             //use machine adress as host adress
             if (mode == gameMode::Online){
-                hostAdress.ip = sf::IpAddress::getLocalAddress();
+                hostAdress.ip = sf::IpAddress::getPublicAddress();
             }
             else {
-                hostAdress.ip= sf::IpAddress::getPublicAddress();
+                hostAdress.ip= sf::IpAddress::getLocalAddress();
             }
             std::cout << "Hosting Game: " << hostAdress.pathSave <<std::endl;
             std::cout << "Using IP: " << hostAdress.ip.toString() << "::" << hostAdress.port <<std::endl;

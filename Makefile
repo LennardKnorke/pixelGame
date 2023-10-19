@@ -17,3 +17,20 @@ link_game:
 
 link_server:
 	g++ *.o -o Server -L src/lib -lsfml-graphics -lsfml-audio -lsfml-network -lsfml-system -lsfml-window
+
+
+########
+##TEST##
+########
+
+#test: compile_test link_test #DOES NOT WORK RN! RUN BELOW SEPERATE.
+#ALSO: DELETE WHEN USING GAME/SERVER COMPILATIONS/LINKING
+
+compile_test:
+	g++ -I./src/include -c ./src/testing_code/*.cpp
+
+link_test:
+	g++ test.o -o Test -L src/lib -lsfml-graphics -lsfml-audio -lsfml-network -lsfml-system -lsfml-window
+
+
+

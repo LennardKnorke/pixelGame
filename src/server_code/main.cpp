@@ -33,7 +33,7 @@ Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath, 
     //SET UP SERVER
     this->serverPort = port;
     this->serverAdress = adress;
-    
+
     if (serverSocket.listen(serverPort) != sf::Socket::Done){
         std::cout << "ERROR CONNECTING PORT AND SOCKET\n";
         return;
