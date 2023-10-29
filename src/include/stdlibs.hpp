@@ -64,6 +64,9 @@ enum mainMenuLayerId{
 enum gameMode{
     Single,local, Local_client, online, Online_client,Local_host, Online_host, undefined
 };
+bool fileExists(const std::string &filename);
+bool mode_Host(gameMode mode);
+bool mode_Online(gameMode mode);
 
 enum menuPopUps {
     NoPopUp,

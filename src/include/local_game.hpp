@@ -5,6 +5,10 @@
 
 #define n_menugameButtons 3
 
+bool initServerProcess(sf::IpAddress *adress, unsigned short *port, std::string HostId, std::string pathToSave, gameMode Mode);
+bool setHostIp(sf::IpAddress *adress, gameMode Mode);
+bool setHostPort(unsigned short *port, sf::IpAddress *adress, gameMode Mode);
+
 class inGameMenuButton{
     public:
     bool focus;
@@ -18,5 +22,4 @@ class inGameMenuButton{
     void draw(sf::RenderWindow *window);
     ~inGameMenuButton(void);
 };
-bool setHostAddress(gameMode mode, sf::IpAddress *ip, unsigned short *p);
 #endif //LOCAL_GAME_CLIENT_HPP

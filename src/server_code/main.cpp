@@ -2,27 +2,32 @@
 
 
 int main(int argc, char *argv[]){
+
     std::cout<<"Server process started\n";
-    std::cout << argc << std::endl;
-    for (int i = 0; i < argc; i++){
-        std::cout << argv[i] << std::endl;
-    }
     if (argc != 6) {
-        std::cerr << "Usage: " << argv[0] << " <string1> <unsigned short> <string2>" << std::endl;
+        std::cout << "Invalid number of parameters!\n";
         system("pause");
         return -1;
     }
     
-    unsigned short port = static_cast<unsigned short>(std::stoi(argv[1]));
-    sf::IpAddress adress = sf::IpAddress(argv[2]);
+    unsigned short server_port = static_cast<unsigned short>(std::stoi(argv[1]));
+    std::cout << "Port: " << server_port << std::endl;
+    
+    sf::IpAddress server_adress = sf::IpAddress(argv[2]);
+    std::cout << "Adress: " << server_adress.toString() << std::endl;
+    
     std::string savePath = argv[3];
-    std::string hostId = argv[4];
-    std::cout << "Adress: " << adress.toString() << std::endl;
-    std::cout << "Port: " << port << std::endl;
     std::cout << "Savepath: " << savePath << std::endl;
+
+    std::string hostId = argv[4];
     std::cout << "HostId: " << hostId << std::endl;
 
-    Server RunningServer(port, adress, savePath, hostId);
+    gameMode modeToLoad = static_cast<gameMode>(std::stoi(argv[5]));
+    if (mode_Online(modeToLoad)){
+        std::cout << "Playing Online\n";
+    }
+
+    Server RunningServer(server_port, server_adress, savePath, hostId);
     std::cout<<"Server was running und succesfully ended\n";
     system("pause");
     return 0;

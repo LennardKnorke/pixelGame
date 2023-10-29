@@ -2,41 +2,25 @@
 #include "local_game.hpp"
 #include "client.hpp"
 GAME_STATE Application::gameLoop(void){
+    //"Global variables for this loop"
     gameLoopState state = gameLoopState::Game;
     Clients ClientSocket;
-    std::cout << mode << std::endl;
-    if (mode == gameMode::Local_host || mode == gameMode::Online_host || mode == gameMode::Single){
-        if (setHostAddress(mode, &hostAdress.ip, &hostAdress.port)){
-            const char* path = "./Server.exe";
-            std::string port_string = std::to_string(hostAdress.port);
-            std::string command = "start Server.exe " 
-                                + port_string + " " 
-                                + hostAdress.ip.toString() + " "
-                                + hostAdress.pathSave + " "
-                                + localUserID + " "
-                                + std::to_string(mode);
-                                ;
-            std::cout << command <<std::endl;
-            if (std::system(command.c_str()) != 0){
-                std::cout << "Failed to initalize server thread\n";
-                state = gameLoopState::QuitMenu;
-            }
-            else {
-                std::cout << "Initialized command\n";
-            }
-        }
-        else {
-            std::cout <<"Failed to set ip/port for server\n";
-            state = gameLoopState::QuitMenu;
-        }
-    }
-    
-
-    //ClientSocket.connect(hostAdress.ip, hostAdress.port);
-    
     bool gamePlayInput[7] = {false, false, false, false, false, false, false};
     std::vector<inGameMenuButton*> menuButtons;
     sf::Packet communicationPacket;
+
+
+    if (mode_Host(mode)){
+        if (initServerProcess(&hostAdress.ip, &hostAdress.port, localUserID, hostAdress.pathSave, mode)){
+            std::cout << "Process started\n";
+        }
+        else {
+            std::cout << "Failed to initiate server process\n";
+            state = gameLoopState::QuitMenu;
+        }
+    }    
+    
+
     //loading screen... wait for connection with host
     if (state == gameLoopState::Game){
         for (int i  = 0; i < n_menugameButtons; i++){
@@ -46,6 +30,7 @@ GAME_STATE Application::gameLoop(void){
     }//return menu with error if timeout
     
     
+    //GAME LOOP STARTS HERE
     while (state != gameLoopState::QuitGame && state != gameLoopState::QuitMenu){
         if (state == gameLoopState::Game){
            drawGame();
@@ -66,14 +51,20 @@ GAME_STATE Application::gameLoop(void){
         cursor.draw(&window);
         window.display();
     }
+    //GAMELOOP STOPS HERE
     
+
+    ClientSocket.disconnect();
     //Delete helpful stuff
     for (inGameMenuButton* tmp: menuButtons){
         delete tmp;
     }
-    //at the end. dereference the current game, preparing for either ending game or going to the menu
 
-    ClientSocket.disconnect();
+    //Reset host values
+    hostAdress.ip = sf::IpAddress::None;
+    hostAdress.port = 0;
+    hostAdress.pathSave = "";
+
     if (state == gameLoopState::QuitMenu){
         return GAME_STATE::MENU;
     }
@@ -82,32 +73,67 @@ GAME_STATE Application::gameLoop(void){
 
 
 
-bool setHostAddress(gameMode mode, sf::IpAddress *ip, unsigned short *p){
-    if (mode == gameMode::Online_host){
-        std::cout << "Online!\n";
-        *ip = sf::IpAddress::getPublicAddress();
+bool initServerProcess(sf::IpAddress *adress, unsigned short *port, std::string HostId, std::string pathToSave, gameMode Mode){
+
+    if (!setHostIp(adress, Mode)){
+        return false;
+    }
+    if (!setHostPort(port, adress, Mode)){
+        return false;
+    }
+
+    std::string command = "start Server.exe " 
+                            + std::to_string(*port) + " "
+                            + adress->toString() + " " 
+                            + pathToSave + " " 
+                            + HostId + " "
+                            + std::to_string(Mode)
+                            ;
+    std::cout << command <<std::endl;
+
+    if (std::system(command.c_str()) != 0){
+        std::cout << "Failed to run server command\n";
+        *adress = sf::IpAddress::None;
+        *port = 0;
+        return false;
+    }
+    return true;
+}
+
+bool setHostIp(sf::IpAddress *adress, gameMode Mode){
+    if (mode_Online(Mode)){
+        *adress = sf::IpAddress::getPublicAddress();
     }
     else {
-        std::cout << "Local or Single!\n";
-        *ip = sf::IpAddress::getLocalAddress();
+        *adress = sf::IpAddress::getLocalAddress();
     }
+
+    if (*adress == sf::IpAddress::None){
+        std::cout << "Failed to set host adress as host!\n";
+        return false;
+    }
+    return true;
+}
+
+bool setHostPort(unsigned short *port, sf::IpAddress *adress, gameMode Mode){
     unsigned short tmp = 1024;
     sf::TcpListener listener;
     while (tmp <= USHRT_MAX)
     {
         if (listener.listen(tmp) == sf::Socket::Done){
-            *p = tmp;
+            *port = tmp;
             listener.close();
             return true;
         }
         tmp++;
     }
     listener.close();
-    *p = 0;
-    *ip = sf::IpAddress::None;
+
+    //reset adress and port
+    *port = 0;
+    *adress = sf::IpAddress::None;
     return false;
 }
-
 
 
 //displays the loading screen while waiting for the client/host to connect
@@ -283,3 +309,6 @@ void inGameMenuButton::update(sf::Vector2f mousePos){
         }
     }
 }
+
+
+

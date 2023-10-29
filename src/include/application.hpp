@@ -5,7 +5,7 @@
 
 
 //checks if a relative file exists
-bool fileExists(const std::string &filename);
+
 
 
 //makros about the gamestate
@@ -128,7 +128,6 @@ class Application{
     void loadSettings(const std::string &filename);
     void createSettings(const std::string &filename);
     void saveSettings(const std::string &filename);
-
 
     //Menu functions. found in menu.cpp
     GAME_STATE menuLoop(void);
