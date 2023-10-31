@@ -27,70 +27,127 @@ int main(int argc, char *argv[]){
         std::cout << "Playing Online\n";
     }
 
-    Server RunningServer(server_port, server_adress, savePath, hostId);
+    Server RunningServer(server_port, server_adress, savePath, hostId, modeToLoad);
     std::cout<<"Server was running und succesfully ended\n";
     system("pause");
     return 0;
 }
 
 
-Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath, std::string hostId){
+Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath, std::string hostId, gameMode modeToLoad){
     //SET UP SERVER
+    this->hostConnected = false;
     this->serverPort = port;
     this->serverAdress = adress;
+    this->mode = modeToLoad;
+    if (mode == gameMode::Single){
+        this->maxPlayers = 1;
+    }
+    else {
+        this->maxPlayers = 4;
+    }
 
-    if (serverSocket.listen(serverPort) != sf::Socket::Done){
-        std::cout << "ERROR CONNECTING PORT AND SOCKET\n";
+    if (!loadGameSave()){
+        std::cout << "Failed to load GameSave\n";
         return;
     }
-    //LOAD GAMESAVE
 
+    if (mode_Online(mode)){
+        if (!setUp_OnlineServer()){
+            std::cout << "Failed to set up online server\n";
+            return;
+        }
+    }
+    else {
+        if (!setUp_LocalServer()){
+            std::cout << "Failed to set up local server\n";
+            return;
+        }
+    }
 
-    auto start_time = std::chrono::high_resolution_clock::now();
+    //Start Accepting New Connections;
+    sf::Thread connectingThread(&acceptConnections, this);
+    connectingThread.launch();
+
+    
+    auto hostTimeOutTimer_start = std::chrono::high_resolution_clock::now();
     // Calculate the elapsed time
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    auto hostTimeOutTimer_end = std::chrono::high_resolution_clock::now();
+    auto hostTimeOutTimer_diff = std::chrono::duration_cast<std::chrono::seconds>(hostTimeOutTimer_end - hostTimeOutTimer_start);
     bool host_joined = false;
     //SERVER LOOP
     std::cout << "Server ready. Listening on adress: " << serverAdress.toString() << ":" << serverPort <<std::endl;
     bool SERVER_RUNNING = true;
     while (SERVER_RUNNING){
-        sf::TcpSocket client;
-        if (serverSocket.accept(client) == sf::Socket::Done) {
-            std::cout << "New client connected" << std::endl;
 
-            // Start a new thread to handle the client
-            //std::thread clientThread(HandleClient, std::move(client));
-            //clientThread.detach(); // Detach the thread to run independently
+        if (!hostConnected){
+            hostTimeOutTimer_end = std::chrono::high_resolution_clock::now();
+            hostTimeOutTimer_diff = std::chrono::duration_cast<std::chrono::seconds>(hostTimeOutTimer_end - hostTimeOutTimer_start);
+
+            if (hostTimeOutTimer_diff.count() > 15){
+                connectingThread.terminate();
+                //CLose other threads as well!
+                SERVER_RUNNING = false;
+                std::cout << "Host failed to connect/timed out\n";
+                break;
+            }
         }
-        SERVER_RUNNING = false;
+        else if (hostConnected && !hostConnectionCheck()){
+            std::cout<< "Host disconnected!\n";
+            hostTimeOutTimer_start = std::chrono::high_resolution_clock::now();
+            hostConnected = false;
+        }
+
+        //Update Gamestate
     }
 
     return;
 }
 
-//// Server side
-// Start a TCP server
-sf::IpAddress startServer(int port = 5426, bool online = false){
-    sf::TcpListener listener;
-    if (listener.listen(port) != sf::Socket::Done){
-        std::cout << "The Server initializen on port " << port << "failed succesfully." <<  std::endl;
-    }
-    // Get IP address
-    sf::IpAddress serverIP;
-    if (online){
-        serverIP = sf::IpAddress::getPublicAddress();
-    }
 
-    else {
-        serverIP = sf::IpAddress::getLocalAddress();    
-    }
 
-    std::cout << "Please share your IP-Address with fellow whores! It is " << serverIP <<  std::endl;
-
-    return serverIP;
+bool Server::loadGameSave(){
+    return true;
 }
 
+
+
+bool Server::setUp_LocalServer(){
+    if (serverListener.listen(serverPort) != sf::Socket::Done){
+        std::cout << "ERROR CONNECTING PORT AND SOCKET\n";
+        return false;
+    }
+    return true;
+}
+
+
+
+bool Server::setUp_OnlineServer(){
+    if (serverListener.listen(serverPort) != sf::Socket::Done){
+        std::cout << "ERROR CONNECTING PORT AND SOCKET\n";
+        return false;
+    }
+    return true;
+}
+
+
+void Server::acceptConnections(void){
+
+    while (true){
+        sf::TcpSocket client;
+        if (serverListener.accept(client) == sf::Socket::Done) {
+            std::cout << "New client connected" << std::endl;
+        // Start a new thread to handle the client
+        //std::thread clientThread(HandleClient, std::move(client));
+        //clientThread.detach(); // Detach the thread to run independently
+        }
+    }
+}
+
+
+bool Server::hostConnectionCheck(void){
+    return false;
+}
 // Accept a new connection from client to listener (TCP port)
 /*
 void acceptConnection(sf::TcpListener listener){

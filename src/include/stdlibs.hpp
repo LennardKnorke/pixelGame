@@ -1,17 +1,31 @@
 #pragma once
 #ifndef STDLIBS_HPP
 #define STDLIBS_HPP
-#include <iostream>
-#include <fstream>
+#include <algorithm>
+#include <assert.h>
 #include <cassert>
-#include <thread>
-#include <string>
+#include <cctype>
+#include <cstdlib> 
 #include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string>
 #include <thread>
 #include <random>
 #include <vector>
-#include <filesystem>
-#include <cstdlib> 
+
+#ifdef _WIN32
+    #include <Windows.h>
+#else
+    #include <unistd.h>
+    #include <signal.h>
+#endif
+
+
+
 //Downloaded from https://www.sfml-dev.org/files/SFML-2.6.0-windows-gcc-13.1.0-mingw-64-bit.zip. for mingw (w64, over mysys)
 //copied files according to https://www.youtube.com/watch?v=rZE700aaT5I
 #include <SFML/Graphics.hpp>
@@ -75,10 +89,6 @@ enum menuPopUps {
     deleteSave
 };
 
-#ifdef _WIN32
-#include <Windows.h>
-#else
-#include <unistd.h>
-#endif
+
 
 #endif //STDLIBS_HPP

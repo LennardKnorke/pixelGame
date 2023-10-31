@@ -102,7 +102,23 @@ bool initServerProcess(sf::IpAddress *adress, unsigned short *port, std::string 
 
 bool setHostIp(sf::IpAddress *adress, gameMode Mode){
     if (mode_Online(Mode)){
-        *adress = sf::IpAddress::getPublicAddress();
+        if (!fileExists("multiplayer.txt")){
+            std::cout << "'multiplayer.txt' missing\n";
+            return false;
+        }
+        //*adress = sf::IpAddress::getPublicAddress();
+        std::ifstream inputFile("multiplayer.txt");
+        std::string hamachiIp;
+        std::getline(inputFile, hamachiIp);
+        inputFile.close();
+        std::cout << "Hamachi Ip: " << sf::IpAddress(hamachiIp).toString() << std::endl;
+        *adress = sf::IpAddress(hamachiIp);
+        if (*adress == sf::IpAddress::None){
+            std::cout << "Invalid IpAdress\n";
+            return false;
+        }        
+        
+        return true;
     }
     else {
         *adress = sf::IpAddress::getLocalAddress();
@@ -117,6 +133,9 @@ bool setHostIp(sf::IpAddress *adress, gameMode Mode){
 
 bool setHostPort(unsigned short *port, sf::IpAddress *adress, gameMode Mode){
     unsigned short tmp = 1024;
+    if (mode_Online(Mode)){
+        tmp = 54000;
+    }
     sf::TcpListener listener;
     while (tmp <= USHRT_MAX)
     {

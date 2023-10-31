@@ -6,18 +6,36 @@
 
 //void server_thread_function(unsigned short port, sf::IpAddress adress, std::string savePath);
 
+struct serverClient {
+    bool connected = false;
+    std::string key = "";
+    sf::TcpSocket *socket=nullptr;
+};
+
 class Server {
     private:
+
     unsigned short serverPort;
     sf::IpAddress serverAdress;
-    sf::TcpListener serverSocket;
+    sf::TcpListener serverListener;
+    bool hostConnected;
+    gameMode mode;
+    int maxPlayers;
     std::string hostId;
-    void acceptConnection();
+    std::vector<serverClient> connectedClients;
+    gameSave *GAME;
+
+    bool setUp_LocalServer();
+    bool setUp_OnlineServer();
+    bool loadGameSave();
+
+    void acceptConnections();
+    bool hostConnectionCheck();
     void sendPacket();
     void HandleClient(sf::TcpSocket clientSocket);
-    gameSave *GAME;
+    
     public:
-    Server(unsigned short port, sf::IpAddress adress, std::string savePath, std::string hostId);
+    Server(unsigned short port, sf::IpAddress adress, std::string savePath, std::string hostId, gameMode modeToLoad);
     
 
 
