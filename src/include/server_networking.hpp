@@ -4,13 +4,27 @@
 #include "stdlibs.hpp"
 #include "gamesave.hpp"
 
-//void server_thread_function(unsigned short port, sf::IpAddress adress, std::string savePath);
+
+struct timeOutTimer {
+    std::chrono::time_point<std::chrono::high_resolution_clock> start;
+    std::chrono::time_point<std::chrono::high_resolution_clock> current;
+    std::chrono::seconds difference;
+};
 
 struct serverClient {
-    bool connected = false;
+    bool active = false;
+    unsigned short id = USHRT_MAX;
     std::string key = "";
-    sf::TcpSocket *socket=nullptr;
+    sf::Thread *threadPtr = nullptr;
+    sf::TcpSocket socket;
+    timeOutTimer timeOut;
+    playerMessagePackage playerMessage;
 };
+
+
+//Empty=Unused
+bool clientInUse(serverClient *c);
+void clearClient(serverClient *c);
 
 class Server {
     private:
@@ -18,11 +32,16 @@ class Server {
     unsigned short serverPort;
     sf::IpAddress serverAdress;
     sf::TcpListener serverListener;
-    bool hostConnected;
+    struct hostinfo{
+        bool connected;
+        std::string hostId;
+        timeOutTimer timeOutTimer;
+    }hostConnectionState;
+    
     gameMode mode;
-    int maxPlayers;
-    std::string hostId;
-    std::vector<serverClient> connectedClients;
+    unsigned short maxPlayers;
+    
+    std::vector<serverClient*> clientsAvailable;
     gameSave *GAME;
 
     bool setUp_LocalServer();
@@ -30,9 +49,14 @@ class Server {
     bool loadGameSave();
 
     void acceptConnections();
+    unsigned short getFreeClientPosition();
+    
     bool hostConnectionCheck();
+    void updateTimeOut(timeOutTimer *timer);
+    void initTimeOut(timeOutTimer *timer);
+
     void sendPacket();
-    void HandleClient(sf::TcpSocket clientSocket);
+    void handleClient();
     
     public:
     Server(unsigned short port, sf::IpAddress adress, std::string savePath, std::string hostId, gameMode modeToLoad);
@@ -41,8 +65,10 @@ class Server {
 
 };
 
-
-
+typedef struct clientThreadParameters{
+    unsigned short i;
+}clientThreadParameters;
+void clientThread(clientThreadParameters p);
 
 
 #endif //SERVER_NETWORKING_HPP

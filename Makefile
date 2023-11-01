@@ -1,23 +1,25 @@
-all: game server#server #Update all sourcefiles and compile to exe
+all: clean client server#server #Update all sourcefiles and compile to exe
 
 ################################
 ##########STDLIBS###############
 ################################
 compile_STDLIBS:
-	g++ -I./src/include -c ./src/code/stdlibs.cpp
+	g++ -I./src/include -c ./src/client_side/stdlibs.cpp
 
 ################################
 ##########Game+Server###########
 ################################
-game: compile_game link_game clean_o
-compile_game:
-	g++ -I./src/include -c ./src/code/*.cpp
-link_game:
+client: compile_client link_client
+	del test.o application.o client.o gamesave.o gameSaveSummary.o local_game.o main.o menu.o menuButtons.o stdlibs.o
+compile_client:
+	g++ -I./src/include -c ./src/client_side/*.cpp
+link_client:
 	g++ *.o -o Game -L src/lib -lsfml-graphics -lsfml-audio -lsfml-network -lsfml-system -lsfml-window
 
-server: compile_STDLIBS compile_server link_server clean_o
+server: compile_STDLIBS compile_server link_server
+	del test.o application.o client.o gamesave.o gameSaveSummary.o local_game.o main.o menu.o menuButtons.o stdlibs.o
 compile_server:
-	g++ -c src/server_code/*.cpp -Isrc/include
+	g++ -c src/server_side/*.cpp -Isrc/include
 link_server:
 	g++ *.o -o Server -L src/lib -lsfml-graphics -lsfml-audio -lsfml-network -lsfml-system -lsfml-window
 

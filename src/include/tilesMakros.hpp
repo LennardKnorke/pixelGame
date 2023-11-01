@@ -8,7 +8,7 @@ enum tileTypes {
     Stone,
     Iron,
     MagmaStone,
-    ButtomBorder
+    BottomBorder
 };
 
 typedef struct Tile  {

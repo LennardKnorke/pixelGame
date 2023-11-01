@@ -63,7 +63,8 @@ typedef struct gameSaveSummary{
     std::string pathName;
 }gameSaveSummary;
 
-//User set controls
+
+
 enum gameInputOptions {
     up = 0, down = 1, left = 2, right  =3, nextItem = 4, prevItem = 5, attack = 6
 };
@@ -89,6 +90,9 @@ enum menuPopUps {
     deleteSave
 };
 
-
+//User set controls
+typedef struct playerMessagePackage {
+    gameLoopState state;
+}playerMessagePackage;
 
 #endif //STDLIBS_HPP
