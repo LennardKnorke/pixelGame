@@ -7,7 +7,7 @@
 void button::draw(sf::RenderWindow *window){std::cout << stringText << " parent class" <<std::endl;};
 void button::update(sf::Vector2f mousePos){}
 void button::changeRes(Application *applicationPointer, int maxButt, int currButt){}
-
+button::~button(){};
 //Pretending over
 
 ClickButton::ClickButton(std::string t, mainMenuLayerId followLayer, Application *applicationPointer, int maxButt, int currButt, mainMenuLayerId currentLayer){

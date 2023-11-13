@@ -51,12 +51,11 @@ void Application::initWindow(void){
 
 //find or create settings
 void Application::initSettings(void){
-    std::string setting_file = "settings.bin";
-    if (fileExists(setting_file)){
-        loadSettings(setting_file);
+    if (fileExists("settings.bin")){
+        loadSettings();
     }
     else {
-        createSettings(setting_file);
+        createSettings();
     }
     ratioScaling = 1920.0/resolution.x;
 
@@ -69,8 +68,8 @@ void Application::initSettings(void){
 
 
 //load
-void Application::loadSettings(const std::string &filename){
-    std::ifstream inputFile(filename, std::ios::binary);
+void Application::loadSettings(void){
+    std::ifstream inputFile("settings.bin", std::ios::binary);
 
     size_t size;
     inputFile.read(reinterpret_cast<char *>(&size), sizeof(size));
@@ -100,7 +99,7 @@ void Application::loadSettings(const std::string &filename){
 
 
 //First create settings/controls/userId and then run save function
-void Application::createSettings(const std::string &filename){
+void Application::createSettings(void){
     //Get Screen Size
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
     resolution = sf::Vector2u(desktop.width, desktop.height);
@@ -157,12 +156,12 @@ void Application::createSettings(const std::string &filename){
 
     inGameControls[attack].iType = inputType::MOUSE_BUTTON;
     inGameControls[attack].input.mouseInput = sf::Mouse::Button::Left;
-    saveSettings(filename);
+    saveSettings();
 }
 
 
 
-void Application::saveSettings(const std::string &filename){
+void Application::saveSettings(void){
     std::ofstream outputFile("settings.bin", std::ios::binary);
     size_t size = localUserID.size();
     outputFile.write(reinterpret_cast<const char *>(&size), sizeof(size_t));

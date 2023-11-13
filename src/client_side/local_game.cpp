@@ -33,9 +33,14 @@ GAME_STATE Application::gameLoop(void){
     //GAME LOOP STARTS HERE
     while (state != gameLoopState::QuitGame && state != gameLoopState::QuitMenu){
         if (state == gameLoopState::Game){
-           drawGame();
-           registerGameInput(&state, gamePlayInput);
-           updateGame();// will exchange data with host/server/savethread
+
+            drawGame();
+            registerGameInput(&state, gamePlayInput);
+            updateGame(&ClientSocket, &communicationPacket);// will exchange data with host/server/savethread
+            std::string s;
+            communicationPacket >> s;
+            std::cout << s <<std::endl;
+            communicationPacket.clear();
         }
         else if(state == gameLoopState::SkillTree){
             drawTree();
@@ -183,7 +188,7 @@ gameLoopState Application::loadingScreen(Clients *socket){
 
 
 
-void Application::readUserGameInput(sf::Vector2i origin, bool *gamePlayInput){
+void Application::readUserGameInput(bool *gamePlayInput){
     //Read key input
     for (int i =0; i < 7; i++){
         if (inGameControls[i].iType == inputType::KEYBOARD){
@@ -210,14 +215,20 @@ void Application::registerGameInput(gameLoopState *s, bool *gamePlayInput){
             *s = gameLoopState::Menu; 
         }
         else if (ev.type == sf::Event::KeyPressed || ev.type == sf::Event::MouseButtonPressed){
-            readUserGameInput(sf::Vector2i(resolution.x/2, resolution.y/2), gamePlayInput);
+            readUserGameInput(gamePlayInput);
         }
     }
 }
 
 
 
-void Application::updateGame(void){
+void Application::updateGame(Clients *socket, sf::Packet *packet){
+    *packet << localUserID;
+    socket->sendData(*packet);
+    packet->clear();
+    socket->receiveData(*packet);
+    packet->clear();
+
 
 }
 

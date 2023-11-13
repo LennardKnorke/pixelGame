@@ -22,7 +22,7 @@ Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath, 
  
 
     //Load Game (will check for errors/corruptions etc.)
-    if (!loadGameSave()){
+    if (!loadGameSave(savePath)){
         std::cout << "Failed to load GameSave\n";
         return;
     }
@@ -69,16 +69,14 @@ Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath, 
 
             //End process if host disconnected for 15 seconds
             if (hostConnectionState.timeOutTimer.difference.count() > 15){
-                
-                //End all Client threads
-                for (serverClient* tmp : clientsAvailable){
-                    if (tmp->threadPtr != nullptr){
-                        (tmp->threadPtr)->terminate();
-                        std::cout << tmp << std::endl;
-                    }
-                }
                 //Stop accepting new connections
                 connectingThread.terminate();
+                //End all Client threads
+                for (serverClient* tmp : clientsAvailable){
+                    if (clientInUse(tmp)){
+                        clearClient(tmp);
+                    }
+                }
                 //End Server Process
                 SERVER_RUNNING = false;
                 std::cout << "Host failed to connect/timed out\n";
@@ -89,18 +87,25 @@ Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath, 
             std::cout<< "Host disconnected!\n";
             initTimeOut(&hostConnectionState.timeOutTimer);
             hostConnectionState.connected = false;
+            //PAUSE GAME!
         }
+
+
         //Pass info to game
+
+
         //Update Gamestate
+
+
     }
     //END OF SERVER LOOP (SERVER_RUNNING == FALSE)
 
 
+    //End of server process. delete all pointers
     for (serverClient* c : clientsAvailable){
         delete c;
     }
-    
-    //End game
+    //End(/save?) game
     if (GAME){
         delete GAME;
     }
@@ -109,7 +114,8 @@ Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath, 
 
 
 // create new pointer to the loaded save
-bool Server::loadGameSave(){
+bool Server::loadGameSave(std::string savePath){
+    GAME = new gameSave(savePath);
     return true;
 }
 
@@ -139,9 +145,11 @@ void Server::acceptConnections(void){
 
     while (true){
         unsigned short socketPosition= getFreeClientPosition();
-        if (clientsAvailable.size()<maxPlayers && serverListener.accept(clientsAvailable[socketPosition]->socket) == sf::Socket::Done) {
+        if (socketPosition != USHRT_MAX && serverListener.accept(clientsAvailable[socketPosition]->socket) == sf::Socket::Done) {
             std::cout << "New client connected" << std::endl;
             clientThreadParameters parameters;
+            parameters.i = socketPosition;
+            parameters.yourClientPlace = clientsAvailable[socketPosition];
             clientsAvailable[socketPosition]->threadPtr = new sf::Thread(clientThread, parameters);
             clientsAvailable[socketPosition]->threadPtr->launch();
         }
@@ -152,8 +160,8 @@ void Server::acceptConnections(void){
 
 
 unsigned short Server::getFreeClientPosition(){
-    for (unsigned short i = 0; i<clientsAvailable.size(); i++){
-        if (!clientsAvailable[i]->active && clientsAvailable[i]->id == USHRT_MAX){
+    for (unsigned short i = 0; i<maxPlayers; i++){
+        if (!clientInUse(clientsAvailable[i])){
             return i;
         }
     }
@@ -162,9 +170,27 @@ unsigned short Server::getFreeClientPosition(){
 
 
 void clientThread(clientThreadParameters p){
+    p.yourClientPlace->id = p.i;
+    p.yourClientPlace->active = true;
+    p.yourClientPlace->connected = true;
+
+    //Get id from clinet
+
+    //get player info about client from gamesave
+
+    //send game + player info to player
+
+    //CONTINOUS EXCHANGE LOOP
+    sf::Packet package;
     while (true){
-        std::cout<<"CANCER!\n";
-        sf::sleep(sf::seconds(3));
+        package << std::string("Hi Player!");
+        p.yourClientPlace->socket.send(package);
+        package.clear();
+        p.yourClientPlace->socket.receive(package);
+        std::string s;
+        package >> s;
+        std::cout<< s;
+        package.clear();
     }
     return;
 }
@@ -172,7 +198,7 @@ void clientThread(clientThreadParameters p){
 
 bool Server::hostConnectionCheck(void){
     for (serverClient *tmpClient : clientsAvailable){
-        if (tmpClient->active && tmpClient->key == hostConnectionState.hostId){
+        if (clientInUse(tmpClient) && tmpClient->key == hostConnectionState.hostId){
             return true;
         }
     }
@@ -206,15 +232,16 @@ void sendPacket(){
 }
 */
 bool clientInUse(serverClient *c){
-    return (c->active==false) 
-            && (c->id==USHRT_MAX) 
-            && (c->key=="") 
-            && (c->threadPtr == nullptr)
+    return (c->active!=false) 
+            && (c->id!=USHRT_MAX) 
+            && (c->key!="") 
+            && (c->threadPtr != nullptr)
             ;
 }
 
 void clearClient(serverClient *c){
     c->active = false;
+    c->connected = false;
     c->id = USHRT_MAX;
     c->key.clear();
     c->key = "";

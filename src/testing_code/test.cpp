@@ -1,41 +1,26 @@
+#include <iostream>
 #include "stdlibs.hpp"
-#include <steam/Isteamnetworkingsockets.h>
-#include <steam/steamnetworkingtypes.h>
-union sockUnion {
-    sf::TcpSocket *localSocket;
-    ISteamNetworkingSockets *publicSock;
-};
 
-typedef struct socket_instance{
-    sockUnion sock;
-    bool beHost;
-
-}socket_instance;
 
 int main (int argc, char *argv[]){
-    const SteamNetworkingIdentity *pIdentity;
-    SteamNetworkingErrMsg msg("wassup");
-    ISteamNetworkingSockets *soc;
-    if (false){
-        std::cout << "Failed to init GameNetworkinSockets.\n";
-        return -1;
-    }
-    
-    if (argc != 2){
-        return 1;
-    }
-    unsigned short loadAs = std::stoi(argv[1]);
-    if (loadAs != 0 && loadAs != 1){
-        std::cout << loadAs << std::endl;
-        return -1;
-    }
-    socket_instance s;
-    if (loadAs == 0){
-        s.beHost = false;
-    }
-    else {
-        s.beHost = true;
-    }
+    sf::RenderWindow window(sf::VideoMode(200, 200), "SFML works!");
+    sf::CircleShape shape(100.f);
+    shape.setFillColor(sf::Color::Green);
 
+    while (window.isOpen())
+    {
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+
+        window.clear();
+        window.draw(shape);
+        window.display();
+    }
+    system("pause");
+    std::cout<<"FUCK\n";
     return 0;
 }
