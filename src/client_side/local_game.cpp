@@ -5,7 +5,7 @@ GAME_STATE Application::gameLoop(void){
     //"Global variables for this loop"
     gameLoopState state = gameLoopState::Game;
     Clients ClientSocket;
-    bool gamePlayInput[7] = {false, false, false, false, false, false, false};
+    playerControl gamePlayInput;
     std::vector<inGameMenuButton*> menuButtons;
     sf::Packet communicationPacket;
 
@@ -35,12 +35,8 @@ GAME_STATE Application::gameLoop(void){
         if (state == gameLoopState::Game){
 
             drawGame();
-            registerGameInput(&state, gamePlayInput);
+            registerGameInput(&state, &gamePlayInput);
             updateGame(&ClientSocket, &communicationPacket);// will exchange data with host/server/savethread
-            std::string s;
-            communicationPacket >> s;
-            std::cout << s <<std::endl;
-            communicationPacket.clear();
         }
         else if(state == gameLoopState::SkillTree){
             drawTree();
@@ -118,19 +114,13 @@ bool setHostIp(sf::IpAddress *adress, gameMode Mode){
         inputFile.close();
         std::cout << "Hamachi Ip: " << sf::IpAddress(hamachiIp).toString() << std::endl;
         *adress = sf::IpAddress(hamachiIp);
-        if (*adress == sf::IpAddress::None){
-            std::cout << "Invalid IpAdress\n";
-            return false;
-        }        
-        
-        return true;
     }
     else {
         *adress = sf::IpAddress::getLocalAddress();
     }
 
     if (*adress == sf::IpAddress::None){
-        std::cout << "Failed to set host adress as host!\n";
+        std::cout << "Invalid IpAdress!\n";
         return false;
     }
     return true;
@@ -188,14 +178,14 @@ gameLoopState Application::loadingScreen(Clients *socket){
 
 
 
-void Application::readUserGameInput(bool *gamePlayInput){
+void Application::readUserGameInput(playerControl *controlInput){
     //Read key input
-    for (int i =0; i < 7; i++){
+    for (int i =0; i < n_gameInput; i++){
         if (inGameControls[i].iType == inputType::KEYBOARD){
-            gamePlayInput[i] = sf::Keyboard::isKeyPressed(inGameControls[i].input.keyInput);
+            controlInput->keyInput[i] = sf::Keyboard::isKeyPressed(inGameControls[i].input.keyInput);
         }
         else if (inGameControls[i].iType == inputType::MOUSE_BUTTON){
-            gamePlayInput[i] = sf::Mouse::isButtonPressed(inGameControls[i].input.mouseInput);
+            controlInput->keyInput[i] = sf::Mouse::isButtonPressed(inGameControls[i].input.mouseInput);
         }
     }
 }
@@ -208,14 +198,14 @@ void Application::drawGame(void){
 
 
 
-void Application::registerGameInput(gameLoopState *s, bool *gamePlayInput){
+void Application::registerGameInput(gameLoopState *s, playerControl *controlInput){
     sf::Event ev;
     while (window.pollEvent(ev)){
         if (ev.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){
             *s = gameLoopState::Menu; 
         }
         else if (ev.type == sf::Event::KeyPressed || ev.type == sf::Event::MouseButtonPressed){
-            readUserGameInput(gamePlayInput);
+            readUserGameInput(controlInput);
         }
     }
 }

@@ -108,7 +108,7 @@ class Application{
     gameMode mode = undefined;      //Online, Local or Alone
     errorCodes error = NoErr;
 
-    inGameInputKey inGameControls[7];
+    inGameInputKey inGameControls[n_gameInput];
     std::string localUserID;
 
     ////////////////FUNCTIONS////////////////
@@ -136,8 +136,8 @@ class Application{
     GAME_STATE gameLoop(void);
         gameLoopState loadingScreen(Clients *socket);
         void drawGame(void);
-        void registerGameInput(gameLoopState *s, bool *gamePlayInput);
-            void readUserGameInput(bool *gamePlayInput);
+        void registerGameInput(gameLoopState *s, playerControl *controlInput);
+            void readUserGameInput(playerControl *controlInput);
         void updateGame(Clients *socket, sf::Packet *packet);
 
         void drawMenu(std::vector<inGameMenuButton*> v);

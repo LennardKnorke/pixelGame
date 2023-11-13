@@ -28,6 +28,8 @@
 
 //Downloaded from https://www.sfml-dev.org/files/SFML-2.6.0-windows-gcc-13.1.0-mingw-64-bit.zip. for mingw (w64, over mysys)
 //copied files according to https://www.youtube.com/watch?v=rZE700aaT5I
+
+
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <SFML/Network.hpp>
@@ -74,13 +76,13 @@ enum menuPopUps {
 };
 
 
-#define n_bool_gameInput 7
+#define n_gameInput 7
 enum gameInputOptions {
     up = 0, down = 1, left = 2, right  =3, nextItem = 4, prevItem = 5, attack = 6
 };
 //structure to track playerinput
 typedef struct playerControl{
-    bool keyInput[n_bool_gameInput];
+    bool keyInput[n_gameInput] = {false};
     sf::Vector2i aim;//indicates the position of the cursor relative to the position of the controlled char
 }playerControl;
 
