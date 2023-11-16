@@ -3,10 +3,11 @@
 #define MENUBUTTONS_HPP
 #include "stdlibs.hpp"
 
-/////////////////////////////////////////////////////////////////
-//DECLARATIONS mainMenuButtons.cpp
-void setUpMenuButtons(std::vector<button*> *buttonList, Application *applicationPointer);
-void drawMenuButtons(std::vector<button*> *MenuButtons, mainMenuLayerId currentLayer, sf::RenderWindow *window);
+/// Annoying implementation.
+
+////////////////////////////////////////////////////////////
+void setUpMenuButtons(std::vector<button*> &buttonList, Application *applicationPointer);
+void drawMenuButtons(std::vector<button*> &MenuButtons, mainMenuLayerId currentLayer, sf::RenderWindow &window);
 
 //Base class of a text button
 class button{
@@ -19,7 +20,7 @@ class button{
     bool focus;
     bool pressed;
     int n_button;
-    virtual void draw(sf::RenderWindow *window);
+    virtual void draw(sf::RenderWindow &window);
     virtual void update(sf::Vector2f mousePos);
     virtual ~button();
     virtual void changeRes(Application *applicationPointer, int maxButt, int currButt);
@@ -32,7 +33,7 @@ class ClickButton : public button {
     
     public:
     ClickButton(std::string t, mainMenuLayerId followLayer, Application *applicationPointer, int maxButt, int currButt, mainMenuLayerId currentLayer);
-    void draw(sf::RenderWindow *window);
+    void draw(sf::RenderWindow &window);
     void update(sf::Vector2f mousePos);
 
     void changeRes(Application *applicationPointer, int maxButt, int currButt);
@@ -48,7 +49,7 @@ class GraphicButton : public button{
     sf::Vector2u newResolution;
     GraphicButton(std::string t, mainMenuLayerId followLayer, Application *applicationPointer, int maxButt, int currButt, sf::Vector2u newRes, mainMenuLayerId currentLayer);
     ~GraphicButton(void);
-    void draw(sf::RenderWindow *window);
+    void draw(sf::RenderWindow &window);
     void update(sf::Vector2f mousePos);
 
     void changeRes(Application *applicationPointer, int maxButt, int currButt);
@@ -63,7 +64,7 @@ class newSafeButton : public button {
     bool activeInput;
     newSafeButton(std::string t, mainMenuLayerId followLayer, Application *applicationPointer, int maxButt, int currButt, mainMenuLayerId given_layer);
     void update(sf::Vector2f mousePos);
-    void draw(sf::RenderWindow *window);
+    void draw(sf::RenderWindow &window);
 
     void changeRes(Application *applicationPointer, int maxButt, int currButt);
     
@@ -79,7 +80,7 @@ class adressButton : public button {
     bool activeInput;
     adressButton(std::string t, mainMenuLayerId followLayer, Application *applicationPointer, int maxButt, int currButt, mainMenuLayerId given_layer);
     void update(sf::Vector2f mousePos);
-    void draw(sf::RenderWindow *window);
+    void draw(sf::RenderWindow &window);
 
     void changeRes(Application *applicationPointer, int maxButt, int currButt);
     
@@ -93,7 +94,7 @@ class adressButton : public button {
 class ProfileButton : public button {
     public:
     ProfileButton(std::string t, mainMenuLayerId followLayer, Application *applicationPointer, int maxButt, int currButt, mainMenuLayerId currentLayer);
-    void draw(sf::RenderWindow *window);
+    void draw(sf::RenderWindow &window);
     void update(sf::Vector2f mousePos);
 
     void changeRes(Application *applicationPointer, int maxButt, int currButt);

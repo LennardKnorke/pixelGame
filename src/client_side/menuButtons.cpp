@@ -4,7 +4,7 @@
 //BUTTON CLASS(es)
 ///////////////////////
 //pretending we define the parent class functions
-void button::draw(sf::RenderWindow *window){std::cout << stringText << " parent class" <<std::endl;};
+void button::draw(sf::RenderWindow &window){std::cout << stringText << " parent class" <<std::endl;};
 void button::update(sf::Vector2f mousePos){}
 void button::changeRes(Application *applicationPointer, int maxButt, int currButt){}
 button::~button(){};
@@ -40,9 +40,9 @@ void ClickButton::changeRes(Application *applicationPointer, int maxButt, int cu
 }
 
 
-void ClickButton::draw(sf::RenderWindow *window){
-    window->draw(imageSprite);
-    window->draw(text);
+void ClickButton::draw(sf::RenderWindow &window){
+    window.draw(imageSprite);
+    window.draw(text);
 }
 
 
@@ -95,9 +95,9 @@ adressButton::~adressButton(void){};
 
 
 
-void adressButton::draw(sf::RenderWindow *window){
-    window->draw(imageSprite);
-    window->draw(text);
+void adressButton::draw(sf::RenderWindow &window){
+    window.draw(imageSprite);
+    window.draw(text);
 }
 
 
@@ -215,9 +215,9 @@ void GraphicButton::update(sf::Vector2f mousePos){
 
 
 
-void GraphicButton::draw(sf::RenderWindow *window){
-    window->draw(imageSprite);
-    window->draw(text);
+void GraphicButton::draw(sf::RenderWindow &window){
+    window.draw(imageSprite);
+    window.draw(text);
 }
 
 
@@ -262,9 +262,9 @@ void ProfileButton::changeRes(Application *applicationPointer, int maxButt, int 
 }
 
 
-void ProfileButton::draw(sf::RenderWindow *window){
-    window->draw(imageSprite);
-    window->draw(text);
+void ProfileButton::draw(sf::RenderWindow &window){
+    window.draw(imageSprite);
+    window.draw(text);
 }
 
 
@@ -316,9 +316,9 @@ newSafeButton::~newSafeButton(void){};
 
 
 
-void newSafeButton::draw(sf::RenderWindow *window){
-    window->draw(imageSprite);
-    window->draw(text);
+void newSafeButton::draw(sf::RenderWindow &window){
+    window.draw(imageSprite);
+    window.draw(text);
 }
 
 
@@ -391,22 +391,22 @@ void newSafeButton::changeRes(Application *applicationPointer, int maxButt, int 
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //FREE FUNCTIONS
-void drawMenuButtons(std::vector<button*> *MenuButtons, mainMenuLayerId currentLayer, sf::RenderWindow *window){
-    for (button* buttTmp : *MenuButtons){
+void drawMenuButtons(std::vector<button*> &MenuButtons, mainMenuLayerId currentLayer, sf::RenderWindow &window){
+    for (button* buttTmp : MenuButtons){
         if (buttTmp->layer == currentLayer){
             buttTmp->draw(window);
         }
     }
 }
 
-void setUpMenuButtons(std::vector<button*> *buttonList, Application *applicationPointer){
+void setUpMenuButtons(std::vector<button*> &buttonList, Application *applicationPointer){
     //layersId::Base
     mainMenuLayerId currentLayer = mainMenuLayerId::Base;
     int maxButtons = 3;
     std::vector<std::string> text = {"Play", "Settings", "Exit"};
     std::vector<mainMenuLayerId> followUpsLayers = {mainMenuLayerId::GameMode, mainMenuLayerId::Settings, mainMenuLayerId::leave};
     for (int i = 0; i < maxButtons; i++){
-        buttonList->push_back(new ClickButton(text[i], followUpsLayers[i], applicationPointer, maxButtons, i, currentLayer));
+        buttonList.push_back(new ClickButton(text[i], followUpsLayers[i], applicationPointer, maxButtons, i, currentLayer));
     }
     text.clear();
     followUpsLayers.clear();
@@ -457,7 +457,7 @@ void setUpMenuButtons(std::vector<button*> *buttonList, Application *application
     text = {"Singleplayer", "Locally", "Online"};
     followUpsLayers = {mainMenuLayerId::Hosting, mainMenuLayerId::HostVsClient, mainMenuLayerId::HostVsClient};
     for (int i = 0; i < maxButtons; i++){
-        buttonList->push_back(new ClickButton(text[i], followUpsLayers[i], applicationPointer, maxButtons, i, currentLayer));
+        buttonList.push_back(new ClickButton(text[i], followUpsLayers[i], applicationPointer, maxButtons, i, currentLayer));
     }
     text.clear();
     followUpsLayers.clear();
@@ -469,7 +469,7 @@ void setUpMenuButtons(std::vector<button*> *buttonList, Application *application
     text = {"Host", "Join"};
     followUpsLayers = {mainMenuLayerId::Hosting, mainMenuLayerId::Joining};
     for (int i = 0; i < maxButtons; i++){
-        buttonList->push_back(new ClickButton(text[i], followUpsLayers[i], applicationPointer, maxButtons, i, currentLayer));
+        buttonList.push_back(new ClickButton(text[i], followUpsLayers[i], applicationPointer, maxButtons, i, currentLayer));
     }
     text.clear();
     followUpsLayers.clear();
@@ -481,7 +481,7 @@ void setUpMenuButtons(std::vector<button*> *buttonList, Application *application
     text = {"Enter Host Ip", "Enter Host Port"};
     followUpsLayers = {mainMenuLayerId::final, mainMenuLayerId::final};
     for (int i = 0; i < maxButtons; i++){
-        buttonList->push_back(new adressButton(text[i], followUpsLayers[i], applicationPointer, maxButtons, i, currentLayer));
+        buttonList.push_back(new adressButton(text[i], followUpsLayers[i], applicationPointer, maxButtons, i, currentLayer));
     }
     text.clear();
     followUpsLayers.clear();
@@ -492,9 +492,9 @@ void setUpMenuButtons(std::vector<button*> *buttonList, Application *application
     maxButtons = 1;
     text = {"Create New World"};
     followUpsLayers = {mainMenuLayerId::final};
-    buttonList->push_back(new newSafeButton(text[0], followUpsLayers[0], applicationPointer, maxButtons + applicationPointer->availableSaveFiles.size(), 0, currentLayer));
+    buttonList.push_back(new newSafeButton(text[0], followUpsLayers[0], applicationPointer, maxButtons + applicationPointer->availableSaveFiles.size(), 0, currentLayer));
     for (int i = 0; i < applicationPointer->availableSaveFiles.size(); i++){
-        buttonList->push_back(new ProfileButton(applicationPointer->availableSaveFiles[i].saveName, mainMenuLayerId::final, applicationPointer, applicationPointer->availableSaveFiles.size()+maxButtons, i+1, mainMenuLayerId::Hosting));
+        buttonList.push_back(new ProfileButton(applicationPointer->availableSaveFiles[i].game, mainMenuLayerId::final, applicationPointer, applicationPointer->availableSaveFiles.size()+maxButtons, i+1, mainMenuLayerId::Hosting));
     }
 
     text.clear();

@@ -71,12 +71,11 @@ void Application::initSettings(void){
 void Application::loadSettings(void){
     std::ifstream inputFile("settings.bin", std::ios::binary);
 
-    size_t size;
-    inputFile.read(reinterpret_cast<char *>(&size), sizeof(size));
-    localUserID.resize(size);
-    inputFile.read(reinterpret_cast<char *>(&localUserID[0]), size);
+    //Read id of client
+    readStrOfFile(inputFile, localUserID);
+
+    //Read standart resolution
     inputFile.read(reinterpret_cast<char *>(&resolution), sizeof(sf::Vector2u));
-    //inputFile.read(reinterpret_cast<char*>(&inGameControls), sizeof(userKeys));
 
     std::cout   <<"Loaded user: " << localUserID << std::endl
                 << resolution.x << "\t"
@@ -128,7 +127,7 @@ void Application::createSettings(void){
     const std::string alphabet = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     std::mt19937 rng(std::random_device{}());
     std::uniform_int_distribution<std::string::size_type> dist(0, alphabet.size()-1);
-    for (int i = 0 ; i < MAX_LENGTH_KEY; i++){
+    for (int i = 0 ; i < maxInputLengths::userId; i++){
         localUserID += alphabet[dist(rng)];
     }
     std::cout   << "Created User:  "<< localUserID << std::endl
@@ -163,9 +162,10 @@ void Application::createSettings(void){
 
 void Application::saveSettings(void){
     std::ofstream outputFile("settings.bin", std::ios::binary);
-    size_t size = localUserID.size();
-    outputFile.write(reinterpret_cast<const char *>(&size), sizeof(size_t));
-    outputFile.write(reinterpret_cast<const char *>(localUserID.data()), size);
+    
+    //Write local user ID
+    writeStrToFile(outputFile, localUserID);
+    //Write resolution
     outputFile.write(reinterpret_cast<const char *>(&resolution), sizeof(sf::Vector2u));
     //Save Control settings
     for (int i = 0; i < 7; i++){
@@ -280,9 +280,9 @@ void CursorSprite::update(void){
 
 
 
-void CursorSprite::draw(sf::RenderWindow *renderwindow){
+void CursorSprite::draw(sf::RenderWindow &renderwindow){
     if (print){
-        renderwindow->draw(sprite[activeSprite]);
+        renderwindow.draw(sprite[activeSprite]);
     }
     
 }

@@ -11,7 +11,7 @@ GAME_STATE Application::gameLoop(void){
 
 
     if (mode_Host(mode)){
-        if (initServerProcess(&hostAdress.ip, &hostAdress.port, localUserID, hostAdress.pathSave, mode)){
+        if (initServerProcess(&hostAdress.ip, hostAdress.port, localUserID, hostAdress.pathSave, mode)){
             std::cout << "Process started\n";
         }
         else {
@@ -26,7 +26,7 @@ GAME_STATE Application::gameLoop(void){
         for (int i  = 0; i < n_menugameButtons; i++){
             menuButtons.push_back(new inGameMenuButton(i, this));
         }
-        state = loadingScreen(&ClientSocket);
+        state = loadingScreen(ClientSocket);
     }//return menu with error if timeout
     
     
@@ -35,8 +35,8 @@ GAME_STATE Application::gameLoop(void){
         if (state == gameLoopState::Game){
 
             drawGame();
-            registerGameInput(&state, &gamePlayInput);
-            updateGame(&ClientSocket, &communicationPacket);// will exchange data with host/server/savethread
+            registerGameInput(state, gamePlayInput);
+            updateGame(ClientSocket, communicationPacket);// will exchange data with host/server/savethread
         }
         else if(state == gameLoopState::SkillTree){
             drawTree();
@@ -49,7 +49,7 @@ GAME_STATE Application::gameLoop(void){
             updateMenu(menuButtons);//quit, quit to menu, to skill tree, see information, send character updates to host
         }
         cursor.update();
-        cursor.draw(&window);
+        cursor.draw(window);
         window.display();
     }
     //GAMELOOP STOPS HERE
@@ -74,7 +74,7 @@ GAME_STATE Application::gameLoop(void){
 
 
 
-bool initServerProcess(sf::IpAddress *adress, unsigned short *port, std::string HostId, std::string pathToSave, gameMode Mode){
+bool initServerProcess(sf::IpAddress *adress, unsigned short &port, std::string HostId, std::string pathToSave, gameMode Mode){
 
     if (!setHostIp(adress, Mode)){
         return false;
@@ -84,7 +84,7 @@ bool initServerProcess(sf::IpAddress *adress, unsigned short *port, std::string 
     }
 
     std::string command = "start Server.exe " 
-                            + std::to_string(*port) + " "
+                            + std::to_string(port) + " "
                             + adress->toString() + " " 
                             + pathToSave + " " 
                             + HostId + " "
@@ -95,7 +95,7 @@ bool initServerProcess(sf::IpAddress *adress, unsigned short *port, std::string 
     if (std::system(command.c_str()) != 0){
         std::cout << "Failed to run server command\n";
         *adress = sf::IpAddress::None;
-        *port = 0;
+        port = 0;
         return false;
     }
     return true;
@@ -126,7 +126,7 @@ bool setHostIp(sf::IpAddress *adress, gameMode Mode){
     return true;
 }
 
-bool setHostPort(unsigned short *port, sf::IpAddress *adress, gameMode Mode){
+bool setHostPort(unsigned short &port, sf::IpAddress *adress, gameMode Mode){
     unsigned short tmp = 1024;
     if (mode_Online(Mode)){
         tmp = 54000;
@@ -135,7 +135,7 @@ bool setHostPort(unsigned short *port, sf::IpAddress *adress, gameMode Mode){
     while (tmp <= USHRT_MAX)
     {
         if (listener.listen(tmp) == sf::Socket::Done){
-            *port = tmp;
+            port = tmp;
             listener.close();
             return true;
         }
@@ -144,21 +144,21 @@ bool setHostPort(unsigned short *port, sf::IpAddress *adress, gameMode Mode){
     listener.close();
 
     //reset adress and port
-    *port = 0;
+    port = 0;
     *adress = sf::IpAddress::None;
     return false;
 }
 
 
 //displays the loading screen while waiting for the client/host to connect
-gameLoopState Application::loadingScreen(Clients *socket){
+gameLoopState Application::loadingScreen(Clients &socket){
     
     window.clear(sf::Color::Black);
     window.display();
     
     for (int i = 0; i < 4; i++){
         std::cout << "Attempting to connect with host no: " << i+1 <<std::endl;
-        if (socket->connect(hostAdress.ip, hostAdress.port)){
+        if (socket.connect(hostAdress.ip, hostAdress.port)){
             return gameLoopState::Game; 
         }
 
@@ -178,14 +178,14 @@ gameLoopState Application::loadingScreen(Clients *socket){
 
 
 
-void Application::readUserGameInput(playerControl *controlInput){
+void Application::readUserGameInput(playerControl &controlInput){
     //Read key input
-    for (int i =0; i < n_gameInput; i++){
+    for (int i =0; i < n_keyInputOptions; i++){
         if (inGameControls[i].iType == inputType::KEYBOARD){
-            controlInput->keyInput[i] = sf::Keyboard::isKeyPressed(inGameControls[i].input.keyInput);
+            controlInput.keyInput[i] = sf::Keyboard::isKeyPressed(inGameControls[i].input.keyInput);
         }
         else if (inGameControls[i].iType == inputType::MOUSE_BUTTON){
-            controlInput->keyInput[i] = sf::Mouse::isButtonPressed(inGameControls[i].input.mouseInput);
+            controlInput.keyInput[i] = sf::Mouse::isButtonPressed(inGameControls[i].input.mouseInput);
         }
     }
 }
@@ -198,11 +198,11 @@ void Application::drawGame(void){
 
 
 
-void Application::registerGameInput(gameLoopState *s, playerControl *controlInput){
+void Application::registerGameInput(gameLoopState &s, playerControl &controlInput){
     sf::Event ev;
     while (window.pollEvent(ev)){
-        if (ev.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){
-            *s = gameLoopState::Menu; 
+            if (ev.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){
+            s = gameLoopState::Menu; 
         }
         else if (ev.type == sf::Event::KeyPressed || ev.type == sf::Event::MouseButtonPressed){
             readUserGameInput(controlInput);
@@ -212,14 +212,12 @@ void Application::registerGameInput(gameLoopState *s, playerControl *controlInpu
 
 
 
-void Application::updateGame(Clients *socket, sf::Packet *packet){
-    *packet << localUserID;
-    socket->sendData(*packet);
-    packet->clear();
-    socket->receiveData(*packet);
-    packet->clear();
-
-
+void Application::updateGame(Clients &socket, sf::Packet &packet){
+    packet << localUserID;
+    socket.sendData(packet);
+    packet.clear();
+    socket.receiveData(packet);
+    packet.clear();
 }
 
 

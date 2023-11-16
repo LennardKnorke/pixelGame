@@ -8,7 +8,7 @@ bool Clients::connect(sf::IpAddress hostIp, unsigned short hostPort){
         socket.setBlocking(false);
         return true;
     }
-    
+
     std::cout << "Failed to connect with host\n";
     return false;
 };

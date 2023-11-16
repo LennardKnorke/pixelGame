@@ -20,12 +20,12 @@ Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath, 
         this->maxPlayers = 4;
     }
  
-
     //Load Game (will check for errors/corruptions etc.)
     if (!loadGameSave(savePath)){
         std::cout << "Failed to load GameSave\n";
         return;
     }
+    system("pause");
     //Set up server either locally or online
     //(both work the EXACT same way right now due to hamachi)
     if (mode_Online(mode)){
@@ -56,8 +56,10 @@ Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath, 
     //      - host not connected? run timeout
     //          - end if host ist disconnected for too long
     //      - host WAS connected && is not anymore in the client list -> start timouttimer
-    //  - Pass info received from players into game
     //  - update gameState (or should it run in another thread, memory risks!!)
+
+
+
     //SERVER LOOP STARTS HERE
     std::cout << "Server ready. Listening on adress: " << serverAdress.toString() << ":" << serverPort <<std::endl;
     bool SERVER_RUNNING = true;
@@ -113,10 +115,15 @@ Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath, 
 }
 
 
-// create new pointer to the loaded save
 bool Server::loadGameSave(std::string savePath){
+
     GAME = new gameSave(savePath);
-    return true;
+    if (GAME->getSaveLoadedState()){
+        return true;
+    }
+    else {
+        return false;
+    }
 }
 
 
@@ -174,14 +181,18 @@ void clientThread(clientThreadParameters p){
     p.yourClientPlace->active = true;
     p.yourClientPlace->connected = true;
 
+    sf::Packet package;
     //Get id from clinet
 
-    //get player info about client from gamesave
+    //(Option 1) Send full gameworld here
 
-    //send game + player info to player
+    //LOOP
+        //  Timouthandling
+        //  get player info about client from gamesave
+        //  (Option 1) send updates to players; (Option 2) send window to player
 
-    //CONTINOUS EXCHANGE LOOP
-    sf::Packet package;
+
+    // Exchange Loop
     while (true){
         package << std::string("Hi Player!");
         p.yourClientPlace->socket.send(package);

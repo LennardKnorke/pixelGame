@@ -3,56 +3,69 @@
 //Create an instance: existing save file
 gameSave::gameSave(std::string savePath){
 
-    loadedComplete = loadSave(savePath);
-
-    
+    if (!fileExists(savePath)){
+        std::cout << "save cant load because path invalid!\n";
+        loadedComplete = false;
+        return;
+    }
+    if (!loadSave(savePath)){
+        std::cout << "Failed to load or initialize save\n";
+        loadedComplete = false;
+        return;
+    }
     
 }
 
 bool gameSave::loadSave(std::string savePath){
-    
+
     std::ifstream inputFile(savePath, std::ios::binary);
-
-    size_t size;
-
-    inputFile.read(reinterpret_cast<char *>(&size), sizeof(size));
-    saveName.resize(size);
-    inputFile.read(reinterpret_cast<char *>(&saveName[0]), size);
-
-    inputFile.read(reinterpret_cast<char *>(&size), sizeof(size));
-    fileName.resize(size);
-    inputFile.read(reinterpret_cast<char *>(&fileName[0]), size);
-
-    inputFile.read(reinterpret_cast<char *>(&size), sizeof(size));
-    pathName.resize(size);
-    inputFile.read(reinterpret_cast<char *>(&pathName[0]), size);
-
+    readStrOfFile(inputFile, saveName);
+    readStrOfFile(inputFile, fileName);
+    readStrOfFile(inputFile, pathName);
     inputFile.read(reinterpret_cast<char *>(&initialized), sizeof(bool));
 
     if (initialized){
-        return loadCompleteSafe(&inputFile);
+        loadCompleteSafe(inputFile);
+        inputFile.close();
     }
     else {
         inputFile.close();
-        return initUninitialized();
+        initUninitialized();
+        //saveSave();
+    }
+
+
+    if (loadedComplete && initialized){
+        return true;
+    }
+    else {
+        return false;
     }
 }
 
 //loads all the data of an already initialzed gamesave
-bool gameSave::loadCompleteSafe(std::ifstream *file){
+void gameSave::loadCompleteSafe(std::ifstream &file){
     //LOAD TILES
 
     //LOAD PLAYERS
 
     //Load NPCS
-    file->close();
-    return true;
+    loadedComplete = true;
+
 }
 
 
-bool gameSave::initUninitialized(){
+void gameSave::initUninitialized(){
     unsigned short nPlayers = 0;
-    return false;
+    //Set seed
+
+
+    // Magic
+
+
+    initialized = true;
+    loadedComplete = true;
+    return;
 }
 
 bool gameSave::saveSave(void){
@@ -61,6 +74,7 @@ bool gameSave::saveSave(void){
 
 
 //Return of information from private variables
+bool gameSave::getSaveLoadedState(void){return loadedComplete;}
 std::string gameSave::getSaveName(void){return saveName;}
 std::string gameSave::getSavePath(void){return pathName;}
 std::string gameSave::getFileName(void){return fileName;}

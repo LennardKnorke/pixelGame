@@ -4,51 +4,109 @@
 #include "stdlibs.hpp"
 
 
-//struct to summarize relevant player information
+/// @brief saves player key and character attributes!
 typedef struct Player{
-    std::string name;
-    std::string key;
+    std::string key;        //!< key associated with this character
+    
 }Player;
 
 class NPC;
 
-//game save class. manipulate, load, create or safe a world/game instance
+////////////////////////////////////////////////////////////
+/// \brief contains save/ world and player information of active savegame
+////////////////////////////////////////////////////////////
 class gameSave {
-    private:
-    //Variable of uninitialized saves
-        //three names relevant for the gameSaveSummary
-    std::string saveName;
-    std::string fileName;
-    std::string pathName;
-    bool initialized;
-    //Others
-    Tile tileMap[10000][10000];
-    std::vector<Player*> activePlayers;
-    std::vector<Player> clientsData;
-    std::vector<NPC*> npcs;
-    std::vector<int> seed;
-    //Variables which do no get saved in the savefile
-    bool loadedComplete = false;
-
-    bool loadSave(std::string savePath);
-    bool loadCompleteSafe(std::ifstream *file);
-    bool initUninitialized(void);
-
-    bool saveSave(void);
-    
-
-
-    //
-
     public:
     
+    ////////////////////////////////////////////////////////////
+    /// \brief load and run a save upon initiation
+    ///
+    /// \param savePath path to game for loading
+    ////////////////////////////////////////////////////////////
     gameSave(std::string savePath);
-    Player addPlayer(char userKey[MAX_LENGTH_KEY]);
-    //Return functions to get private variables
-    //saveName
+
+    ////////////////////////////////////////////////////////////
+    /// \brief (NOT FINISHED) Create a new player
+    ///
+    /// \param userKey key associated with player
+    ////////////////////////////////////////////////////////////
+    Player addPlayer(std::string userKey);
+
+    ////////////////////////////////////////////////////////////
+    /// \brief return saveName
+    ///
+    /// \return str name given
+    ////////////////////////////////////////////////////////////
     std::string getSaveName(void);
+
+    ////////////////////////////////////////////////////////////
+    /// \brief return path
+    ///
+    /// \return path as string
+    ////////////////////////////////////////////////////////////
     std::string getSavePath(void);
+
+    ////////////////////////////////////////////////////////////
+    /// \brief return saveName
+    ///
+    /// \return str of file name
+    ////////////////////////////////////////////////////////////
     std::string getFileName(void);
+
+    ////////////////////////////////////////////////////////////
+    /// \brief signals to server that the save has been loaded
+    ///
+    /// \return true/false whether succesfull
+    ////////////////////////////////////////////////////////////
+    bool getSaveLoadedState(void);
+
+    private:
+    
+    ////////////////////////////////////////////////////////////
+    /// \brief load Save
+    ///
+    /// \param savePath path to save
+    ///
+    /// \return true/false if loading was successfull
+    ////////////////////////////////////////////////////////////
+    bool loadSave(std::string savePath);
+
+        ////////////////////////////////////////////////////////////
+        /// \brief load an initialized save
+        ///
+        /// \param file opened file stream to read out
+        ////////////////////////////////////////////////////////////
+        void loadCompleteSafe(std::ifstream &file);
+
+        ////////////////////////////////////////////////////////////
+        /// \brief initialized a loaded but uninitialized save file (NOT FINISHED)
+        ////////////////////////////////////////////////////////////
+        void initUninitialized(void);
+        ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    /// \brief save the active savefile
+    ///
+    /// \return true/false if successfully saved
+    ////////////////////////////////////////////////////////////
+    bool saveSave(void);
+
+
+    /// START OF INFORMATION IN GAMESAVE_SUMMARIES
+
+    std::string saveName;   //!< Name of world/save
+    std::string fileName;   //!< name of file
+    std::string pathName;   //!< path
+
+    /// END OF INFORMATION IN GAMESAVE_SUMMARIES
+
+    bool initialized = false;               //!< initialized save? seed set? tiles generated?
+    bool loadedComplete = false;            //!< indicates whether saves has been loaded succesfully
+    std::vector<int> seed;                  //!< World Seed
+    Tile tileMap[10][10];                   //!< WORLD MAP
+    std::vector<Player*> activePlayers;     //!< Pointers to active players
+    std::vector<Player> clientsData;        //!< Players created in world
+    std::vector<NPC*> npcs;                 //!< List of active nps (friendly + enemies)
     
 };
 

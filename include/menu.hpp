@@ -3,17 +3,38 @@
 #define MENU_HPP
 #include "stdlibs.hpp"
 
-/////////////////////////////////////////////////////////////////
-//DECLARATIONS FOR MENU.CPP
-//Makros
-
-#define MAX_LENGTH_SAVENAME 12
-#define MAX_LENGTH_IP_PUBLIC 15
-#define MAX_LENGTH_IP_LOCAL 15
-#define MAX_LENGTH_PORT 6
+////////////////////////////////////////////////////////////
+/// \brief sets up sfml text to be used for Error messages
+///
+/// \param font pointer to font to be used
+///
+/// \param scaling float about the 16:9 scaling (base: 1920x1080) to be applied. (OPTIONAL!)
+///
+/// \return sfml text
+////////////////////////////////////////////////////////////
 sf::Text initErrorMessage(sf::Font *font, float scaling);
+
+////////////////////////////////////////////////////////////
+/// \brief sets up sfml text to be used for Error messages
+///
+/// \param font pointer to font to be used
+///
+/// \param scaling float about the 16:9 scaling (base: 1920x1080) to be applied. (OPTIONAL!)
+///
+/// \return sfml text
+////////////////////////////////////////////////////////////
 void drawMenuPopUp(menuPopUps PopUp, sf::RenderWindow *window, sf::Text *warningMessage);
-void inputErrorDisplay(menuPopUps *menuPopUp, sf::Event *ev);
+
+////////////////////////////////////////////////////////////
+/// \brief handle user event input for different messages
+///
+/// \param menuPopUp pointer menu popup
+///
+/// \param ev current sfml events
+////////////////////////////////////////////////////////////
+void inputErrorPopUp(menuPopUps &menuPopUp, sf::Event *ev);
+
+
 void escapeKeyPressed(bool *activeText, std::vector<button *> *menuButtons, mainMenuLayerId *currentLayer, gameMode mode);
 mainMenuLayerId getPreviousLayer(mainMenuLayerId currentLayer, gameMode mode);
 void enterKeyPressed(bool *activeText, std::vector<button *> *menuButtons, mainMenuLayerId *currentLayer, menuPopUps *menuWarning, Application *appPointer);

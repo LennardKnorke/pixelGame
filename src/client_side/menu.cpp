@@ -13,11 +13,11 @@ GAME_STATE Application::menuLoop(void){
     bool allowTextInput = false;
 
     //Read every save name/path for ingame buttons
-    readAllSaveSummaries(&availableSaveFiles);
+    readAllSaveSummaries(availableSaveFiles);
 
     //Set up menu buttons
     std::vector<button*> MenuButtons;
-    setUpMenuButtons(&MenuButtons, this);
+    setUpMenuButtons(MenuButtons, this);
 
     //SetUpBackgroundSprite
     sf::Sprite backgroundSprite;
@@ -38,9 +38,9 @@ GAME_STATE Application::menuLoop(void){
         window.clear(sf::Color::Transparent);
         window.draw(backgroundSprite);
         if (currentMenuPopUp == menuPopUps::NoPopUp){
-            drawMenuButtons(&MenuButtons, currentLayer, &window);
+            drawMenuButtons(MenuButtons, currentLayer, window);
             if (!allowTextInput){//No text input?->Draw cursor
-                cursor.draw(&window);
+                cursor.draw(window);
             }
         }
         else {
@@ -54,7 +54,7 @@ GAME_STATE Application::menuLoop(void){
         sf::Event event;
         while (window.pollEvent(event)){
             if (currentMenuPopUp != menuPopUps::NoPopUp){
-                inputErrorDisplay(&currentMenuPopUp, &event);
+                inputErrorPopUp(currentMenuPopUp, &event);
             }
             else {
                 if (event.type == sf::Event::KeyPressed){
@@ -127,10 +127,10 @@ void drawMenuPopUp(menuPopUps PopUp, sf::RenderWindow *window, sf::Text *warning
 
 
 
-void inputErrorDisplay(menuPopUps *menuPopUp, sf::Event *ev){
-    if (*menuPopUp == menuPopUps::InvalidName){
+void inputErrorPopUp(menuPopUps &menuPopUp, sf::Event *ev){
+    if (menuPopUp == menuPopUps::InvalidName){
         if(ev->type == sf::Event::KeyPressed && (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)||sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))){
-            *menuPopUp = menuPopUps::NoPopUp;
+            menuPopUp = menuPopUps::NoPopUp;
         }
     }
     return;
@@ -267,12 +267,12 @@ bool createSave(std::string newSaveName, menuPopUps *menuWarning, Application *a
         return false;
     }
     for (gameSaveSummary tmp : appPointer->availableSaveFiles){
-        if (tmp.saveName == newSaveName){
+        if (tmp.game == newSaveName){
             *menuWarning = menuPopUps::InvalidName;
             return false;
         }
     }
-    return createNewSafeFile(newSaveName, &(appPointer->hostAdress.pathSave));
+    return createNewSafeFile(newSaveName, (appPointer->hostAdress.pathSave));
 }
 
 
@@ -343,7 +343,7 @@ void textEntered(bool *activeText, std::vector<button *> *menuButtons, mainMenuL
 bool validCharacterInput(mainMenuLayerId activeLayer, sf::Uint32 c, int activeLength, gameMode mode, int n){
     //Allow only characters for the savename
     if (activeLayer == mainMenuLayerId::Hosting){//Entering a new savename only allow "a-z", "A-Z", "0-9".
-        if (activeLength >= MAX_LENGTH_SAVENAME){
+        if (activeLength >= maxInputLengths::saveName){
             return false;
         }
         if ((c < 48 || c > 57) && (c < 65 || c > 90) && (c < 97 || c > 122) && c != 32){
@@ -354,7 +354,7 @@ bool validCharacterInput(mainMenuLayerId activeLayer, sf::Uint32 c, int activeLe
     if (activeLayer == mainMenuLayerId::Joining) {//Entering "0-9", "." , ":" for the ip
         //First check port
         if (n == 1){
-            if (activeLength >= MAX_LENGTH_PORT){
+            if (activeLength >= maxInputLengths::port){
                 return false;
             }
             if (c < 48 || c > 57){
@@ -363,7 +363,7 @@ bool validCharacterInput(mainMenuLayerId activeLayer, sf::Uint32 c, int activeLe
         }
         //Then ip for either local or public validty
         if (mode == gameMode::Local_client){
-            if (activeLength >= MAX_LENGTH_IP_LOCAL){
+            if (activeLength >= maxInputLengths::localIp){
                 return false;
             }
             if ((c < 48 || c > 57) && c != 46){
@@ -371,7 +371,7 @@ bool validCharacterInput(mainMenuLayerId activeLayer, sf::Uint32 c, int activeLe
             }
         }
         if (mode == gameMode::Online_client){
-            if (activeLength >= MAX_LENGTH_IP_PUBLIC){
+            if (activeLength >= maxInputLengths::publicIp){
                 return false;
             }
             if ((c < 48 || c > 57) && c != 46){
@@ -424,9 +424,9 @@ void mouseButtonPressed(bool *activeText, std::vector<button *> *menuButtons, ma
 
 void setActiveSafe(std::string saveName, std::string *pathToBeLoaded, std::vector<gameSaveSummary> availableSaveFiles){
     for (gameSaveSummary sum : availableSaveFiles){
-        if (sum.saveName == saveName){
+        if (sum.game == saveName){
             pathToBeLoaded->clear();
-            *pathToBeLoaded = sum.pathName;
+            *pathToBeLoaded = sum.path;
         }
     }
 }
