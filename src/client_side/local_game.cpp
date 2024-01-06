@@ -4,11 +4,11 @@
 GAME_STATE Application::gameLoop(void){
     //"Global variables for this loop"
     gameLoopState state = gameLoopState::Game;
-    Clients ClientSocket;
-    playerControl gamePlayInput;
-    std::vector<inGameMenuButton*> menuButtons;
-    sf::Packet communicationPacket;
+    sf::TcpSocket ClientSocket;
 
+    std::vector<inGameMenuButton*> menuButtons;
+
+    
 
     if (mode_Host(mode)){
         if (initServerProcess(&hostAdress.ip, hostAdress.port, localUserID, hostAdress.pathSave, mode)){
@@ -28,35 +28,89 @@ GAME_STATE Application::gameLoop(void){
         }
         state = loadingScreen(ClientSocket);
     }//return menu with error if timeout
+
+
+    // READ WORLD DATA FROM SERVER ROUGHLY HERE
+
+
+    if (state == gameLoopState::Game){
+        backgroundMusic[musicIdx::mainMenu].stop();
+        backgroundMusic[musicIdx::game_main].play();
+    }
     
     
     //GAME LOOP STARTS HERE
     while (state != gameLoopState::QuitGame && state != gameLoopState::QuitMenu){
-        if (state == gameLoopState::Game){
+        combinedMsgPackage messages;
+        sf::Event events;
 
-            drawGame();
-            registerGameInput(state, gamePlayInput);
-            updateGame(ClientSocket, communicationPacket);// will exchange data with host/server/savethread
+        // DRAW APPLICATION
+        if (state == gameLoopState::Game){
+            drawGame();        
         }
         else if(state == gameLoopState::SkillTree){
             drawTree();
-            registerTreeInput(&state);
-            updateTree();
         }
         else if (state == gameLoopState::Menu){
             drawMenu(menuButtons);
-            registerMenuInput(&state, menuButtons);
-            updateMenu(menuButtons);//quit, quit to menu, to skill tree, see information, send character updates to host
         }
-        cursor.update();
+        
         cursor.draw(window);
         window.display();
+        // END DRAWING
+
+        // REGISTER INPUT
+        cursor.update();
+        while (window.pollEvent(events)){
+            if (events.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){
+                if (state == gameLoopState::Game){
+                    state = gameLoopState::Menu;
+                }
+                else if (state == gameLoopState::Menu){
+                    state = gameLoopState::Game;
+                }
+                else if (state == state == gameLoopState::SkillTree){
+                    state = gameLoopState::Menu;
+                }
+            }
+
+            else {
+                if (state == gameLoopState::Game){
+                    registerGameInput(events, messages.client.game);
+                }
+                else if (state == gameLoopState::Menu){
+                    registerMenuInput(events,state, menuButtons);
+                }
+                else if (state == state == gameLoopState::SkillTree){
+                    registerTreeInput();
+                }
+            }
+        }
+        // END REGISTERING INPUT
+
+        // EXCHANGE INFO TO SERVER
+        if (state == gameLoopState::Game){
+            updateGame(ClientSocket, messages.client.game);
+        }
+        else if (state == gameLoopState::SkillTree){
+            updateTree(ClientSocket, messages.client.tree);
+        }
+        else if (state == gameLoopState::Menu){
+            updateMenu(ClientSocket, menuButtons);
+        }
+        // END OF EXCHANGE
+        
     }
     //GAMELOOP STOPS HERE
-    
 
+    // send ending command to server and disconnect socket.
+    sf::Packet p;
+    p << sf::Uint8(gameLoopState::QuitGame);
+    ClientSocket.send(p);
+    
     ClientSocket.disconnect();
     //Delete helpful stuff
+    backgroundMusic[musicIdx::game_main].stop();
     for (inGameMenuButton* tmp: menuButtons){
         delete tmp;
     }
@@ -151,14 +205,17 @@ bool setHostPort(unsigned short &port, sf::IpAddress *adress, gameMode Mode){
 
 
 //displays the loading screen while waiting for the client/host to connect
-gameLoopState Application::loadingScreen(Clients &socket){
+gameLoopState Application::loadingScreen(sf::TcpSocket &socket){
     
-    window.clear(sf::Color::Black);
+    window.clear(sf::Color::Green);
     window.display();
     
     for (int i = 0; i < 4; i++){
         std::cout << "Attempting to connect with host no: " << i+1 <<std::endl;
         if (socket.connect(hostAdress.ip, hostAdress.port)){
+            sf::Packet p;
+            p << localUserID;
+            socket.send(p);
             return gameLoopState::Game; 
         }
 
@@ -170,24 +227,13 @@ gameLoopState Application::loadingScreen(Clients &socket){
         while (elapsed_time.count() < 1){
             end_time = std::chrono::high_resolution_clock::now();
             elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);  
+            
+            window.clear(sf::Color::Green);
+            window.display();
         }
         
     }
     return gameLoopState::QuitMenu;    
-}
-
-
-
-void Application::readUserGameInput(playerControl &controlInput){
-    //Read key input
-    for (int i =0; i < n_keyInputOptions; i++){
-        if (inGameControls[i].iType == inputType::KEYBOARD){
-            controlInput.keyInput[i] = sf::Keyboard::isKeyPressed(inGameControls[i].input.keyInput);
-        }
-        else if (inGameControls[i].iType == inputType::MOUSE_BUTTON){
-            controlInput.keyInput[i] = sf::Mouse::isButtonPressed(inGameControls[i].input.mouseInput);
-        }
-    }
 }
 
 
@@ -198,26 +244,55 @@ void Application::drawGame(void){
 
 
 
-void Application::registerGameInput(gameLoopState &s, playerControl &controlInput){
-    sf::Event ev;
-    while (window.pollEvent(ev)){
-            if (ev.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){
-            s = gameLoopState::Menu; 
-        }
-        else if (ev.type == sf::Event::KeyPressed || ev.type == sf::Event::MouseButtonPressed){
-            readUserGameInput(controlInput);
+void Application::registerGameInput(sf::Event &ev,  gameInput_msg &playerInput){
+    //Read key input
+    if (ev.type == sf::Event::KeyPressed || ev.type == sf::Event::MouseButtonPressed){
+        for (int i = 0; i < n_keyInputOptions; i++){
+            if (inGameControls[i].iType == inputType::KEYBOARD){
+                playerInput.controls.keyInput[i] = sf::Keyboard::isKeyPressed(inGameControls[i].input.keyInput);
+            }
+            else if (inGameControls[i].iType == inputType::MOUSE_BUTTON){
+                playerInput.controls.keyInput[i] = sf::Mouse::isButtonPressed(inGameControls[i].input.mouseInput);
+            }
         }
     }
 }
 
 
 
-void Application::updateGame(Clients &socket, sf::Packet &packet){
-    packet << localUserID;
-    socket.sendData(packet);
-    packet.clear();
-    socket.receiveData(packet);
-    packet.clear();
+
+void Application::updateGame(sf::TcpSocket &socket, gameInput_msg &controlMessages){
+    sf::Packet packet;
+    packet << sf::Uint8(gameLoopState::Game);
+
+    socket.send(packet);
+
+    socket.receive(packet);
+}
+
+
+
+
+//
+void Application::drawTree(void){
+    window.clear(sf::Color::Yellow);
+}
+
+
+
+void Application::registerTreeInput(){
+
+}
+
+
+
+void Application::updateTree(sf::TcpSocket &socket, skillTreeInput_msg &msg){
+    sf::Packet packet;
+    packet << sf::Uint8(gameLoopState::SkillTree);
+
+    socket.send(packet);
+
+    socket.receive(packet);
 }
 
 
@@ -230,18 +305,12 @@ void Application::drawMenu(std::vector<inGameMenuButton*> v){
 }
 
 
+void Application::registerMenuInput(sf::Event &ev, gameLoopState &s, std::vector<inGameMenuButton*> &v){
 
-void Application::registerMenuInput(gameLoopState *s, std::vector<inGameMenuButton*> v){
-    sf::Event ev;
-    while (window.pollEvent(ev)){
-        if (ev.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){
-            *s = gameLoopState::Game;
-        }
-        if (ev.type == sf::Event::MouseButtonPressed && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)){
-            for (inGameMenuButton* tmp : v){
-                if (tmp->focus){
-                    *s = tmp->followUpState;
-                }
+    if (ev.type == sf::Event::MouseButtonPressed && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)){
+        for (inGameMenuButton* tmp : v){
+            if (tmp->focus){
+                s = tmp->followUpState;
             }
         }
     }
@@ -249,30 +318,17 @@ void Application::registerMenuInput(gameLoopState *s, std::vector<inGameMenuButt
 
 
 
-void Application::updateMenu(std::vector<inGameMenuButton*> v){
+void Application::updateMenu(sf::TcpSocket &socket, std::vector<inGameMenuButton*> &v){
     for (inGameMenuButton* tmp : v){
         tmp->update(cursor.returnPosition());
     }
-}
-//
-void Application::drawTree(void){
-    window.clear(sf::Color::Yellow);
-}
 
+    sf::Packet packet;
+    packet << sf::Uint8(gameLoopState::Menu);
 
+    socket.send(packet);
 
-void Application::registerTreeInput(gameLoopState *s){
-    sf::Event ev;
-    while (window.pollEvent(ev)){
-        if (ev.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){
-            *s = gameLoopState::Menu;
-        }
-    }
-}
-
-
-
-void Application::updateTree(void){
+    socket.receive(packet);
 }
 //////////////
 //inGameMenuButton
@@ -293,7 +349,7 @@ inGameMenuButton::inGameMenuButton(int currentIdx, Application *app){
     focus = false;
     text.setString(textString);
     text.setFont(app->gameFont);
-    text.setCharacterSize(30/app->ratioScaling);
+    text.setCharacterSize(GAMEFONT_SIZE);
     text.setFillColor(sf::Color::White);
     text.setPosition((app->resolution.x/2.0) - (text.getGlobalBounds().getSize().x/2.0), ((app->resolution.y/(n_menugameButtons + 1)) * (currentIdx + 1)) - (text.getGlobalBounds().getSize().y/2));
 }

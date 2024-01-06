@@ -16,14 +16,13 @@ class button{
     mainMenuLayerId layer;
     std::string stringText;
     sf::Text text;
-    sf::Sprite imageSprite;
     bool focus;
     bool pressed;
     int n_button;
     virtual void draw(sf::RenderWindow &window);
     virtual void update(sf::Vector2f mousePos);
     virtual ~button();
-    virtual void changeRes(Application *applicationPointer, int maxButt, int currButt);
+
 };
 
 
@@ -36,7 +35,6 @@ class ClickButton : public button {
     void draw(sf::RenderWindow &window);
     void update(sf::Vector2f mousePos);
 
-    void changeRes(Application *applicationPointer, int maxButt, int currButt);
     
     ~ClickButton(void);
 };
@@ -52,7 +50,6 @@ class GraphicButton : public button{
     void draw(sf::RenderWindow &window);
     void update(sf::Vector2f mousePos);
 
-    void changeRes(Application *applicationPointer, int maxButt, int currButt);
 
 };
 
@@ -66,7 +63,6 @@ class newSafeButton : public button {
     void update(sf::Vector2f mousePos);
     void draw(sf::RenderWindow &window);
 
-    void changeRes(Application *applicationPointer, int maxButt, int currButt);
     
     void addInput(sf::Uint32 input, sf::Vector2u res);
     void delLastInput(sf::Vector2u res);
@@ -82,7 +78,6 @@ class adressButton : public button {
     void update(sf::Vector2f mousePos);
     void draw(sf::RenderWindow &window);
 
-    void changeRes(Application *applicationPointer, int maxButt, int currButt);
     
     void addInput(sf::Uint32 input, sf::Vector2u res);
     void delLastInput(sf::Vector2u res);
@@ -97,7 +92,6 @@ class ProfileButton : public button {
     void draw(sf::RenderWindow &window);
     void update(sf::Vector2f mousePos);
 
-    void changeRes(Application *applicationPointer, int maxButt, int currButt);
     
     ~ProfileButton(void);
 };

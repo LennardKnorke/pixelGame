@@ -48,6 +48,12 @@ bool setHostIp(sf::IpAddress *adress, gameMode Mode);
 bool setHostPort(unsigned short &port, sf::IpAddress *adress, gameMode Mode);
 
 
+class inGameStateApplication{
+    public:
+    virtual void draw(sf::RenderWindow &window);
+    virtual void sendToHost(sf::TcpSocket &socket, sf::Packet &package);
+};
+
 // BASIC SET UP. THEREFORE NO EXTENSIVE INSTRUCTION. Update soon!
 class inGameMenuButton{
     public:

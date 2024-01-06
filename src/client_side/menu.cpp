@@ -7,6 +7,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 GAME_STATE Application::menuLoop(void){
 
+
     //Variables to control what to display in menu
     mainMenuLayerId currentLayer = mainMenuLayerId::Base;
     menuPopUps currentMenuPopUp = menuPopUps::NoPopUp;
@@ -26,8 +27,8 @@ GAME_STATE Application::menuLoop(void){
     backgroundSprite.setScale(resolution.x/backgroundSprite.getGlobalBounds().getSize().x, resolution.y/backgroundSprite.getGlobalBounds().getSize().y);
 
     //prepare a warning message for errors
-    sf::Text warningMessage = initErrorMessage(&gameFont, ratioScaling);
-    
+    sf::Text warningMessage = initErrorMessage(gameFont);
+    backgroundMusic[musicIdx::mainMenu].play();
     //  MAIN MENU LOOP
     //      1. DRAW
     //      2. Register Key/Mouse Input
@@ -109,13 +110,13 @@ GAME_STATE Application::menuLoop(void){
 /////////////////////////////////////////////////////////////////////////////////
 //MENU HPP DEFINITIONS
 /////////////////////////////////////////////////////////////////////////////////
-sf::Text initErrorMessage(sf::Font *font, float scaling){
+sf::Text initErrorMessage(sf::Font &font){
     sf::Text newText;
     newText.setString("");
     newText.setFillColor(sf::Color::White);
-    newText.setFont(*font);
+    newText.setFont(font);
     newText.setStyle(sf::Text::Style::Regular);
-    newText.setCharacterSize(30 * scaling);
+    newText.setCharacterSize(GAMEFONT_SIZE);
     return newText;
 }
 

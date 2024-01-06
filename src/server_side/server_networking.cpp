@@ -25,7 +25,7 @@ Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath, 
         std::cout << "Failed to load GameSave\n";
         return;
     }
-    system("pause");
+
     //Set up server either locally or online
     //(both work the EXACT same way right now due to hamachi)
     if (mode_Online(mode)){
@@ -92,7 +92,11 @@ Server::Server(unsigned short port, sf::IpAddress adress, std::string savePath, 
             //PAUSE GAME!
         }
 
-
+        for (auto iterator : clientsAvailable){
+            if (!iterator->active && iterator->threadPtr != nullptr){
+                clearClient(iterator);
+            }
+        }
         //Pass info to game
 
 
@@ -154,10 +158,9 @@ void Server::acceptConnections(void){
         unsigned short socketPosition= getFreeClientPosition();
         if (socketPosition != USHRT_MAX && serverListener.accept(clientsAvailable[socketPosition]->socket) == sf::Socket::Done) {
             std::cout << "New client connected" << std::endl;
-            clientThreadParameters parameters;
-            parameters.i = socketPosition;
-            parameters.yourClientPlace = clientsAvailable[socketPosition];
-            clientsAvailable[socketPosition]->threadPtr = new sf::Thread(clientThread, parameters);
+            clientsAvailable[socketPosition]->id = socketPosition;
+            clientsAvailable[socketPosition]->active = true;
+            clientsAvailable[socketPosition]->threadPtr = new sf::Thread(clientThread, clientsAvailable[socketPosition]);
             clientsAvailable[socketPosition]->threadPtr->launch();
         }
     }
@@ -176,14 +179,32 @@ unsigned short Server::getFreeClientPosition(){
 }
 
 
-void clientThread(clientThreadParameters p){
-    p.yourClientPlace->id = p.i;
-    p.yourClientPlace->active = true;
-    p.yourClientPlace->connected = true;
-
+void clientThread(serverClient *SC){
+    bool VALID_CLIENT = true;
     sf::Packet package;
     //Get id from clinet
+    SC->socket.setBlocking(true);
+    SC->socket.receive(package);
+    package >> SC->key;
 
+    /// CHECK KEY FOR VALIDITY
+    if (SC->key.size() != maxInputLengths::userId){
+        std::cout << "Invalid user key: " << SC->key << std::endl;
+        std::cout << "Disconnecting client!\n";
+        VALID_CLIENT = false;
+    }
+    else {
+        for (auto iterator : SC->key){
+            if (VALID_CLIENT && !std::isalnum(iterator)){
+                std::cout << "Invalid user key: " << SC->key << std::endl;
+                std::cout << "Disconnecting client!\n";
+                VALID_CLIENT = false;
+            }
+        }
+    }
+    if (VALID_CLIENT){
+        std::cout << "Connected to client: " << SC->key <<std::endl;
+    }
     //(Option 1) Send full gameworld here
 
     //LOOP
@@ -191,16 +212,26 @@ void clientThread(clientThreadParameters p){
         //  get player info about client from gamesave
         //  (Option 1) send updates to players; (Option 2) send window to player
 
-
+    if (!VALID_CLIENT){
+        SC->active = false;
+        SC->connected = false;
+        SC->socket.disconnect();
+        SC->id = USHRT_MAX;
+        SC->key.clear();
+        SC->key = "";
+        return;
+    }
     // Exchange Loop
-    while (true){
-        package << std::string("Hi Player!");
-        p.yourClientPlace->socket.send(package);
+    package.clear();
+
+    while (VALID_CLIENT){
+        // FIll package
+        SC->socket.send(package);
+        
         package.clear();
-        p.yourClientPlace->socket.receive(package);
-        std::string s;
-        package >> s;
-        std::cout<< s;
+        // Receive package
+        SC->socket.receive(package);
+        
         package.clear();
     }
     return;
@@ -224,24 +255,7 @@ void Server::updateTimeOut(timeOutTimer *timer){
 void Server::initTimeOut(timeOutTimer *timer){
     timer->start = std::chrono::high_resolution_clock::now();
 }
-// Accept a new connection from client to listener (TCP port)
-/*
-void acceptConnection(sf::TcpListener listener){
-    sf::TcpSocket client;
-    if (listener.accept(client) != sf::Socket::Done){
-        std::cout << "An client's connection attempt failed succesfully." <<  std::endl;
-    }
-}
 
-void sendPacket(){
-    sf::Uint16 x = 10;
-    std::string s = "hello";
-    double d = 0.6;
-
-    sf::Packet packet;
-    packet << x << s << d;
-}
-*/
 bool clientInUse(serverClient *c){
     return (c->active!=false) 
             && (c->id!=USHRT_MAX) 
@@ -252,11 +266,14 @@ bool clientInUse(serverClient *c){
 
 void clearClient(serverClient *c){
     c->active = false;
+    c->socket.disconnect();
     c->connected = false;
     c->id = USHRT_MAX;
     c->key.clear();
     c->key = "";
-    c->threadPtr->terminate();
-    c->threadPtr->~Thread();
-    c->threadPtr = nullptr;
+    if (c->threadPtr != nullptr){
+        c->threadPtr->terminate();
+        c->threadPtr->~Thread();
+        c->threadPtr = nullptr;
+    }
 }

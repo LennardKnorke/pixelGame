@@ -139,11 +139,7 @@ class Server {
 
 };
 
-typedef struct clientThreadParameters{
-    unsigned short i;
-    serverClient *yourClientPlace;
-}clientThreadParameters;
-void clientThread(clientThreadParameters p);
-
+void clientThread(serverClient *SC);
+void readClientMessage(sf::Packet &package);
 
 #endif //SERVER_NETWORKING_HPP

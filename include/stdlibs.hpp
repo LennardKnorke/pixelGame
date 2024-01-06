@@ -44,6 +44,12 @@
 ////////////////////////////////////////////////////////////
 #include "tilesMakros.hpp"
 
+
+
+////////////////////////////////////////////////////////////
+/// optional shit to allow other headers to mention these
+////////////////////////////////////////////////////////////
+#define GAMEFONT_SIZE 35
 //Allows them to be used in other headerfiles!
 class Application;
 class Clients;
@@ -175,21 +181,23 @@ typedef struct playerControl{
 
 
 // Structure containing all information necessary for communication
-typedef struct menuStateInput_msg{
-    playerControl controls;
-}menuStateInput_msg;
+typedef struct menuInput_msg{
+    bool tmp;
+}menuInput_msg;
+
 typedef struct skillTreeInput_msg{
-    int i;
+    bool tmp;
 }skillTreeInput_msg;
-typedef struct mainGameInput_msg{
-    int i;
-}mainGameInput_msg;
+
+/// @brief contains input commands given by player. send to server
+typedef struct gameInput_msg{
+    playerControl controls;
+}gameInput_msg;
 
 typedef struct playerMessagePackage {
-    gameLoopState state;
-    menuStateInput_msg menu;
+    menuInput_msg menu;
     skillTreeInput_msg tree;
-    mainGameInput_msg game;
+    gameInput_msg game;
 }playerMessagePackage;
 
 
@@ -197,6 +205,9 @@ typedef struct serverMessagePackage{
     bool serverRuns;
 }serverMessagePackage;
 
+
+/// \brief one copy is run for each client on server and the respective client side
+/// contains the information send by the client and information to be send by the server
 typedef struct combinedMsgPackage {
     serverMessagePackage server;
     playerMessagePackage client;

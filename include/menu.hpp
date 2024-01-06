@@ -6,13 +6,13 @@
 ////////////////////////////////////////////////////////////
 /// \brief sets up sfml text to be used for Error messages
 ///
-/// \param font pointer to font to be used
+/// \param font font to be used
 ///
 /// \param scaling float about the 16:9 scaling (base: 1920x1080) to be applied. (OPTIONAL!)
 ///
 /// \return sfml text
 ////////////////////////////////////////////////////////////
-sf::Text initErrorMessage(sf::Font *font, float scaling);
+sf::Text initErrorMessage(sf::Font &font);
 
 ////////////////////////////////////////////////////////////
 /// \brief sets up sfml text to be used for Error messages

@@ -2,7 +2,7 @@
 #ifndef APPLICATION_HPP
 #define APPLICATON_HPP
 #include "stdlibs.hpp"
-
+#include "cursor.hpp"
 
 /// @brief makros: Gamestates
 enum GAME_STATE {
@@ -21,19 +21,21 @@ enum errorCodes{
 };
 
 
-#define nr_cursor_textures 2    //!< maximum number of cursor textures to load
-#define nr_menu_textures 4      //!< maximum number of menu textures to load
-#define MAX_N_SAVES 5           //!< maximum number of saves to load/create
 
+#define nr_menu_textures 1      //!< maximum number of menu textures to load
+#define MAX_N_SAVES 5           //!< maximum number of saves to load/create
+#define nr_backgroundMusic 2    //!< maximum number of music files to be loaded
 
 /// @brief makros: idx menu textures
 enum menuTextureIdxS {
     background = 0,     //!< background texture index
-    button_silver = 1,  //!<
-    button_red = 2,     //!<
-    button_green = 3    //!<
 };
 
+/// @brief makros: idx background music
+enum musicIdx {
+    mainMenu = 0,           //!< main Menu
+    game_main = 1,      //!< main Game
+};
 
 /// @brief makros: type of input
 enum inputType {
@@ -52,63 +54,6 @@ typedef struct inGameInputKey {
 }inGameInputKey;
 
 
-/// @brief makro: index cursorsprites textures
-enum cursorSpriteIndexes {
-    menu = 0, 
-    game_base = 1
-};
-
-
-////////////////////////////////////////////////////////////
-/// \brief Class containing cursor sprites for the menu,
-///        ingame, etc.
-////////////////////////////////////////////////////////////
-class CursorSprite {    
-    public:
-
-    ////////////////////////////////////////////////////////////
-    /// \brief change the active sprite used for cursor
-    ///
-    /// \param i new index of sprite in the texture
-    ////////////////////////////////////////////////////////////
-    void changeSprite(cursorSpriteIndexes i);
-
-    ////////////////////////////////////////////////////////////
-    /// \brief run updates
-    ////////////////////////////////////////////////////////////
-    void update(void);
-
-    ////////////////////////////////////////////////////////////
-    /// \brief draw in window
-    ///
-    /// \param window window to draw in
-    ////////////////////////////////////////////////////////////
-    void draw(sf::RenderWindow &renderwindow);
-
-    ////////////////////////////////////////////////////////////
-    /// \brief (NOT IMPLEMENTED)
-    ////////////////////////////////////////////////////////////
-    void changeRes(void);
-
-    ////////////////////////////////////////////////////////////
-    /// \brief return cursor/sprite info
-    ///
-    /// \return two floats for the postion
-    ////////////////////////////////////////////////////////////
-    sf::Vector2f returnPosition(void);
-
-    ////////////////////////////////////////////////////////////
-    /// \brief return cursor/sprite info
-    ///
-    /// \return two floats for the size
-    ////////////////////////////////////////////////////////////
-    sf::Vector2f returnSize(void);
-
-    cursorSpriteIndexes activeSprite;       //!< active sprite for drawing
-    sf::Sprite sprite[nr_cursor_textures];  //!< available sprites
-    bool pressed;                           //!< true/false if mousebutton is pressed (redundant?)
-    bool print;                             //!< true/false show the cursor sprite
-};
 
 
 ////////////////////////////////////////////////////////////
@@ -129,7 +74,6 @@ class Application{
     ///
     ////////////////////////////////////////////////////////////
     void initWindow(void);
-
 
     ////////////////////////////////////////////////////////////
     /// \brief Load/init/create settings
@@ -199,7 +143,7 @@ class Application{
         /// \return returns the game loop makro if successful,
         /// menu otherwise
         ////////////////////////////////////////////////////////////
-        gameLoopState loadingScreen(Clients &socket);
+        gameLoopState loadingScreen(sf::TcpSocket &socket);
 
         ////////////////////////////////////////////////////////////
         /// \brief main gameloop: Draw textures
@@ -214,14 +158,7 @@ class Application{
         ///
         /// \param controlInput struct which "saves" the current user input
         ////////////////////////////////////////////////////////////
-        void registerGameInput(gameLoopState &s, playerControl &controlInput);
-
-            ////////////////////////////////////////////////////////////
-            /// \brief save the key and aim input for user's character
-            ///
-            /// \param controlInput struct which "saves" the current user input
-            ////////////////////////////////////////////////////////////
-            void readUserGameInput(playerControl &controlInput);
+        void registerGameInput(sf::Event &ev, gameInput_msg &playerInput);
 
         ////////////////////////////////////////////////////////////
         /// \brief main gameloop: exchange info with server, update local client
@@ -230,7 +167,7 @@ class Application{
         ///
         /// \param packet sfml package to fill and send via client
         ////////////////////////////////////////////////////////////
-        void updateGame(Clients &socket, sf::Packet &packet);
+        void updateGame(sf::TcpSocket &socket, gameInput_msg &controlMessages);
 
         ////////////////////////////////////////////////////////////
         /// \brief main gameloop: draw menubuttons
@@ -246,14 +183,14 @@ class Application{
         ///
         /// \param v vector with buttons for ingame Menu
         ////////////////////////////////////////////////////////////
-        void registerMenuInput(gameLoopState *s, std::vector<inGameMenuButton*> v);
+        void registerMenuInput(sf::Event &ev, gameLoopState &s, std::vector<inGameMenuButton*> &v);
 
         ////////////////////////////////////////////////////////////
         /// \brief main gameloop: update menu/buttons in menu 
         ///
         /// \param v vector with buttons for ingame Menu
         ////////////////////////////////////////////////////////////
-        void updateMenu(std::vector<inGameMenuButton*> v);
+        void updateMenu(sf::TcpSocket &socket, std::vector<inGameMenuButton*> &v);
 
         ////////////////////////////////////////////////////////////
         /// \brief main gameloop: draw skilltree (NOT FINISHED)
@@ -265,28 +202,28 @@ class Application{
         ///
         /// \param s potential to go back to main menu/update game state
         ////////////////////////////////////////////////////////////
-        void registerTreeInput(gameLoopState *s);
+        void registerTreeInput();
 
         ////////////////////////////////////////////////////////////
         /// \brief main gameloop: exchange info with host, update local (NOT FINISHED)
         ////////////////////////////////////////////////////////////
-        void updateTree(void);
+        void updateTree(sf::TcpSocket &socket, skillTreeInput_msg &msg);
 
 
-    //Window related variables
+    ////////////////////////////////////////////////////////////
+    ////        VARIABLES
+    ////////////////////////////////////////////////////////////
     sf::RenderWindow window;    //!< window variable to display everything in
-
+    float volume;              //!< 0-1
     sf::Vector2u resolution;    //!< resolution of the window
-    float ratioScaling;         //!< 16:9 scaling compared to 1920x1080 (optional?)
     CursorSprite cursor;        //!< application cursor
     
     sf::Font gameFont;          //!< Font used for all sf::Text instances
 
-    //One instance for all the textures
-    struct Textures {
+    struct Textures {                               //!< contains all textures (FILL FOR MORE TEXTURES USED IN GAME!)
         sf::Texture cursors[nr_cursor_textures];    //!< cursor textures
         sf::Texture menu[nr_menu_textures];         //!< menu textures
-    }textures;  //!< contains all textures (FILL FOR MORE TEXTURES USED IN GAME!)
+    }textures;  
     
     
     std::vector<gameSaveSummary> availableSaveFiles;//!< contains summaries of available saves
@@ -296,17 +233,18 @@ class Application{
     //!< public ip adress of user machine
     sf::IpAddress machineLocalAdress = sf::IpAddress::getLocalAddress();
     
-    struct socketAdress {
+    struct socketAdress {                       //!< contains info for connecting to host or hosting
         sf::IpAddress ip = sf::IpAddress::None; //!< ip to connect to
         unsigned short port = 0;                //!< port to connect to
         std::string pathSave;                   //!< (IF HOST) path to save for loading
-    }hostAdress;    //!< contains info for connecting to host or hosting
+    }hostAdress;                                
 
     GAME_STATE State;               //!< state of game/APPLICATION. game, menu or exit
     gameMode mode = undefined;      //!< Online, Local or Alone
     errorCodes error = NoErr;       //!< error to display
     std::string localUserID;        //!< Id of active user
 
+    sf::Music backgroundMusic[nr_backgroundMusic];
     inGameInputKey inGameControls[n_keyInputOptions];   //!< assigned keys for ingame controls
 };
 

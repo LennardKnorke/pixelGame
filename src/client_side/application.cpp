@@ -39,8 +39,11 @@ Application::Application(void){
 
 
 
-//Set up render window
 void Application::initWindow(void){
+    //Get screen resolution
+    sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
+    resolution = sf::Vector2u(desktop.width, desktop.height);
+    
     window.create(sf::VideoMode(resolution.x, resolution.y, 32), "ReFrAcTuReD", sf::Style::Fullscreen);
     window.setFramerateLimit(60);
     window.setMouseCursorVisible(false);
@@ -49,7 +52,6 @@ void Application::initWindow(void){
 
 
 
-//find or create settings
 void Application::initSettings(void){
     if (fileExists("settings.bin")){
         loadSettings();
@@ -57,17 +59,16 @@ void Application::initSettings(void){
     else {
         createSettings();
     }
-    ratioScaling = 1920.0/resolution.x;
 
     if (!fileExists("multiplayer.txt")){
         std::ofstream outputFile("multiplayer.txt");
-        outputFile << "None\n";
+        outputFile << "Copy Your Own Hamachi Ip Here\n";
         outputFile.close();
     }
 }
 
 
-//load
+
 void Application::loadSettings(void){
     std::ifstream inputFile("settings.bin", std::ios::binary);
 
@@ -75,11 +76,9 @@ void Application::loadSettings(void){
     readStrOfFile(inputFile, localUserID);
 
     //Read standart resolution
-    inputFile.read(reinterpret_cast<char *>(&resolution), sizeof(sf::Vector2u));
+    inputFile.read(reinterpret_cast<char *>(&volume), sizeof(float));
 
-    std::cout   <<"Loaded user: " << localUserID << std::endl
-                << resolution.x << "\t"
-                << resolution.y << std::endl;
+    std::cout   <<"Loaded user: " << localUserID << std::endl;
 
     //load control settings
     for (int i = 0; i < 7; i++){
@@ -97,32 +96,9 @@ void Application::loadSettings(void){
 
 
 
-//First create settings/controls/userId and then run save function
-void Application::createSettings(void){
-    //Get Screen Size
-    sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
-    resolution = sf::Vector2u(desktop.width, desktop.height);
-    if (desktop.width >= 1920 && desktop.height >= 1080){
-        resolution.x = 1920;
-        resolution.y = 1080;
-    }
-    else if (desktop.width >= 1600 && desktop.height >= 900){
-        resolution.x = 1600;
-        resolution.y = 900;
-    }
-    else if (desktop.width >= 1280 && desktop.height >= 720){
-        resolution.x = 1280;
-        resolution.y = 720;
-    }else if (desktop.width >= 1024 && desktop.height >= 576){
-        resolution.x = 1024;
-        resolution.y = 576;
-    }
-    else {
-        resolution.x = 960;
-        resolution.y = 540;
-    }
-    
 
+void Application::createSettings(void){
+    
     //Generate A key
     const std::string alphabet = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     std::mt19937 rng(std::random_device{}());
@@ -130,9 +106,10 @@ void Application::createSettings(void){
     for (int i = 0 ; i < maxInputLengths::userId; i++){
         localUserID += alphabet[dist(rng)];
     }
-    std::cout   << "Created User:  "<< localUserID << std::endl
-                << resolution.x << "\t"
-                << resolution.y << std::endl;
+    std::cout   << "Created User:  "<< localUserID << std::endl;
+
+    //Set default volume
+    volume = 50.0;
 
     //set default controls
     inGameControls[up].iType = inputType::KEYBOARD;
@@ -163,11 +140,15 @@ void Application::createSettings(void){
 void Application::saveSettings(void){
     std::ofstream outputFile("settings.bin", std::ios::binary);
     
-    //Write local user ID
+    // save local user ID
     writeStrToFile(outputFile, localUserID);
-    //Write resolution
-    outputFile.write(reinterpret_cast<const char *>(&resolution), sizeof(sf::Vector2u));
-    //Save Control settings
+
+
+    // save volumne setting resolution
+    outputFile.write(reinterpret_cast<char *>(&volume), sizeof(float));
+
+
+    // Save Control settings
     for (int i = 0; i < 7; i++){
         outputFile.write(reinterpret_cast<const char*>(&inGameControls[i].iType), sizeof(inputType));
         if (inGameControls[i].iType == inputType::KEYBOARD){
@@ -189,7 +170,18 @@ bool Application::loadAssets(void){
     if (!(loadTextures())){
         return false;
     }
-    //Load Sound Assets
+
+    //Load Music Assets
+    int i = 0;
+    for (auto &iterator : std::filesystem::directory_iterator("assets/music/")){
+        if (!backgroundMusic[i].openFromFile(iterator.path().string())){
+            std::cout << "Failed to load Music: " << iterator.path().string() << std::endl;
+            return false;
+        }
+        backgroundMusic[i].setLoop(true);
+        backgroundMusic[i].setVolume(volume);
+        i++;
+    }
 
     //Load Font Asset
     if (!(gameFont.loadFromFile("PFAgoraSlabPro Bold.ttf"))){
@@ -213,8 +205,9 @@ void Application::setUpSaveFolder(void){
 }
 
 
+
 bool Application::loadTextures(void){
-    //Get Menu Textures
+    // Load Menu Textures
     int texture_idx = 0;
     for (auto &iterator : std::filesystem::directory_iterator("assets/sprites/menu/")){
         if (!(textures.menu[texture_idx].loadFromFile(iterator.path().string()))){
@@ -226,7 +219,7 @@ bool Application::loadTextures(void){
             break;
         }
     }
-    //Get CursorTextures
+    // Load CursorTextures
     texture_idx = 0;
     for (auto &iterator : std::filesystem::directory_iterator("assets/sprites/cursor/")){
         if (!(textures.cursors[texture_idx].loadFromFile(iterator.path().string()))){
@@ -257,47 +250,9 @@ void Application::setUpCursorAssets(void){
     for (int i = 0; i < nr_cursor_textures; i++){
         cursor.sprite[i].setTexture(textures.cursors[i]);
     }
-    cursor.sprite[cursorSpriteIndexes::menu].setScale((100 / ratioScaling)/cursor.sprite[cursorSpriteIndexes::menu].getGlobalBounds().getSize().x, (100 / ratioScaling)/cursor.sprite[cursorSpriteIndexes::menu].getGlobalBounds().getSize().y);
+    cursor.sprite[cursorSpriteIndexes::menu].setScale((100)/cursor.sprite[cursorSpriteIndexes::menu].getGlobalBounds().getSize().x, (100)/cursor.sprite[cursorSpriteIndexes::menu].getGlobalBounds().getSize().y);
     cursor.changeSprite(cursorSpriteIndexes::menu);
     cursor.print = true;
 }
-
-
-
-////////////////////////////////////////////
-// CURSOR CLASS
-////////////////////////////////////////////
-void CursorSprite::changeSprite(cursorSpriteIndexes i){
-    activeSprite = i;
-}
-
-
-
-void CursorSprite::update(void){
-    sprite[activeSprite].setPosition(sf::Vector2f(sf::Mouse::getPosition()));
-    pressed = sf::Mouse::isButtonPressed(sf::Mouse::Left);
-}
-
-
-
-void CursorSprite::draw(sf::RenderWindow &renderwindow){
-    if (print){
-        renderwindow.draw(sprite[activeSprite]);
-    }
-    
-}
-
-
-
-sf::Vector2f CursorSprite::returnPosition(void){
-    return sprite[activeSprite].getPosition();
-}
-
-
-
-sf::Vector2f CursorSprite::returnSize(void){
-    return sprite[activeSprite].getGlobalBounds().getSize();
-}
-
 
 
