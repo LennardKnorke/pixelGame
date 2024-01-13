@@ -1,5 +1,5 @@
 #include "application.hpp"
-#include "gameSaveSummary.hpp"
+
 ////////////////////////////////////////////
 //APPLICATION CLASS
 
@@ -149,7 +149,7 @@ void Application::saveSettings(void){
 
 
     // Save Control settings
-    for (int i = 0; i < 7; i++){
+    for (int i = 0; i < n_keyInputOptions; i++){
         outputFile.write(reinterpret_cast<const char*>(&inGameControls[i].iType), sizeof(inputType));
         if (inGameControls[i].iType == inputType::KEYBOARD){
             outputFile.write(reinterpret_cast<const char*>(&inGameControls[i].input.keyInput), sizeof(sf::Keyboard::Key));

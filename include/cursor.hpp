@@ -2,36 +2,35 @@
 
 #define nr_cursor_textures 2    //!< maximum number of cursor textures to load
 
-/// @brief makro: index cursorsprites textures
+/// \brief Enumeration of cursor sprite indexes
 enum cursorSpriteIndexes {
     menu = 0, 
     game_base = 1
 };
 
-
 ////////////////////////////////////////////////////////////
 /// \brief Class containing cursor sprites for the menu,
-///        ingame, etc.
+///        in-game, etc.
 ////////////////////////////////////////////////////////////
 class CursorSprite {    
-    public:
+public:
 
     ////////////////////////////////////////////////////////////
-    /// \brief change the active sprite used for cursor
+    /// \brief Change the active sprite used for the cursor
     ///
-    /// \param i new index of sprite in the texture
+    /// \param i New index of the sprite in the texture
     ////////////////////////////////////////////////////////////
     void changeSprite(cursorSpriteIndexes i);
 
     ////////////////////////////////////////////////////////////
-    /// \brief run updates
+    /// \brief Run updates
     ////////////////////////////////////////////////////////////
     void update(void);
 
     ////////////////////////////////////////////////////////////
-    /// \brief draw in window
+    /// \brief Draw the cursor in the window
     ///
-    /// \param window window to draw in
+    /// \param window Window to draw in
     ////////////////////////////////////////////////////////////
     void draw(sf::RenderWindow &renderwindow);
 
@@ -41,21 +40,21 @@ class CursorSprite {
     void changeRes(void);
 
     ////////////////////////////////////////////////////////////
-    /// \brief return cursor/sprite info
+    /// \brief Return the position of the cursor
     ///
-    /// \return two floats for the postion
+    /// \return The position of the cursor as a sf::Vector2f
     ////////////////////////////////////////////////////////////
     sf::Vector2f returnPosition(void);
 
     ////////////////////////////////////////////////////////////
-    /// \brief return cursor/sprite info
+    /// \brief Return the size of the cursor
     ///
-    /// \return vector of two floats for the size
+    /// \return The size of the cursor as a sf::Vector2f
     ////////////////////////////////////////////////////////////
     sf::Vector2f returnSize(void);
 
-    cursorSpriteIndexes activeSprite;       //!< active sprite for drawing
-    sf::Sprite sprite[nr_cursor_textures];  //!< available sprites
-    bool pressed;                           //!< true/false if mousebutton is pressed (redundant?)
-    bool print;                             //!< true/false show the cursor sprite
+    cursorSpriteIndexes activeSprite;       //!< Active sprite for drawing
+    sf::Sprite sprite[nr_cursor_textures];  //!< Available sprites
+    bool pressed;                           //!< True/false if mouse button is pressed (redundant?)
+    bool print;                             //!< True/false to show the cursor sprite
 };

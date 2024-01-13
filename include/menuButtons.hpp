@@ -3,12 +3,6 @@
 #define MENUBUTTONS_HPP
 #include "stdlibs.hpp"
 
-/// Annoying implementation.
-
-////////////////////////////////////////////////////////////
-void setUpMenuButtons(std::vector<button*> &buttonList, Application *applicationPointer);
-void drawMenuButtons(std::vector<button*> &MenuButtons, mainMenuLayerId currentLayer, sf::RenderWindow &window);
-
 //Base class of a text button
 class button{
     public:

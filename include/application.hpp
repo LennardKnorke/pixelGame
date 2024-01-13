@@ -4,13 +4,6 @@
 #include "stdlibs.hpp"
 #include "cursor.hpp"
 
-/// @brief makros: Gamestates
-enum GAME_STATE {
-    MENU,   //!< in the main menu
-    GAME,   //!< in the main game loop
-    QUIT    //!< quit application
-};
-
 
 /// @brief makros: load/display error messages in mainmenu
 enum errorCodes{
@@ -61,160 +54,86 @@ typedef struct inGameInputKey {
 ///        the local client, booting information and most
 ///         functions
 ////////////////////////////////////////////////////////////
+
+
+
 class Application{
     public:
 
-    ////////////////////////////////////////////////////////////
-    /// \brief Default constructor runs the application
-    ////////////////////////////////////////////////////////////
+    /**
+     * @brief Default constructor that runs the application.
+     */
     Application(void);
 
-    ////////////////////////////////////////////////////////////
-    /// \brief Set up the rendering window
-    ///
-    ////////////////////////////////////////////////////////////
+    /**
+     * @brief Set up the rendering window.
+     */
     void initWindow(void);
 
-    ////////////////////////////////////////////////////////////
-    /// \brief Load/init/create settings
-    ////////////////////////////////////////////////////////////
+    /**
+     * @brief Load, initialize, or create settings.
+     */
     void initSettings(void);
 
-    ////////////////////////////////////////////////////////////
-    /// \brief Load existing settings file
-    ////////////////////////////////////////////////////////////
+    /**
+     * @brief Load an existing settings file.
+     */
     void loadSettings(void);
 
-    ////////////////////////////////////////////////////////////
-    /// \brief create setting file with default settings
-    ////////////////////////////////////////////////////////////
+    /**
+     * @brief Create a setting file with default settings.
+     */
     void createSettings(void);
 
-    ////////////////////////////////////////////////////////////
-    /// \brief Saves the setting file
-    ////////////////////////////////////////////////////////////
+    /**
+     * @brief Save the setting file.
+     */
     void saveSettings(void);
 
-    ////////////////////////////////////////////////////////////
-    /// \brief Load ALL assets, like textures/music etc.
-    ///
-    /// \return true if succesfull, else false
-    ////////////////////////////////////////////////////////////
+    /**
+     * @brief Load all assets, such as textures and music.
+     * 
+     * @return true if successful, false otherwise.
+     */
     bool loadAssets(void);
     
-    ////////////////////////////////////////////////////////////
-    /// \brief Load textures into application
-    ///
-    /// \return true if succesfull, else false
-    ////////////////////////////////////////////////////////////
+    /**
+     * @brief Load textures into the application.
+     * 
+     * @return true if successful, false otherwise.
+     */
     bool loadTextures(void);
 
-    ////////////////////////////////////////////////////////////
-    /// \brief Load Cursor textures
-    ////////////////////////////////////////////////////////////
+    /**
+     * @brief Load cursor textures.
+     */
     void setUpCursorAssets(void);
 
-
-    ////////////////////////////////////////////////////////////
-    /// \brief Creates folder for savefiles if not present
-    ////////////////////////////////////////////////////////////
+    /**
+     * @brief Create a folder for save files if it is not present.
+     */
     void setUpSaveFolder(void);
     
-    ////////////////////////////////////////////////////////////
-    /// \brief Run the main menu. Definition found in menu.cpp
-    ///
-    /// \return next game state (game loop or exit)
-    ////////////////////////////////////////////////////////////
+
+    /**
+     * @brief Run the main menu.
+     * 
+     * @return the next game state (game loop or exit).
+     */
     GAME_STATE menuLoop(void);
 
-    ////////////////////////////////////////////////////////////
-    /// \brief Run the main game loop
-    ///
-    /// \return next game state (main menu loop or exit)
-    ////////////////////////////////////////////////////////////
+    /**
+     * @brief Run the main game loop.
+     * 
+     * @return the next game state (main menu loop or exit).
+     */
     GAME_STATE gameLoop(void);
 
-        ////////////////////////////////////////////////////////////
-        /// \brief Display a loading screen and attempt to connect 
-        /// with host
-        ///
-        /// \param socket the client socket to connect with host
-        ///
-        /// \return returns the game loop makro if successful,
-        /// menu otherwise
-        ////////////////////////////////////////////////////////////
-        gameLoopState loadingScreen(sf::TcpSocket &socket);
-
-        ////////////////////////////////////////////////////////////
-        /// \brief main gameloop: Draw textures
-        ////////////////////////////////////////////////////////////
-        void drawGame(void);
-
-        ////////////////////////////////////////////////////////////
-        /// \brief main gameloop: register keyinput
-        ///
-        /// \param s optional to change gameloop state to menu if 
-        /// escape button is pressed
-        ///
-        /// \param controlInput struct which "saves" the current user input
-        ////////////////////////////////////////////////////////////
-        void registerGameInput(sf::Event &ev, gameInput_msg &playerInput);
-
-        ////////////////////////////////////////////////////////////
-        /// \brief main gameloop: exchange info with server, update local client
-        ///
-        /// \param socket socket through which communicate with host 
-        ///
-        /// \param packet sfml package to fill and send via client
-        ////////////////////////////////////////////////////////////
-        void updateGame(sf::TcpSocket &socket, gameInput_msg &controlMessages);
-
-        ////////////////////////////////////////////////////////////
-        /// \brief main gameloop: draw menubuttons
-        ///
-        /// \param v vector with buttons for ingame Menu
-        ////////////////////////////////////////////////////////////
-        void drawMenu(std::vector<inGameMenuButton*> v);
-
-        ////////////////////////////////////////////////////////////
-        /// \brief main gameloop: register key and mosue input
-        ///
-        /// \param s option to update the gameloop state
-        ///
-        /// \param v vector with buttons for ingame Menu
-        ////////////////////////////////////////////////////////////
-        void registerMenuInput(sf::Event &ev, gameLoopState &s, std::vector<inGameMenuButton*> &v);
-
-        ////////////////////////////////////////////////////////////
-        /// \brief main gameloop: update menu/buttons in menu 
-        ///
-        /// \param v vector with buttons for ingame Menu
-        ////////////////////////////////////////////////////////////
-        void updateMenu(sf::TcpSocket &socket, std::vector<inGameMenuButton*> &v);
-
-        ////////////////////////////////////////////////////////////
-        /// \brief main gameloop: draw skilltree (NOT FINISHED)
-        ////////////////////////////////////////////////////////////
-        void drawTree(void);
-
-        ////////////////////////////////////////////////////////////
-        /// \brief main gameloop: register input in tree window (NOT FINISHED)
-        ///
-        /// \param s potential to go back to main menu/update game state
-        ////////////////////////////////////////////////////////////
-        void registerTreeInput();
-
-        ////////////////////////////////////////////////////////////
-        /// \brief main gameloop: exchange info with host, update local (NOT FINISHED)
-        ////////////////////////////////////////////////////////////
-        void updateTree(sf::TcpSocket &socket, skillTreeInput_msg &msg);
-
-
-    ////////////////////////////////////////////////////////////
-    ////        VARIABLES
-    ////////////////////////////////////////////////////////////
+    /**
+     * @brief VARIABLES
+     */
     sf::RenderWindow window;    //!< window variable to display everything in
-    float volume;              //!< 0-1
+    float volume;               //!< 0-1
     sf::Vector2u resolution;    //!< resolution of the window
     CursorSprite cursor;        //!< application cursor
     
@@ -225,12 +144,9 @@ class Application{
         sf::Texture menu[nr_menu_textures];         //!< menu textures
     }textures;  
     
-    
-    std::vector<gameSaveSummary> availableSaveFiles;//!< contains summaries of available saves
-
-    //!< local ip adress of user machine
+    //!< local ip address of user machine
     sf::IpAddress machinePublicAdress = sf::IpAddress::getPublicAddress();
-    //!< public ip adress of user machine
+    //!< public ip address of user machine
     sf::IpAddress machineLocalAdress = sf::IpAddress::getLocalAddress();
     
     struct socketAdress {                       //!< contains info for connecting to host or hosting
@@ -239,13 +155,13 @@ class Application{
         std::string pathSave;                   //!< (IF HOST) path to save for loading
     }hostAdress;                                
 
-    GAME_STATE State;               //!< state of game/APPLICATION. game, menu or exit
-    gameMode mode = undefined;      //!< Online, Local or Alone
+    GAME_STATE State;               //!< state of game/APPLICATION. game, menu, or exit
+    gameMode mode = undefined;      //!< Online, Local, or Alone
     errorCodes error = NoErr;       //!< error to display
     std::string localUserID;        //!< Id of active user
 
     sf::Music backgroundMusic[nr_backgroundMusic];
-    inGameInputKey inGameControls[n_keyInputOptions];   //!< assigned keys for ingame controls
+    inGameInputKey inGameControls[n_keyInputOptions];   //!< assigned keys for in-game controls
 };
 
 
