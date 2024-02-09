@@ -108,6 +108,14 @@ void readStrOfFile(std::ifstream& file, std::string& str);
 ////////////////////////////////////////////////////////////
 void writeStrToFile(std::ofstream& file, std::string& str);
 
+enum connectionStatus {
+    connected,      //!< Connected to server
+    disconnected,   //!< Disconnected from server
+    connecting,     //!< Attempting to connect to server
+};
+
+
+
 /// \brief Contains the name given to a save, the path and filename (redundant?).
 typedef struct gameSaveSummary {
     std::string game;   //!< Game/save name

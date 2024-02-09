@@ -256,3 +256,8 @@ void Application::setUpCursorAssets(void){
 }
 
 
+void Application::resetHostInfo(void){
+    this->hostAdress.ip = sf::IpAddress::None;
+    this->hostAdress.port = 0;
+    this->hostAdress.pathSave.clear();
+}

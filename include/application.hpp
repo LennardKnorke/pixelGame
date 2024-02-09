@@ -114,6 +114,10 @@ class Application{
      */
     void setUpSaveFolder(void);
     
+    /**
+     * @brief 
+    */
+   void resetHostInfo(void);
 
     /**
      * @brief Run the main menu.

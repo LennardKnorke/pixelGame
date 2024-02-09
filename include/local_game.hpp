@@ -71,6 +71,9 @@ class GameClass {
      */
     void userInput_pause(void);
 
+    sf::Packet send_receive(); //sends and receives data from server
+    
+
     void update_game(void);
     void update_skilltree(void);
     void update_pause(void);
@@ -89,7 +92,7 @@ class GameClass {
     std::string playerID;       /**< The player ID. */
     sf::TcpSocket socket;       /**< The TCP socket for network communication. */
     sf::Thread *networkThread;  /**< The thread for network communication. */
-    bool connected;             /**< Indicates whether the client is connected to the host. */
+    connectionStatus connection_status;/**< Indicates whether the client is connected to the host. */
     gameLoopState gameState;    /**< The current game loop state. */
     
 

@@ -22,23 +22,17 @@ GAME_STATE Application::gameLoop(void){
 
     // Run Game
     GameClass *game = new GameClass(this);
-    if (!game->loadAndConnect()){
+    if (game->loadAndConnect()){
+        GAME_STATE nextAppState = game->runGame();
+        resetHostInfo();
+        return nextAppState;
+    }
+    else {
         delete game;
-        // Reset host adress, port and path
-        hostAdress.ip = sf::IpAddress::None;
-        hostAdress.port = 0;
-        hostAdress.pathSave.clear();
+        resetHostInfo();
         return GAME_STATE::MENU;
     }
-    GAME_STATE nextAppState = game->runGame();
-    delete game;
 
-    // Reset host adress, port and path
-    hostAdress.ip = sf::IpAddress::None;
-    hostAdress.port = 0;
-    hostAdress.pathSave.clear();
-
-    return nextAppState;
 }
 
 
@@ -48,10 +42,15 @@ GameClass::GameClass(Application *appPointer){
     //Set up pointers + variables
     window = &(appPointer->window);
     backgroundMusic = appPointer->backgroundMusic;
+
     gameState = gameLoopState::Game;
+
     playerID = appPointer->localUserID;
     cursor = &(appPointer->cursor);
 
+    connection_status = connectionStatus::disconnected;
+    host.ip = appPointer->hostAdress.ip;
+    host.port = appPointer->hostAdress.port;
     //Set up menu buttons
     for (int i  = 0; i < n_menugameButtons; i++){
         menuButtons.push_back(new inGameMenuButton(i, appPointer));
@@ -84,18 +83,19 @@ GameClass::~GameClass(void){
 //displays the loading screen while waiting for the client/host to connect
 bool GameClass::loadAndConnect(void){
     // start the networking thead
+    connection_status = connectionStatus::connecting;
     networkThread->launch();
 
 
     // Display loading screen
     
-    while (!connected && networkThread){
+    while (connection_status == connectionStatus::connecting){
         window->clear(sf::Color::Yellow);
 
         window->display();
     }
 
-    if (!connected){
+    if (connection_status == connectionStatus::disconnected){
         std::cout << "Failed to connect to host\n";
         return false;
     }
@@ -105,11 +105,11 @@ bool GameClass::loadAndConnect(void){
 void GameClass::connectToHost(void){
     for (int i = 0; i < 5; i++){
         std::cout << "Attempting to connect with host no: " << i+1 <<std::endl;
-        if (socket.connect(host.ip, host.port)){
+        if (socket.connect(host.ip, host.port) == sf::Socket::Done){
             sf::Packet p;
             p << playerID;
             socket.send(p);
-            connected = true;
+            connection_status = connectionStatus::connected;
             return;
         }
         auto start_time = std::chrono::high_resolution_clock::now();
@@ -122,6 +122,7 @@ void GameClass::connectToHost(void){
         }
 
     }
+    connection_status = connectionStatus::disconnected;
     return;  
 };
 
@@ -149,8 +150,9 @@ GAME_STATE GameClass::runGame(void){
         cursor->update();
 
         // Exchange with server
+        sf::Packet responsePacket = send_receive();
 
-        // Update Local Information
+        // Extract game state from package/ update information
         if (gameState == gameLoopState::Game){
             update_game();
         }
@@ -212,7 +214,12 @@ void GameClass::userInput_game(void){
 }
 
 void GameClass::userInput_skilltree(void){
-    
+    sf::Event ev;
+    while (window->pollEvent(ev)){
+        if (ev.type == sf::Event::KeyPressed && ev.key.code == sf::Keyboard::Escape){
+            gameState = gameLoopState::Pause;
+        }
+    }
 }
 
 void GameClass::userInput_pause(void){
@@ -232,6 +239,19 @@ void GameClass::userInput_pause(void){
         }
     }
 }
+
+sf::Packet GameClass::send_receive(){
+    sf::Packet package;
+    // Add game_state to package and send to server
+    package << sf::Uint8(gameState);
+    // Add in for relevant gamestates
+    socket.send(package);
+    package.clear();
+    // Receive package from server
+    socket.receive(package);
+    return package;
+}
+
 
 void GameClass::update_game(void){
     
