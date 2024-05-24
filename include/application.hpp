@@ -48,15 +48,11 @@ typedef struct inGameInputKey {
 
 
 
-
 ////////////////////////////////////////////////////////////
 /// \brief Application class, contains global variables for
 ///        the local client, booting information and most
 ///         functions
 ////////////////////////////////////////////////////////////
-
-
-
 class Application{
     public:
 

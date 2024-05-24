@@ -7,15 +7,18 @@ GAME_STATE Application::gameLoop(void){
 
     // Set up server process (IF HOSTING)
     if (mode_Host(mode)){
+        if (mode_Online(mode)){
+            hostAdress.ip = machinePublicAdress;
+        }
+        else {
+            hostAdress.ip = machineLocalAdress;
+        }
         if (initServerProcess(&hostAdress.ip, hostAdress.port, localUserID, hostAdress.pathSave, mode)){
-            std::cout << "Process started\n";
+            std::cout << "Host process started\n";
         }
         else {
             std::cout << "Failed to initiate server process\n";
-            // Reset host adress, port and path
-            hostAdress.ip = sf::IpAddress::None;
-            hostAdress.port = 0;
-            hostAdress.pathSave.clear();
+            resetHostInfo();
             return GAME_STATE::MENU;
         }
     }  
@@ -268,10 +271,6 @@ void GameClass::update_pause(void){
 }
 
 bool initServerProcess(sf::IpAddress *adress, unsigned short &port, std::string HostId, std::string pathToSave, gameMode Mode){
-
-    if (!setHostIp(adress, Mode)){
-        return false;
-    }
     if (!setHostPort(port, adress, Mode)){
         return false;
     }
@@ -287,33 +286,6 @@ bool initServerProcess(sf::IpAddress *adress, unsigned short &port, std::string 
 
     if (std::system(command.c_str()) != 0){
         std::cout << "Failed to run server command\n";
-        *adress = sf::IpAddress::None;
-        port = 0;
-        return false;
-    }
-    return true;
-}
-
-bool setHostIp(sf::IpAddress *adress, gameMode Mode){
-    if (mode_Online(Mode)){
-        if (!fileExists("multiplayer.txt")){
-            std::cout << "'multiplayer.txt' missing\n";
-            return false;
-        }
-        //*adress = sf::IpAddress::getPublicAddress();
-        std::ifstream inputFile("multiplayer.txt");
-        std::string hamachiIp;
-        std::getline(inputFile, hamachiIp);
-        inputFile.close();
-        std::cout << "Hamachi Ip: " << sf::IpAddress(hamachiIp).toString() << std::endl;
-        *adress = sf::IpAddress(hamachiIp);
-    }
-    else {
-        *adress = sf::IpAddress::getLocalAddress();
-    }
-
-    if (*adress == sf::IpAddress::None){
-        std::cout << "Invalid IpAdress!\n";
         return false;
     }
     return true;

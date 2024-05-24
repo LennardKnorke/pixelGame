@@ -53,6 +53,7 @@ void Application::initWindow(void){
 
 
 void Application::initSettings(void){
+    // Set up Settings
     if (fileExists("settings.bin")){
         loadSettings();
     }
@@ -60,10 +61,23 @@ void Application::initSettings(void){
         createSettings();
     }
 
+    // Set up hamachi ip
     if (!fileExists("multiplayer.txt")){
         std::ofstream outputFile("multiplayer.txt");
         outputFile << "Copy Your Own Hamachi Ip Here\n";
         outputFile.close();
+    }
+    else {
+        std::string line;
+        // Read one line from file
+        std::ifstream inputFile("multiplayer.txt");
+        std::getline(inputFile, line);
+        inputFile.close();
+        // Check if line is a valid IP
+        if (validIP(line)){
+            machinePublicAdress = sf::IpAddress(line);
+        }
+        
     }
 }
 
@@ -132,6 +146,8 @@ void Application::createSettings(void){
 
     inGameControls[attack].iType = inputType::MOUSE_BUTTON;
     inGameControls[attack].input.mouseInput = sf::Mouse::Button::Left;
+    
+    
     saveSettings();
 }
 

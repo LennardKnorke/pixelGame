@@ -91,6 +91,7 @@ class GameClass {
     }host;
     std::string playerID;       /**< The player ID. */
     sf::TcpSocket socket;       /**< The TCP socket for network communication. */
+    sf::UdpSocket udpSocket;    /**< The UDP socket for network communication. */
     sf::Thread *networkThread;  /**< The thread for network communication. */
     connectionStatus connection_status;/**< Indicates whether the client is connected to the host. */
     gameLoopState gameState;    /**< The current game loop state. */

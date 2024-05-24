@@ -28,6 +28,7 @@
 #include <string>
 #include <thread>
 #include <random>
+#include <regex>
 #include <vector>
 
 #ifdef _WIN32
@@ -170,6 +171,15 @@ bool mode_Host(gameMode mode);
 /// \return True or false if mode indicates online gameplay.
 ////////////////////////////////////////////////////////////
 bool mode_Online(gameMode mode);
+
+////////////////////////////////////////////////////////////
+/// \brief Checks if a given string is a valid IPv4 address.
+///
+/// \param ip String with IPv4 address.
+///
+/// \return True if valid, else false.
+////////////////////////////////////////////////////////////
+bool validIP(const std::string& ip);
 
 /// @brief Macros: For different warning messages in menu
 enum menuPopUps {

@@ -26,6 +26,10 @@ int main(int argc, char *argv[]){
     if (mode_Online(modeToLoad)){
         std::cout << "Playing Online\n";
     }
+    else {
+        std::cout << "Playing Local/Alone\n";
+    
+    }
     Server RunningServer(server_port, server_adress, savePath, hostId, modeToLoad);
     std::cout<<"Server was running und succesfully ended\n";
     system("pause");

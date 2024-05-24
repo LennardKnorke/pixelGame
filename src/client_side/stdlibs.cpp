@@ -46,3 +46,8 @@ bool mode_Online(gameMode mode){
     }
     return false;
 }
+
+bool validIP(const std::string &ip){
+    std::regex ipPattern("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
+    return std::regex_match(ip, ipPattern);
+}

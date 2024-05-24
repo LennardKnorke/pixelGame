@@ -10,6 +10,7 @@ WFLAGS = -Wall -Wfatal-errors -pedantic -Wextra -O2
 #Path tools
 INCLUDE_PATH = ./include
 LIB_PATH = ./lib
+BIN_PATH = ./bin
 
 #Linking tools
 sfml_links =  -l sfml-graphics -l sfml-window -l sfml-audio -l sfml-network -l sfml-system
@@ -20,6 +21,7 @@ extra_std_statics = -lfreetype -lflac -lvorbisenc -lvorbisfile -lvorbis -logg -l
 
 LINK = -L $(LIB_PATH) $(sfml_links) $(other_links)
 LINK_STATIC = -L $(LIB_PATH) $(sfml_links_static) $(other_links) $(extra_std_statics)
+
 
 ################################
 ##########STDLIBS###############
@@ -48,14 +50,6 @@ server_static: compile_STDLIBS_s compile_server_s
 	$(COMPILER_s) *.o -o Server.exe $(LINK_STATIC)
 compile_server_s:
 	$(COMPILER_s) $(WFLAGS) -c ./src/server_side/*.cpp -I $(INCLUDE_PATH)
-
-################################
-##########TEST##################
-################################
-test: compile_STDLIBS compile_test
-	$(COMPILER) *.o -o Test.exe $(LINK)
-compile_test:
-	$(COMPILER) $(WFLAGS) -c ./src/testing_code/*.cpp -I $(INCLUDE_PATH)
 
 	
 ################################
