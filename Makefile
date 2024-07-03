@@ -1,64 +1,59 @@
-all: clean client server #Update all sourcefiles and compile to exe
-all_static:clean client_static server_static
+all: all_static # default command is static
+#default all, otherwise all_static, all_dynamic
 
 
-#Compile tools
-COMPILER = g++ -std=c++2a -m64
-COMPILER_s = g++ -std=c++2a -m64 -DSFML_STATIC -static
+# Variables
 WFLAGS = -Wall -Wfatal-errors -pedantic -Wextra -O2
-
-#Path tools
 INCLUDE_PATH = ./include
 LIB_PATH = ./lib
 BIN_PATH = ./bin
+SRC_PATH = ./src
+other_links = -lopengl32 -lwinmm -lgdi32 -lOpenAL32
 
-#Linking tools
-sfml_links =  -l sfml-graphics -l sfml-window -l sfml-audio -l sfml-network -l sfml-system
-other_links = -lopengl32 -lwinmm -lgdi32
+# Source files
+SRC := $(wildcard $(SRC_PATH)/*.cpp)
+OBJ := $(patsubst $(SRC_PATH)/%.cpp, $(BIN_PATH)/%.o, $(SRC))
 
+
+# Static build variables
+COMPILER_s = g++ -std=c++2a -m64 -DSFML_STATIC -static
+LINK_STATIC = -L $(LIB_PATH) $(sfml_links_static) $(other_links) $(extra_std_statics)
 sfml_links_static = -l sfml-graphics-s -l sfml-window-s -l sfml-audio-s -l sfml-network-s -l sfml-system-s
 extra_std_statics = -lfreetype -lflac -lvorbisenc -lvorbisfile -lvorbis -logg -lws2_32
 
-LINK = -L $(LIB_PATH) $(sfml_links) $(other_links)
-LINK_STATIC = -L $(LIB_PATH) $(sfml_links_static) $(other_links) $(extra_std_statics)
 
 
-################################
-##########STDLIBS###############
-################################
-compile_STDLIBS:
-	$(COMPILER) $(WFLAGS) -c ./src/client_side/stdlibs.cpp -I $(INCLUDE_PATH)
-compile_STDLIBS_s:
-	$(COMPILER_s) $(WFLAGS) -c ./src/client_side/stdlibs.cpp -I $(INCLUDE_PATH)
-################################
-##########Game+Server###########
-################################
-client: compile_client
-	$(COMPILER) *.o -o Game.exe $(LINK)
-compile_client:
-	$(COMPILER) $(WFLAGS) -c ./src/client_side/*.cpp -I $(INCLUDE_PATH)
-client_static: compile_client_s
-	$(COMPILER_s) *.o -o Game.exe $(LINK_STATIC)
-compile_client_s:
-	$(COMPILER_s) $(WFLAGS) -c ./src/client_side/*.cpp -I $(INCLUDE_PATH)	
+# Dynamic build variables
+COMPILER_d = g++ -std=c++2a -m64
+LINK_DYNAMIC = -L $(LIB_PATH) $(sfml_link_d) $(other_links)
+sfml_link_d =  -l sfml-graphics -l sfml-window -l sfml-audio -l sfml-network -l sfml-system
 
-server: compile_STDLIBS compile_server
-	$(COMPILER) *.o -o Server.exe $(LINK)
-compile_server:
-	$(COMPILER) $(WFLAGS) -c ./src/server_side/*.cpp -I $(INCLUDE_PATH)
-server_static: compile_STDLIBS_s compile_server_s
-	$(COMPILER_s) *.o -o Server.exe $(LINK_STATIC)
-compile_server_s:
-	$(COMPILER_s) $(WFLAGS) -c ./src/server_side/*.cpp -I $(INCLUDE_PATH)
 
-	
-################################
-##########Cleaning##############
-################################
-clean_o:
-	del *.o
-clean_exe:
-	del Test.exe Game.exe Server.exe
-clean: clean_o clean_exe
-clean_all: clean
-	del settings.bin multiplayer.txt
+# Targets
+all_static: clean $(OBJ)
+	$(COMPILER_s) $(OBJ) -o Game.exe $(LINK_STATIC)
+
+all_dynamic: clean $(OBJ)
+	$(COMPILER_d) $(OBJ) -o Game.exe $(LINK_DYNAMIC)
+
+
+$(BIN_PATH)/%.o: $(SRC_PATH)/%.cpp
+	$(COMPILER_s) $(WFLAGS) -c $< -I $(INCLUDE_PATH) -o $@
+
+
+compile_static:
+	$(COMPILER_s) $(WFLAGS) -c ./src/*.cpp -I $(INCLUDE_PATH) -o $(BIN_PATH)/$@F)
+
+compile_dynamic:
+	$(COMPILER_d) $(WFLAGS) -c ./src/*.cpp -I $(INCLUDE_PATH) -o $(BIN_PATH)/$@F)
+
+
+
+
+# Clean Up Tools
+clean:
+	for %%f in ($(BIN_PATH)/*.o) do del "bin\%%f"
+	if exist Game.exe del Game.exe
+clean_all: clean# can add more clean ups for other files if needed
+	if exist settings.bin del settings.bin
+

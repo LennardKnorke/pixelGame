@@ -15,12 +15,13 @@ Application::Application(void){
     if (!loadAssets()){
         State = GAME_STATE::QUIT;
     }
+    else {
+        setUpCursorAssets();
+        setUpSaveFolder();
+        std::cout << machinePublicAdress << "\t" << machineLocalAdress <<  std::endl;
+    }
 
-    setUpCursorAssets();
-    setUpSaveFolder();
-    std::cout << machinePublicAdress << "\t" << machineLocalAdress <<  std::endl;
-
-
+    
     //Main application loop. Switches between the main menu, game and exit
     while (State != GAME_STATE::QUIT){
         if (State == GAME_STATE::MENU){
@@ -39,19 +40,6 @@ Application::Application(void){
 
 
 
-void Application::initWindow(void){
-    //Get screen resolution
-    sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
-    resolution = sf::Vector2u(desktop.width, desktop.height);
-    
-    window.create(sf::VideoMode(resolution.x, resolution.y, 32), "ReFrAcTuReD", sf::Style::Fullscreen);
-    window.setFramerateLimit(60);
-    window.setMouseCursorVisible(false);
-    window.setMouseCursorGrabbed(true);
-}
-
-
-
 void Application::initSettings(void){
     // Set up Settings
     if (fileExists("settings.bin")){
@@ -59,25 +47,6 @@ void Application::initSettings(void){
     }
     else {
         createSettings();
-    }
-
-    // Set up hamachi ip
-    if (!fileExists("multiplayer.txt")){
-        std::ofstream outputFile("multiplayer.txt");
-        outputFile << "Copy Your Own Hamachi Ip Here\n";
-        outputFile.close();
-    }
-    else {
-        std::string line;
-        // Read one line from file
-        std::ifstream inputFile("multiplayer.txt");
-        std::getline(inputFile, line);
-        inputFile.close();
-        // Check if line is a valid IP
-        if (validIP(line)){
-            machinePublicAdress = sf::IpAddress(line);
-        }
-        
     }
 }
 
@@ -89,7 +58,7 @@ void Application::loadSettings(void){
     //Read id of client
     readStrOfFile(inputFile, localUserID);
 
-    //Read standart resolution
+    //Read volumne
     inputFile.read(reinterpret_cast<char *>(&volume), sizeof(float));
 
     std::cout   <<"Loaded user: " << localUserID << std::endl;
@@ -105,9 +74,15 @@ void Application::loadSettings(void){
         }
     }
     
-    inputFile.close();
-}
+    // FPs and full screen
+    inputFile.read(reinterpret_cast<char *>(&FPS), sizeof(int));
+    inputFile.read(reinterpret_cast<char *>(&fullscreen), sizeof(bool));
 
+    inputFile.close();
+
+    
+
+}
 
 
 
@@ -118,9 +93,9 @@ void Application::createSettings(void){
     std::mt19937 rng(std::random_device{}());
     std::uniform_int_distribution<std::string::size_type> dist(0, alphabet.size()-1);
     for (int i = 0 ; i < maxInputLengths::userId; i++){
-        localUserID += alphabet[dist(rng)];
+        this->localUserID += alphabet[dist(rng)];
     }
-    std::cout   << "Created User:  "<< localUserID << std::endl;
+    std::cout   << "Created User:  "<< this->localUserID << std::endl;
 
     //Set default volume
     volume = 50.0;
@@ -147,7 +122,12 @@ void Application::createSettings(void){
     inGameControls[attack].iType = inputType::MOUSE_BUTTON;
     inGameControls[attack].input.mouseInput = sf::Mouse::Button::Left;
     
-    
+    inGameControls[special].iType = inputType::KEYBOARD;
+    inGameControls[special].input.keyInput = sf::Keyboard::LShift;
+
+    inGameControls[useItem].iType = inputType::KEYBOARD;
+    inGameControls[useItem].input.keyInput = sf::Keyboard::G;
+
     saveSettings();
 }
 
@@ -175,9 +155,24 @@ void Application::saveSettings(void){
         }        
     }
 
+    // Save FPS and Fullscreen
+    outputFile.write(reinterpret_cast<char *>(&FPS), sizeof(int));
+    outputFile.write(reinterpret_cast<char *>(&fullscreen), sizeof(bool));
+
     outputFile.close();
 }
 
+
+
+void Application::initWindow(void){
+    //Get screen resolution
+    sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
+    resolution = sf::Vector2u(desktop.width, desktop.height);
+    window.create(sf::VideoMode(resolution.x, resolution.y, 32), "ReFrAcTuReD", sf::Style::Fullscreen);
+    window.setFramerateLimit(FPS);
+    window.setMouseCursorVisible(false);
+    window.setMouseCursorGrabbed(true);
+}
 
 
 //MANAGE ASSETS
@@ -190,17 +185,17 @@ bool Application::loadAssets(void){
     //Load Music Assets
     int i = 0;
     for (auto &iterator : std::filesystem::directory_iterator("assets/music/")){
-        if (!backgroundMusic[i].openFromFile(iterator.path().string())){
+        if (!assets.backgroundMusic[i].openFromFile(iterator.path().string())){
             std::cout << "Failed to load Music: " << iterator.path().string() << std::endl;
             return false;
         }
-        backgroundMusic[i].setLoop(true);
-        backgroundMusic[i].setVolume(volume);
+        assets.backgroundMusic[i].setLoop(true);
+        assets.backgroundMusic[i].setVolume(volume);
         i++;
     }
 
     //Load Font Asset
-    if (!(gameFont.loadFromFile("PFAgoraSlabPro Bold.ttf"))){
+    if (!(assets.gameFont.loadFromFile("PFAgoraSlabPro Bold.ttf"))){
         std::cout << "Failed to load display font!\n";
         return false;
     }
@@ -226,7 +221,7 @@ bool Application::loadTextures(void){
     // Load Menu Textures
     int texture_idx = 0;
     for (auto &iterator : std::filesystem::directory_iterator("assets/sprites/menu/")){
-        if (!(textures.menu[texture_idx].loadFromFile(iterator.path().string()))){
+        if (!(assets.textures.menu[texture_idx].loadFromFile(iterator.path().string()))){
             std::cout << "Failed to load menu texture: " << iterator << std::endl;
             return false;
         }
@@ -238,7 +233,7 @@ bool Application::loadTextures(void){
     // Load CursorTextures
     texture_idx = 0;
     for (auto &iterator : std::filesystem::directory_iterator("assets/sprites/cursor/")){
-        if (!(textures.cursors[texture_idx].loadFromFile(iterator.path().string()))){
+        if (!(assets.textures.cursors[texture_idx].loadFromFile(iterator.path().string()))){
             std::cout << "Failed to load cursor texture: " << iterator << std::endl;
             return false;
         }
@@ -264,16 +259,10 @@ bool Application::loadTextures(void){
 
 void Application::setUpCursorAssets(void){
     for (int i = 0; i < nr_cursor_textures; i++){
-        cursor.sprite[i].setTexture(textures.cursors[i]);
+        cursor.sprites[i].setTexture(assets.textures.cursors[i]);
     }
-    cursor.sprite[cursorSpriteIndexes::menu].setScale((100)/cursor.sprite[cursorSpriteIndexes::menu].getGlobalBounds().getSize().x, (100)/cursor.sprite[cursorSpriteIndexes::menu].getGlobalBounds().getSize().y);
-    cursor.changeSprite(cursorSpriteIndexes::menu);
-    cursor.print = true;
+    cursor.sprites[cursorSpriteIdx::menu].setScale((100)/cursor.sprites[cursorSpriteIdx::menu].getGlobalBounds().getSize().x, (100)/cursor.sprites[cursorSpriteIdx::menu].getGlobalBounds().getSize().y);
+    cursor.changeSprite(cursorSpriteIdx::menu);
+    cursor.display = true;
 }
 
-
-void Application::resetHostInfo(void){
-    this->hostAdress.ip = sf::IpAddress::None;
-    this->hostAdress.port = 0;
-    this->hostAdress.pathSave.clear();
-}

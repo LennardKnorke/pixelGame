@@ -6,7 +6,20 @@
 #pragma once
 #ifndef MENU_HPP
 #define MENU_HPP
-#include "stdlibs.hpp"
+
+#include "SFML/Audio.hpp"
+
+#include "cursor.hpp"
+#include "menuButtons.hpp"
+#include "save_management.hpp"
+
+enum menuPopUps{
+    noPopUp,
+    tooManySaves,
+    invalidName,
+    saveError,
+    invalidIp
+};
 
 /**
  * @class MainMenu
@@ -16,10 +29,12 @@ class MainMenu {
     public:
     /**
      * @brief Constructs a MainMenu object.
-     * @param appPointer A pointer to the Application object.
+     * @param window A pointer to the RenderWindow object.
+     * @param res The resolution of the window.
+     * @param bg_Texture pointer to the background texture.
+     * @param font pointer to font to be used for the buttons and text.
      */
-    MainMenu(Application *appPointer);
-    gameMode mode; /**< The game mode. */
+    MainMenu(sf::RenderWindow *window, Cursor *cursor, sf::Vector2u res, sf::Texture *bg_Texture, sf::Font *font, sf::Music *bg_music);
 
     /**
      * @brief Destroys the MainMenu object.
@@ -32,36 +47,41 @@ class MainMenu {
      */
     GAME_STATE runMenu(void);
 
+    gameMode getMode(void);
+    sf::IpAddress getHostIp(void);
+    unsigned short getHostPort(void);
+    gamesave_summary getChosenSave(void);
+
     private:
-    mainMenuLayerId currentLayer; /**< The current layer of the main menu. */
-    menuPopUps menuWarning; /**< The menu warning pop-up. */
-    sf::Text warningMessage; /**< The warning message text. */
-    bool allowTextInput; /**< Flag indicating whether text input is allowed. */
+    
+    mainMenuLayerId currentLayer = mainMenuLayerId::base;   /**< The current layer of the main menu. */
+    menuPopUps menuWarning = menuPopUps::noPopUp;           /**< The menu warning pop-up. */
+    bool writing = false;                                   /**< Flag indicating whether text input is allowed. */
+    
+    sf::Font *font;                                         /**< The font to be used for the buttons and text. */
+    sf::RenderWindow *window;    
+    sf::Sprite backgroundSprite;                            /**< The background sprite. */
+    
+    sf::Vector2u resolution;                                /**< The resolution of the window. */
+    
+    Cursor *cursor;
+    std::vector<button *> menuButtons;
+    sf::Text warningMessage;                                /**< The warning message text. */
+    sf::Music *bg_music;
 
-    Application *applicationPointer; /**< A pointer to the Application object. */
-    sf::RenderWindow *window; /**< A pointer to the RenderWindow object. */
-    std::vector<button *> menuButtons; /**< The menu buttons. */
-    std::vector<gameSaveSummary> availableSaveFiles; /**< The available save files. */
-    sf::Sprite backgroundSprite; /**< The background sprite. */
 
+    gameMode mode = gameMode::undefined;                    /**< The game mode. */
+    std::vector<gamesave_summary> availableSaveFiles;       /**< The available save files. */
+
+    gamesave_summary chosen_save;                           /**< The chosen save file. */
+    sf::IpAddress hostIp = sf::IpAddress::None;              /**< The host IP address. */
+    unsigned short hostPort = 11000;                         /**< The host port. */
+    
     /**
-     * @brief Initializes the error message text.
-     * @param font The font to be used for the text.
+     * @brief Initializes the error message text for the current menu pop up
      * @return The initialized error message text.
      */
-    sf::Text initErrorMessage(sf::Font &font);
-
-    /**
-     * @brief Reads all save file summaries.
-     */
-    void readAllSaveSummaries(void);
-
-    /**
-     * @brief Loads a save file summary from a given filename.
-     * @param filename The filename of the save file.
-     * @return The loaded save file summary.
-     */
-    gameSaveSummary loadSaveSummary(const std::string &filename);
+    void initErrorMessage();
 
     /**
      * @brief Sets up the menu buttons.
@@ -77,12 +97,6 @@ class MainMenu {
      * @brief Draws the menu pop-up.
      */
     void drawMenuPopUp(void);
-
-    /**
-     * @brief Handles the input error pop-up.
-     * @param ev The input event.
-     */
-    void inputErrorPopUp(sf::Event &ev);
 
     /**
      * @brief Handles the escape key press event.
@@ -124,7 +138,7 @@ class MainMenu {
      * @param pathToLoad The path to load.
      * @return True if the safe file was created successfully, false otherwise.
      */
-    bool createNewSafeFile(std::string newSavename, std::string &pathToLoad);
+    bool createNewSafeFile(std::string newSavename);
 
     /**
      * @brief Gets the previous layer based on the game mode.
@@ -132,31 +146,11 @@ class MainMenu {
      */
     mainMenuLayerId getPreviousLayer(void);
 
-    /**
-     * @brief Checks if the character input is valid.
-     * @param c The character input.
-     * @param activeLength The active length.
-     * @param n The number of characters.
-     * @return True if the character input is valid, false otherwise.
-     */
-    bool validCharacterInput(sf::Uint32 c, int activeLength, int n);
-
-    /**
-     * @brief Sets the active safe with the given save name and path to be loaded.
-     * @param saveName The save name.
-     * @param pathToBeLoaded The path to be loaded.
-     */
-    void setActiveSafe(std::string saveName, std::string *pathToBeLoaded);
 
     /**
      * @brief Gets the menu picks based on the game mode.
      */
     void getMenuPicks(void);
-
-    /**
-     * @brief Sets the menu pop-up message.
-     */
-    void setMenuPopUpMessage(void);
 };
 
 #endif //MENU_HPP
