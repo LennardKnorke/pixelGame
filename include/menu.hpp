@@ -7,6 +7,8 @@
 #ifndef MENU_HPP
 #define MENU_HPP
 
+
+
 #include "SFML/Audio.hpp"
 
 #include "cursor.hpp"
@@ -34,7 +36,7 @@ class MainMenu {
      * @param bg_Texture pointer to the background texture.
      * @param font pointer to font to be used for the buttons and text.
      */
-    MainMenu(sf::RenderWindow *window, Cursor *cursor, sf::Vector2u res, sf::Texture *bg_Texture, sf::Font *font, sf::Music *bg_music);
+    MainMenu(sf::RenderWindow *window, Cursor *cursor, resolution_tools resolutions, sf::Texture *bg_Texture, sf::Font *font, sf::Music *bg_music);
 
     /**
      * @brief Destroys the MainMenu object.
@@ -62,7 +64,7 @@ class MainMenu {
     sf::RenderWindow *window;    
     sf::Sprite backgroundSprite;                            /**< The background sprite. */
     
-    sf::Vector2u resolution;                                /**< The resolution of the window. */
+    resolution_tools res;                                   /**< The resolution of the window. */
     
     Cursor *cursor;
     std::vector<button *> menuButtons;
@@ -75,7 +77,7 @@ class MainMenu {
 
     gamesave_summary chosen_save;                           /**< The chosen save file. */
     sf::IpAddress hostIp = sf::IpAddress::None;              /**< The host IP address. */
-    unsigned short hostPort = 11000;                         /**< The host port. */
+    unsigned short hostPort = DEFAULT_PORT;                         /**< The host port. */
     
     /**
      * @brief Initializes the error message text for the current menu pop up

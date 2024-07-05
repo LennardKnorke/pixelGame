@@ -33,6 +33,7 @@ void button::draw(sf::RenderWindow &window){
 };
 void button::update(sf::Vector2f mousePos){
     // Check if the mouse is hovering over the button
+
     if (mousePos.x > text.getPosition().x && mousePos.x < text.getPosition().x + text.getGlobalBounds().getSize().x
     && mousePos.y > text.getPosition().y && mousePos.y < text.getPosition().y + text.getGlobalBounds().getSize().y){
         if (!focus){

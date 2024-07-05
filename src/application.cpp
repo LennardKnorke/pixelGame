@@ -16,7 +16,7 @@ Application::Application(void){
         State = GAME_STATE::QUIT;
     }
     else {
-        setUpCursorAssets();
+        cursor = new Cursor(&window, res_tools, assets.textures.cursors);
         setUpSaveFolder();
         std::cout << machinePublicAdress << "\t" << machineLocalAdress <<  std::endl;
     }
@@ -64,7 +64,7 @@ void Application::loadSettings(void){
     std::cout   <<"Loaded user: " << localUserID << std::endl;
 
     //load control settings
-    for (int i = 0; i < 7; i++){
+    for (int i = 0; i < n_keyInputOptions; i++){
         inputFile.read(reinterpret_cast<char *>(&inGameControls[i].iType), sizeof(inputType));
         if (inGameControls[i].iType == inputType::KEYBOARD){
             inputFile.read(reinterpret_cast<char *>(&inGameControls[i].input.keyInput),sizeof(sf::Keyboard::Key));
@@ -76,7 +76,7 @@ void Application::loadSettings(void){
     
     // FPs and full screen
     inputFile.read(reinterpret_cast<char *>(&FPS), sizeof(int));
-    inputFile.read(reinterpret_cast<char *>(&fullscreen), sizeof(bool));
+    inputFile.read(reinterpret_cast<char *>(&res_tools.fullscreen), sizeof(bool));
 
     inputFile.close();
 
@@ -98,7 +98,8 @@ void Application::createSettings(void){
     std::cout   << "Created User:  "<< this->localUserID << std::endl;
 
     //Set default volume
-    volume = 50.0;
+    volume = DEFAULT_VOLUME;
+    FPS = DEFAULT_FPS;
 
     //set default controls
     inGameControls[up].iType = inputType::KEYBOARD;
@@ -127,6 +128,8 @@ void Application::createSettings(void){
 
     inGameControls[useItem].iType = inputType::KEYBOARD;
     inGameControls[useItem].input.keyInput = sf::Keyboard::G;
+
+    res_tools.fullscreen = DEFAULT_FULLSCREEN;
 
     saveSettings();
 }
@@ -157,7 +160,7 @@ void Application::saveSettings(void){
 
     // Save FPS and Fullscreen
     outputFile.write(reinterpret_cast<char *>(&FPS), sizeof(int));
-    outputFile.write(reinterpret_cast<char *>(&fullscreen), sizeof(bool));
+    outputFile.write(reinterpret_cast<char *>(&res_tools.fullscreen), sizeof(bool));
 
     outputFile.close();
 }
@@ -165,13 +168,28 @@ void Application::saveSettings(void){
 
 
 void Application::initWindow(void){
-    //Get screen resolution
-    sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
-    resolution = sf::Vector2u(desktop.width, desktop.height);
-    window.create(sf::VideoMode(resolution.x, resolution.y, 32), "ReFrAcTuReD", sf::Style::Fullscreen);
+    //Get resolutions
+    res_tools.dev_res = sf::Vector2u(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
+    res_tools.desktop_res = sf::Vector2u(sf::VideoMode::getDesktopMode().width, sf::VideoMode::getDesktopMode().height);
+
+    //Set up window
+    if (res_tools.fullscreen){
+        res_tools.res = res_tools.desktop_res;
+        window.create(sf::VideoMode(res_tools.res.x, res_tools.res.y, 32), "ReFrAcTuReD", sf::Style::Fullscreen);
+    }
+    else {
+        res_tools.res = res_tools.dev_res;
+        window.create(sf::VideoMode(res_tools.res.x, res_tools.res.y, 32), "ReFrAcTuReD", sf::Style::Titlebar | sf::Style::Close);
+    }
+    res_tools.scale = sf::Vector2f((float)res_tools.res.x/(float)res_tools.dev_res.x, (float)res_tools.res.y/(float)res_tools.res.y);
+
+    std::cout << window.getSize().x << " " << window.getSize().y << std::endl;
+
+    // Further window settings
     window.setFramerateLimit(FPS);
     window.setMouseCursorVisible(false);
     window.setMouseCursorGrabbed(true);
+    window.setVerticalSyncEnabled(true);
 }
 
 
@@ -225,6 +243,7 @@ bool Application::loadTextures(void){
             std::cout << "Failed to load menu texture: " << iterator << std::endl;
             return false;
         }
+        assets.textures.menu[texture_idx].setSmooth(true);
         texture_idx += 1;
         if (texture_idx == nr_menu_textures){//So we don't load random assets, forgotten or added to the folder
             break;
@@ -253,16 +272,3 @@ bool Application::loadTextures(void){
 
     return true;
 }
-
-
-
-
-void Application::setUpCursorAssets(void){
-    for (int i = 0; i < nr_cursor_textures; i++){
-        cursor.sprites[i].setTexture(assets.textures.cursors[i]);
-    }
-    cursor.sprites[cursorSpriteIdx::menu].setScale((100)/cursor.sprites[cursorSpriteIdx::menu].getGlobalBounds().getSize().x, (100)/cursor.sprites[cursorSpriteIdx::menu].getGlobalBounds().getSize().y);
-    cursor.changeSprite(cursorSpriteIdx::menu);
-    cursor.display = true;
-}
-

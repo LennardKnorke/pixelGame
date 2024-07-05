@@ -28,15 +28,38 @@ enum inGameErrors {
 
 class Game{
     public:
-    Game();
+    /// @brief Constructor for playing singleplayer game
+    Game(gameMode m, sf::RenderWindow *win, Cursor *cur, gamesave_summary save);
+
+    /// @brief Constructor for joining a game
+    Game(gameMode m, sf::RenderWindow *win, Cursor *cur, sf::IpAddress ip, unsigned short port);
+
 
     /**
      * @brief Runs the game loop
      */
     GAME_STATE run(void);     //!< Main game loop
 
-    private:
+    private: 
+
     GameStates gameState = RUNNING_GAME;   //!< Current state of the game
+    gameMode mode;                          //!< Mode of the game
+    
+
+    struct network_tools {
+        unsigned short host_port;                   //!< Port number
+        sf::IpAddress host_ip;                      //!< IP address
+        sf::TcpSocket socket;                       //!< Socket for communication
+    } network_tools_c;                              //!< Network tools for clients    
+    struct hosting_tools{
+        sf::TcpListener listener;                   //!< Listener for incoming connection
+    } hostingTools;
+
+
+    gamesave_summary info;                   //!< Save file summary (path + name + initial state)
+
+    sf::RenderWindow *window;                //!< Window for the game
+    Cursor *cursor;                          //!< Cursor for the game
 
 };
 

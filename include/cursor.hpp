@@ -2,7 +2,11 @@
 #ifndef CURSOR_HPP
 #define CURSOR_HPP
 
+#include <iostream>
+
 #include "SFML/Graphics.hpp"
+
+#include "utils.hpp"
 
 #define nr_cursor_textures 2    //!< maximum number of cursor textures to load
 
@@ -18,6 +22,7 @@ enum cursorSpriteIdx {
 /// \brief Class containing cursor sprites for the menu, in-game, etc.
 class Cursor{    
 public:
+    Cursor(sf::RenderWindow *win, resolution_tools res, sf::Texture textures[nr_cursor_textures]);  //!< Constructor
 
     /**
      * @brief Change the active sprite used for the cursor
@@ -52,12 +57,13 @@ public:
      * @return The size of the cursor as a sf::Vector2f
      */
     sf::Vector2f returnSize(void);
-
-
-    cursorSpriteIdx spriteIdx;       //!< Active sprite for drawing
-    sf::Sprite sprites[nr_cursor_textures];  //!< Available sprites
+    bool display;                           //!< True/false to show the cursor sprite    
+    private:
+    sf::RenderWindow *window;               //!< Pointer to the window
+    cursorSpriteIdx spriteIdx;              //!< Active sprite for drawing
+    sf::Sprite sprites[nr_cursor_textures]; //!< Available sprites
     bool pressed;                           //!< True/false if mouse button is pressed (redundant?)
-    bool display;                             //!< True/false to show the cursor sprite
+    resolution_tools resolutions;           //!< Resolution tools
 };
 
 

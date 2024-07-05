@@ -89,20 +89,10 @@ class Application{
     bool loadTextures(void);
 
     /**
-     * @brief Load cursor textures.
-     */
-    void setUpCursorAssets(void);
-
-    /**
      * @brief Create a folder for save files if it is not present.
      */
     void setUpSaveFolder(void);
     
-    /**
-     * @brief NOT IMPLEMENTED YET
-    */
-   void resetHostInfo(void);
-
     /**
      * @brief Run the main menu.
      * @return the next game state (game loop or exit).
@@ -117,13 +107,11 @@ class Application{
 
 
     // Window variables
-    sf::RenderWindow window;    //!< window variable to display everything in
-    bool fullscreen = true;     //!< fullscreen mode
-    sf::Vector2u resolution;    //!< resolution of the window
-    sf::Vector2f res_scaling;   //!< scaling of the resolution
-    short FPS;                  //!< frames per second
+    sf::RenderWindow window;            //!< window variable to display everything in
+    resolution_tools res_tools;         //!< resolution tools
+    short FPS;                          //!< frames per second
     
-    Cursor cursor;              //!< application cursor. used throughout the programm
+    Cursor *cursor;              //!< application cursor. used throughout the programm
     
     float volume;               //!< 0-1
 

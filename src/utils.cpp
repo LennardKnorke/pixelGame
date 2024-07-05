@@ -34,3 +34,15 @@ bool validIP(const std::string &ip){
     std::regex ipPattern("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
     return std::regex_match(ip, ipPattern);
 }
+
+
+unsigned short findFreePort(void){
+    sf::TcpListener listener;
+    for (unsigned short i = DEFAULT_PORT; i < 65535; i++){
+        if (listener.listen(i) == sf::Socket::Done){
+            listener.close();
+            return i;
+        }
+    }
+    return 0;
+}

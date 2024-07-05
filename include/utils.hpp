@@ -2,19 +2,40 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
+//
 #include <string>
 #include <fstream>
 #include <regex>
 
+#include <SFML/Network.hpp>
 
-#define GAMEFONT_SIZE 30    //!< Font size for the game
-#define MAX_SAVES 5         //!< Maximum number of saves load or create
+#define GAMEFONT_SIZE 30                //!< Font size for the game
+#define MAX_SAVES 5                     //!< Maximum number of saves load or create
+
+#define DEFAULT_PORT 53000              //!< Default port for networking
+#define DEFAULT_FPS 60                  //!< Default frames per second
+#define DEFAULT_VOLUME 10.0             //!< Default volume level
+#define DEFAULT_WINDOW_WIDTH 1280       //!< Default window width
+#define DEFAULT_WINDOW_HEIGHT 720       //!< Default window height
+#define DEFAULT_FULLSCREEN 0            //!< Default fullscreen setting
+
+
+
+
+typedef struct resolution_setup {
+    bool fullscreen;                    //!< Fullscreen mode
+    sf::Vector2u desktop_res;           //!< Desktop resolution
+    sf::Vector2u dev_res;               //!< Default resolution
+    sf::Vector2f scale;                 //!< Scale factor
+    sf::Vector2u res;                   //!< Resolution (MAY BE REDUNDANT)
+}resolution_tools;
+
 
 /// @brief Macros: Game states
 enum GAME_STATE {
-    MENU,   //!< In the main menu
-    GAME,   //!< In the main game loop
-    QUIT    //!< Quit application
+    MENU,                               //!< In the main menu
+    GAME,                               //!< In the main game loop
+    QUIT                                //!< Quit application
 };
 
 /// @brief Macros: Identify required networking settings
@@ -28,10 +49,10 @@ enum gameMode {
 
 /// @brief Maximum lengths various check ups
 enum maxInputLengths {
-    userId = 15,        //!< maximum length of user identifer strings
-    ip = 15,            //!< maximum length of ip strings
-    port = 5,           //!< maximum length of port strings
-    SaveName = 12       //!< maximum length of save file names
+    userId = 15,                        //!< maximum length of user identifer strings
+    ip = 15,                            //!< maximum length of ip strings
+    port = 5,                           //!< maximum length of port strings
+    SaveName = 12                       //!< maximum length of save file names
 };
 
 
@@ -67,4 +88,10 @@ void writeStrToFile(std::ofstream& file, std::string& str);
  */
 bool validIP(const std::string &ip);
 
+
+/**
+ * @brief Finds a free port to use for networking
+ * @return unsigned short 
+ */
+unsigned short findFreePort(void);
 #endif //UTILS_HPP
