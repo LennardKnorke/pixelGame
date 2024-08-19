@@ -5,7 +5,8 @@
 
 
 //Application main function
-Application::Application(void){
+Application::Application(bool dev){
+    DEV_MODE = dev;     // Prints much more information to the console + visual debug (pending)
 
     //Set up assets, settings etc.
     State = GAME_STATE::MENU;
@@ -16,9 +17,8 @@ Application::Application(void){
         State = GAME_STATE::QUIT;
     }
     else {
-        cursor = new Cursor(&window, res_tools, assets.textures.cursors);
+        cursor = new Cursor(&window, &scale_window, &assets.textures.cursors);
         setUpSaveFolder();
-        std::cout << machinePublicAdress << "\t" << machineLocalAdress <<  std::endl;
     }
 
     
@@ -53,35 +53,31 @@ void Application::initSettings(void){
 
 
 void Application::loadSettings(void){
-    std::ifstream inputFile("settings.bin", std::ios::binary);
+    /*
+    load the settings from the file into temporary struct then convert
+    */
+    settings = load_settings();
+    scale_window = sf::Vector2f((float)settings.res_x / (float)DEFAULT_WINDOW_WIDTH, (float)settings.res_y / (float)DEFAULT_WINDOW_HEIGHT);
 
-    //Read id of client
-    readStrOfFile(inputFile, localUserID);
-
-    //Read volumne
-    inputFile.read(reinterpret_cast<char *>(&volume), sizeof(float));
-
-    std::cout   <<"Loaded user: " << localUserID << std::endl;
-
-    //load control settings
-    for (int i = 0; i < n_keyInputOptions; i++){
-        inputFile.read(reinterpret_cast<char *>(&inGameControls[i].iType), sizeof(inputType));
-        if (inGameControls[i].iType == inputType::KEYBOARD){
-            inputFile.read(reinterpret_cast<char *>(&inGameControls[i].input.keyInput),sizeof(sf::Keyboard::Key));
+    if (DEV_MODE){
+        std::cout << "LOADED SETTINGS:" << std::endl;
+        std::cout << "\tUser: " << settings.userId << std::endl;
+        std::cout << "\tVolume: " << settings.volumne << std::endl;
+        std::cout << "\tFPS: " << settings.fps << std::endl;
+        std::cout << "\tFullscreen: " << settings.fullscreen << std::endl;
+        std::cout << "\tResolution: " << settings.res_x << "x" << settings.res_y << std::endl;
+        std::cout << "\tControls: " << std::endl;
+        for (short i = 0; i < n_keyInputOptions; i++){
+            std::cout << "\t\t" << settings.controls[i].iType;
+            if (settings.controls[i].iType == inputType::KEYBOARD){
+                std::cout << "\t" << settings.controls[i].input.keyInput << std::endl;
+            }
+            else if (settings.controls[i].iType == inputType::MOUSE_BUTTON){
+                std::cout << "\t" << settings.controls[i].input.mouseInput << std::endl;
+            }
         }
-        else if (inGameControls[i].iType == inputType::MOUSE_BUTTON){
-            inputFile.read(reinterpret_cast<char *>(&inGameControls[i].input.mouseInput),sizeof(sf::Mouse::Button));
-        }
+        std::cout << std::endl;
     }
-    
-    // FPs and full screen
-    inputFile.read(reinterpret_cast<char *>(&FPS), sizeof(int));
-    inputFile.read(reinterpret_cast<char *>(&res_tools.fullscreen), sizeof(bool));
-
-    inputFile.close();
-
-    
-
 }
 
 
@@ -92,101 +88,93 @@ void Application::createSettings(void){
     const std::string alphabet = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     std::mt19937 rng(std::random_device{}());
     std::uniform_int_distribution<std::string::size_type> dist(0, alphabet.size()-1);
-    for (int i = 0 ; i < maxInputLengths::userId; i++){
-        this->localUserID += alphabet[dist(rng)];
+    for (short i = 0 ; i < maxInputLengths::userId; i++){
+        //this->localUserID += alphabet[dist(rng)];
+        this->settings.userId += alphabet[dist(rng)];
     }
-    std::cout   << "Created User:  "<< this->localUserID << std::endl;
 
     //Set default volume
-    volume = DEFAULT_VOLUME;
-    FPS = DEFAULT_FPS;
+    this->settings.volumne = DEFAULT_VOLUME;
 
     //set default controls
-    inGameControls[up].iType = inputType::KEYBOARD;
-    inGameControls[up].input.keyInput = sf::Keyboard::W;
+    this->settings.controls[up].iType = inputType::KEYBOARD;
+    this->settings.controls[up].input.keyInput = sf::Keyboard::W;
 
-    inGameControls[down].iType = inputType::KEYBOARD;
-    inGameControls[down].input.keyInput = sf::Keyboard::S;
+    this->settings.controls[up].iType = inputType::KEYBOARD;
+    this->settings.controls[up].input.keyInput = sf::Keyboard::S;
 
-    inGameControls[left].iType = inputType::KEYBOARD;
-    inGameControls[left].input.keyInput = sf::Keyboard::A;
+    this->settings.controls[up].iType = inputType::KEYBOARD;
+    this->settings.controls[up].input.keyInput = sf::Keyboard::A;
 
-    inGameControls[right].iType = inputType::KEYBOARD;
-    inGameControls[right].input.keyInput = sf::Keyboard::D;
+    this->settings.controls[up].iType = inputType::KEYBOARD;
+    this->settings.controls[up].input.keyInput = sf::Keyboard::D;
 
-    inGameControls[prevItem].iType = inputType::KEYBOARD;
-    inGameControls[prevItem].input.keyInput = sf::Keyboard::Q;
+    this->settings.controls[up].iType = inputType::KEYBOARD;
+    this->settings.controls[up].input.keyInput = sf::Keyboard::Q;
 
-    inGameControls[nextItem].iType = inputType::KEYBOARD;
-    inGameControls[nextItem].input.keyInput = sf::Keyboard::E;
+    this->settings.controls[up].iType = inputType::KEYBOARD;
+    this->settings.controls[up].input.keyInput = sf::Keyboard::E;
 
-    inGameControls[attack].iType = inputType::MOUSE_BUTTON;
-    inGameControls[attack].input.mouseInput = sf::Mouse::Button::Left;
-    
-    inGameControls[special].iType = inputType::KEYBOARD;
-    inGameControls[special].input.keyInput = sf::Keyboard::LShift;
+    this->settings.controls[up].iType = inputType::MOUSE_BUTTON;
+    this->settings.controls[up].input.mouseInput = sf::Mouse::Button::Left;
 
-    inGameControls[useItem].iType = inputType::KEYBOARD;
-    inGameControls[useItem].input.keyInput = sf::Keyboard::G;
+    this->settings.controls[up].iType = inputType::KEYBOARD;
+    this->settings.controls[up].input.keyInput = sf::Keyboard::LShift;
 
-    res_tools.fullscreen = DEFAULT_FULLSCREEN;
+    this->settings.controls[up].iType = inputType::KEYBOARD;
+    this->settings.controls[up].input.keyInput = sf::Keyboard::G;
 
-    saveSettings();
-}
+    //settings default grafic infos;
+    this->settings.fps = DEFAULT_FPS;
+    this->settings.fullscreen = DEFAULT_FULLSCREEN;
+    this->settings.res_x = DEFAULT_WINDOW_WIDTH;
+    this->settings.res_y = DEFAULT_WINDOW_HEIGHT;
 
-
-
-void Application::saveSettings(void){
-    std::ofstream outputFile("settings.bin", std::ios::binary);
-    
-    // save local user ID
-    writeStrToFile(outputFile, localUserID);
-
-
-    // save volumne setting resolution
-    outputFile.write(reinterpret_cast<char *>(&volume), sizeof(float));
-
-
-    // Save Control settings
-    for (int i = 0; i < n_keyInputOptions; i++){
-        outputFile.write(reinterpret_cast<const char*>(&inGameControls[i].iType), sizeof(inputType));
-        if (inGameControls[i].iType == inputType::KEYBOARD){
-            outputFile.write(reinterpret_cast<const char*>(&inGameControls[i].input.keyInput), sizeof(sf::Keyboard::Key));
+    if (DEV_MODE){
+        std::cout << "CREATED SETTINGS:" << std::endl;
+        std::cout << "\tUser: " << settings.userId << std::endl;
+        std::cout << "\tVolume: " << settings.volumne << std::endl;
+        std::cout << "\tFPS: " << settings.fps << std::endl;
+        std::cout << "\tFullscreen: " << settings.fullscreen << std::endl;
+        std::cout << "\tResolution: " << settings.res_x << "x" << settings.res_y << std::endl;
+        std::cout << "\tControls: " << std::endl;
+        for (short i = 0; i < n_keyInputOptions; i++){
+            std::cout << "\t\t" << i << ": " << settings.controls[i].iType;
+            if (settings.controls[i].iType == inputType::KEYBOARD){
+                std::cout << " " << settings.controls[i].input.keyInput;
+            }
+            else if (settings.controls[i].iType == inputType::MOUSE_BUTTON){
+                std::cout << " " << settings.controls[i].input.mouseInput;
+            }
+            std::cout << std::endl;
         }
-        else if (inGameControls[i].iType == inputType::MOUSE_BUTTON){
-            outputFile.write(reinterpret_cast<const char*>(&inGameControls[i].input.mouseInput), sizeof(sf::Mouse::Button));
-        }        
+        std::cout << std::endl;
     }
+    save_settings(settings);
 
-    // Save FPS and Fullscreen
-    outputFile.write(reinterpret_cast<char *>(&FPS), sizeof(int));
-    outputFile.write(reinterpret_cast<char *>(&res_tools.fullscreen), sizeof(bool));
-
-    outputFile.close();
+    scale_window = sf::Vector2f((float)settings.res_x / (float)DEFAULT_WINDOW_WIDTH, (float)settings.res_y / (float)DEFAULT_WINDOW_HEIGHT);
 }
 
 
 
 void Application::initWindow(void){
-    //Get resolutions
-    res_tools.dev_res = sf::Vector2u(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
-    res_tools.desktop_res = sf::Vector2u(sf::VideoMode::getDesktopMode().width, sf::VideoMode::getDesktopMode().height);
+
 
     //Set up window
-    if (res_tools.fullscreen){
-        res_tools.res = res_tools.desktop_res;
-        window.create(sf::VideoMode(res_tools.res.x, res_tools.res.y, 32), "ReFrAcTuReD", sf::Style::Fullscreen);
+    if (settings.fullscreen){
+        settings.res_x = sf::VideoMode::getDesktopMode().width;
+        settings.res_y =  sf::VideoMode::getDesktopMode().height;
+        window.create(sf::VideoMode(settings.res_x, settings.res_y, 32), "ReFrAcTuReD", sf::Style::Fullscreen);
     }
     else {
-        res_tools.res = res_tools.dev_res;
-        window.create(sf::VideoMode(res_tools.res.x, res_tools.res.y, 32), "ReFrAcTuReD", sf::Style::Titlebar | sf::Style::Close);
+        settings.res_x = DEFAULT_WINDOW_WIDTH;
+        settings.res_y = DEFAULT_WINDOW_HEIGHT;
+        window.create(sf::VideoMode(settings.res_x, settings.res_y, 32), "ReFrAcTuReD", sf::Style::Titlebar | sf::Style::Close);
     }
-    res_tools.scale = sf::Vector2f((float)res_tools.res.x/(float)res_tools.dev_res.x, (float)res_tools.res.y/(float)res_tools.res.y);
-
-    std::cout << window.getSize().x << " " << window.getSize().y << std::endl;
+    scale_window = sf::Vector2f((float)settings.res_x / (float)DEFAULT_WINDOW_WIDTH, (float)settings.res_y / (float)DEFAULT_WINDOW_HEIGHT);
 
     // Further window settings
-    window.setFramerateLimit(FPS);
+    window.setFramerateLimit(settings.fps);
     window.setMouseCursorVisible(false);
     window.setMouseCursorGrabbed(true);
     window.setVerticalSyncEnabled(true);
@@ -208,7 +196,7 @@ bool Application::loadAssets(void){
             return false;
         }
         assets.backgroundMusic[i].setLoop(true);
-        assets.backgroundMusic[i].setVolume(volume);
+        assets.backgroundMusic[i].setVolume(settings.volumne);
         i++;
     }
 
@@ -236,6 +224,16 @@ void Application::setUpSaveFolder(void){
 
 
 bool Application::loadTextures(void){
+    // Load Images
+    if (!assets.textures.cursors.loadFromFile("assets/sprites/cursor.png") ||
+        !assets.textures.menu.loadFromFile("assets/sprites/menu/0.png")
+        ){
+        std::cout << "Failed to textures: " << std::endl;
+        return false;
+    }
+    assets.textures.cursors.setSmooth(true);
+    assets.textures.menu.setSmooth(true);
+    /* 
     // Load Menu Textures
     int texture_idx = 0;
     for (auto &iterator : std::filesystem::directory_iterator("assets/sprites/menu/")){
@@ -268,7 +266,7 @@ bool Application::loadTextures(void){
     //Get Weapon Textures
 
     //Get Game Textures
-
+    */
 
     return true;
 }

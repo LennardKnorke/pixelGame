@@ -9,26 +9,16 @@
 
 #include <SFML/Network.hpp>
 
+
 #define GAMEFONT_SIZE 30                //!< Font size for the game
 #define MAX_SAVES 5                     //!< Maximum number of saves load or create
 
 #define DEFAULT_PORT 53000              //!< Default port for networking
 #define DEFAULT_FPS 60                  //!< Default frames per second
-#define DEFAULT_VOLUME 10.0             //!< Default volume level
+#define DEFAULT_VOLUME 50.0             //!< Default volume level
 #define DEFAULT_WINDOW_WIDTH 1280       //!< Default window width
 #define DEFAULT_WINDOW_HEIGHT 720       //!< Default window height
 #define DEFAULT_FULLSCREEN 0            //!< Default fullscreen setting
-
-
-
-
-typedef struct resolution_setup {
-    bool fullscreen;                    //!< Fullscreen mode
-    sf::Vector2u desktop_res;           //!< Desktop resolution
-    sf::Vector2u dev_res;               //!< Default resolution
-    sf::Vector2f scale;                 //!< Scale factor
-    sf::Vector2u res;                   //!< Resolution (MAY BE REDUNDANT)
-}resolution_tools;
 
 
 /// @brief Macros: Game states

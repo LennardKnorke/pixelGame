@@ -3,48 +3,169 @@
 #include "menuButtons.hpp"
 
 GAME_STATE Application::menuLoop(void){
-    MainMenu *menu = new MainMenu(&window, cursor, res_tools, &assets.textures.menu[menuTextureIdxS::background], &assets.gameFont, &assets.backgroundMusic[musicIdx::mainMenu]);
-    GAME_STATE nextState = menu->runMenu();
+    MainMenu *menu = new MainMenu(cursor, &settings, &assets.textures.menu, &assets.gameFont, &assets.backgroundMusic[musicIdx::mainMenu], DEV_MODE);
+    GAME_STATE next_state;
+    while (menu->running){
+        menu->draw(&window);
 
-    if (nextState == GAME_STATE::GAME){
-        mode = menu->getMode();
-        if (mode == gameMode::Single || mode == gameMode::Host){
-            loadingTools.chosenSave = menu->getChosenSave();
-        }
-        else if (mode == gameMode::Join){
+        menu->handleEvents(&window);
+
+        menu->update(&window);
+    }
+
+    // End of menu loop. Get next state and necessary tools
+    if (menu->currentLayer == mainMenuLayerId::game){
+        mode = menu->getGameMode();
+        if (mode == gameMode::Join){
             loadingTools.ip = menu->getHostIp();
             loadingTools.port = menu->getHostPort();
+            next_state = GAME_STATE::GAME;
+        }
+        else if (mode == gameMode::Host || mode == gameMode::Single){
+            loadingTools.chosenSave = menu->getChosenSave();
+            next_state = GAME_STATE::GAME;
         }
         else {
+            next_state = GAME_STATE::QUIT;
             std::cout << "ERROR: UNDEFINED GAME MODE. application.cpp\n";
-            nextState = GAME_STATE::QUIT;
+            error = errorCodes::Error;
         }
+        
+    }
+    else{
+        next_state = GAME_STATE::QUIT;
     }
     delete menu; // AVOID MEMORY LEAKS
-    return nextState;
+    return next_state;
 }
 
-gameMode MainMenu::getMode(void){
-    return this->mode;
+
+void MainMenu::draw(sf::RenderWindow *window){
+    window->clear(sf::Color::Transparent);
+    window->draw(backgroundSprite);
+    if (menuWarning == menuPopUps::noPopUp){
+        drawMenuButtons(window);
+        if (!writing){//No text input?->Draw cursor
+            cursor->draw(*window);
+        }
+    }
+    else {
+        drawMenuPopUp(window);
+    }
+    window->display();
 }
 
-sf::IpAddress MainMenu::getHostIp(void){
-    return this->hostIp;
+void MainMenu::handleEvents(sf::RenderWindow *window){
+    sf::Event event;
+    while (window->pollEvent(event)){
+        //Close window
+        if (!window->hasFocus()){
+            if (event.type == sf::Event::Closed){
+                std::cout << "Closing window" << std::endl;
+                window->close();
+                running = false;
+                break;
+            }
+            continue;
+        }
+
+        // Handle events while window is in focus
+        // 1. Keypresses
+        if (event.type == sf::Event::KeyPressed){
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){
+                escapeKeyPressed();
+            }
+            else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)){
+                enterKeyPressed();
+            }
+            else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Delete) || sf::Keyboard::isKeyPressed(sf::Keyboard::BackSpace)){
+                deleteKeyPressed();
+            }
+
+            // temporary fullscreen toggle for graphic practice
+            else {
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::F1) || sf::Keyboard::isKeyPressed(sf::Keyboard::F2)){
+                    sf::VideoMode new_desktop;
+                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::F1)){
+                        new_desktop = sf::VideoMode::getDesktopMode();
+                        window->create(new_desktop, "ReFrAcTuReD", sf::Style::Fullscreen);
+                        settings_p->fullscreen = true;
+                    }
+                    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::F2)){
+                        new_desktop = sf::VideoMode(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, 32);
+                        window->create(new_desktop, "ReFrAcTuReD", sf::Style::Titlebar | sf::Style::Close);
+                        settings_p->fullscreen = false;
+                    }
+
+                    settings_p->res_x = new_desktop.width;
+                    settings_p->res_y = new_desktop.height;
+                    scale_window = sf::Vector2f((float)settings_p->res_x / (float)DEFAULT_WINDOW_WIDTH, (float)settings_p->res_y / (float)DEFAULT_WINDOW_HEIGHT);
+                    
+                    
+                    window->setFramerateLimit(60);
+                    window->setMouseCursorGrabbed(true);
+                    window->setMouseCursorVisible(false);
+
+                    if (DEV_MODE){
+                        std::cout << "Toggle resolution:" << std::endl;
+                        std::cout << "\tFullscreen: " << settings_p->fullscreen << std::endl;
+                        std::cout << "\tResolution:\t" << settings_p->res_x << "x\t" << settings_p->res_y << std::endl;
+                    }
+                    // Rescale buttons and textures
+                    for (button *buttTmp : menuButtons){
+                        buttTmp->changeResolution(settings_p->res_x, settings_p->res_y, scale_window);
+                    }
+                    backgroundSprite.setScale(scale_window);
+                    cursor->changeResolution(DEV_MODE);
+
+                    save_settings(*settings_p);
+
+                }
+            }
+        // 2. Text input
+        }
+        else if (event.type == sf::Event::TextEntered){
+            textEntered(event);
+        }
+        // 3. Mouse input
+        else if (event.type == sf::Event::MouseButtonPressed ){
+            mouseButtonPressed(window);
+        }
+    }
 }
 
-gamesave_summary MainMenu::getChosenSave(void){
-    return this->chosen_save;
-}
-unsigned short MainMenu::getHostPort(void){
-    return this->hostPort;
+void MainMenu::update(sf::RenderWindow *window){
+    if (currentLayer == mainMenuLayerId::game || currentLayer == mainMenuLayerId::leave){
+        running = false;
+        return;
+    }
+
+    if (window->hasFocus() && menuWarning == menuPopUps::noPopUp){
+        for (button* butt : menuButtons){
+            if (butt->layer == currentLayer){
+                butt->update(cursor->returnPosition());
+            }
+        }
+        if (!writing){
+            cursor->update();
+        }
+        getMenuPicks();
+    }
 }
 
-MainMenu::MainMenu(sf::RenderWindow *window, Cursor *cursor, resolution_tools resolutions, sf::Texture *bg_Texture, sf::Font *font, sf::Music *bg_music){
+
+MainMenu::MainMenu(Cursor *cursor, app_settings *ps, sf::Texture *bg_Texture, sf::Font *font, sf::Music *bg_music, bool dev){
+    this->DEV_MODE = dev;
+    if (DEV_MODE){
+        std::cout << "MAIN MENU INITIALIZED" << std::endl;
+    }
+    
     this->font = font;
-    this->window = window;
     this->bg_music = bg_music;
     this->cursor = cursor;
-    this->res = resolutions;
+    this->settings_p = ps;
+    scale_window = sf::Vector2f((float)settings_p->res_x / (float)DEFAULT_WINDOW_WIDTH, (float)settings_p->res_y / (float)DEFAULT_WINDOW_HEIGHT);
+    
     //Read every save name/path for ingame buttons
     availableSaveFiles = read_all_save_summaries();
 
@@ -54,37 +175,33 @@ MainMenu::MainMenu(sf::RenderWindow *window, Cursor *cursor, resolution_tools re
     //SetUpBackgroundSprite
     backgroundSprite.setTexture(*bg_Texture);
     backgroundSprite.setPosition(0, 0);
-    backgroundSprite.setScale(res.res.x/backgroundSprite.getGlobalBounds().getSize().x, res.res.y/backgroundSprite.getGlobalBounds().getSize().y);
+    backgroundSprite.setScale(settings_p->res_x/backgroundSprite.getGlobalBounds().getSize().x, settings_p->res_y/backgroundSprite.getGlobalBounds().getSize().y);
 
     //prepare a warning message for errors
     initErrorMessage();
-
+    this->bg_music->play();
 }
 
 
 
 void MainMenu::setUpMenuButtons(void){
-    float position[2] = {0.0, 0.0};
-    position[0] = res.res.x / 2;
-
     //layersId::Base
-    unsigned short maxButtons = 3;
+    short maxButtons = 3;
     std::vector<std::string> text = {"Play", "Settings", "Exit"};
     std::vector<mainMenuLayerId> followUpsLayers = {mainMenuLayerId::modeSelection, mainMenuLayerId::options, mainMenuLayerId::leave};
-    for (unsigned short i = 0; i < maxButtons; i++){
-        position[1] = res.res.y / float(maxButtons+1) * (i+1);
-        menuButtons.push_back(new ClickButton(i, text[i], mainMenuLayerId::base, followUpsLayers[i], position, *font, clickbuttonTypes::standart));
+    for (short i = 0; i < maxButtons; i++){
+        menuButtons.push_back(new ClickButton(i, maxButtons,text[i], mainMenuLayerId::base, followUpsLayers[i], settings_p->res_x, settings_p->res_y, scale_window, *font, clickbuttonTypes::standart));
     }
     text.clear();
     followUpsLayers.clear();
 
 
     //layersId::options (TO DO)
-    maxButtons = 2;
-    text = {"Graphics", "Controls"};
-    followUpsLayers = {mainMenuLayerId::leave, mainMenuLayerId::leave};
-    for (unsigned short i = 0; i < maxButtons; i++){
-
+    maxButtons = 1;
+    text = {"Toggle Fullscreen"};
+    followUpsLayers = {mainMenuLayerId::options};
+    for (short i = 0; i < maxButtons; i++){
+        menuButtons.push_back(new ClickButton(i, maxButtons, text[i], mainMenuLayerId::options, followUpsLayers[i], settings_p->res_x, settings_p->res_y, scale_window, *font, clickbuttonTypes::graphic));
     }
     text.clear();
     followUpsLayers.clear();
@@ -94,9 +211,8 @@ void MainMenu::setUpMenuButtons(void){
     maxButtons = 3;
     text = {"Singleplayer", "Host", "Join"};
     followUpsLayers = {mainMenuLayerId::hosting, mainMenuLayerId::hosting, mainMenuLayerId::joining};
-    for (unsigned short i = 0; i < maxButtons; i++){
-        position[1] = res.res.y / float(maxButtons+1) * (i+1);
-        menuButtons.push_back(new ClickButton(i, text[i], mainMenuLayerId::modeSelection, followUpsLayers[i], position, *font, clickbuttonTypes::standart));
+    for (short i = 0; i < maxButtons; i++){
+        menuButtons.push_back(new ClickButton(i, maxButtons, text[i], mainMenuLayerId::modeSelection, followUpsLayers[i], settings_p->res_x, settings_p->res_y, scale_window, *font, clickbuttonTypes::standart));
     }
     text.clear();
     followUpsLayers.clear();
@@ -106,12 +222,10 @@ void MainMenu::setUpMenuButtons(void){
     maxButtons = 3;
     text = {"Enter Host Ip", "(Optional) Enter Host Port", "Connect"};
     followUpsLayers = {mainMenuLayerId::joining, mainMenuLayerId::joining, mainMenuLayerId::game};
-    for (unsigned short i = 0; i < maxButtons - 1; i++){
-        position[1] = res.res.y / float(maxButtons+1) * (i+1);
-        menuButtons.push_back(new textButton(i, text[i], mainMenuLayerId::joining, followUpsLayers[i], position, *font, textbuttonTypes::adress));
+    for (short i = 0; i < maxButtons - 1; i++){
+        menuButtons.push_back(new textButton(i, maxButtons, text[i], mainMenuLayerId::joining, followUpsLayers[i], settings_p->res_x, settings_p->res_y, scale_window, *font, textbuttonTypes::adress));
     }
-    position[1] = res.res.y / float(maxButtons+1) * (maxButtons);
-    menuButtons.push_back(new ClickButton(2, text[2], mainMenuLayerId::joining, mainMenuLayerId::game, position, *font, clickbuttonTypes::standart));
+    menuButtons.push_back(new ClickButton(2, maxButtons, text[2], mainMenuLayerId::joining, mainMenuLayerId::game, settings_p->res_x, settings_p->res_y, scale_window, *font, clickbuttonTypes::standart));
     text.clear();
     followUpsLayers.clear();
 
@@ -119,10 +233,9 @@ void MainMenu::setUpMenuButtons(void){
     //layersId::Hosting
     if (availableSaveFiles.size() < MAX_SAVES){
         maxButtons = 1 + availableSaveFiles.size();
-        position[1] = res.res.y / float(maxButtons+1);
-        menuButtons.push_back(new textButton(0, std::string("Start New Game"), mainMenuLayerId::hosting, mainMenuLayerId::game, position, *font, textbuttonTypes::newSafe));
+        menuButtons.push_back(new textButton(0, maxButtons, std::string("Start New Game"), mainMenuLayerId::hosting, mainMenuLayerId::game, settings_p->res_x, settings_p->res_y, scale_window, *font, textbuttonTypes::newSafe));
     }    
-    for (unsigned short i = 0; i < availableSaveFiles.size(); i++){
+    for (long long unsigned i = 0; i < availableSaveFiles.size(); i++){
         short id;
         if (availableSaveFiles.size() < MAX_SAVES){
             id = i+1;
@@ -132,8 +245,7 @@ void MainMenu::setUpMenuButtons(void){
             maxButtons = MAX_SAVES;
             id = i;
         }
-        position[1] = res.res.y / float(maxButtons+1) * (id+1);
-        menuButtons.push_back(new ClickButton(id, availableSaveFiles[i].name, mainMenuLayerId::hosting, mainMenuLayerId::game, position, *font, clickbuttonTypes::saveFile));
+        menuButtons.push_back(new ClickButton(id, maxButtons, availableSaveFiles[i].name, mainMenuLayerId::hosting, mainMenuLayerId::game, settings_p->res_x, settings_p->res_y, scale_window, *font, clickbuttonTypes::saveFile));
     }
 
     text.clear();
@@ -163,7 +275,7 @@ void MainMenu::initErrorMessage(void){
     warningMessage.setFont(*font);
     warningMessage.setStyle(sf::Text::Style::Regular);
     warningMessage.setCharacterSize(GAMEFONT_SIZE);
-    warningMessage.setPosition((res.res.x/2) - (warningMessage.getGlobalBounds().getSize().x / 2), (res.res.y / 2) - (warningMessage.getGlobalBounds().getSize().y / 2));
+    warningMessage.setPosition((settings_p->res_x/2) - (warningMessage.getGlobalBounds().getSize().x / 2), (settings_p->res_y / 2) - (warningMessage.getGlobalBounds().getSize().y / 2));
 
     return;
 }
@@ -177,87 +289,17 @@ MainMenu::~MainMenu(void){
     availableSaveFiles.clear();
 }
 
-
-GAME_STATE MainMenu::runMenu(void){
-    bg_music->play();
-
-    //  MAIN MENU LOOP
-    //      1. DRAW
-    //      2. Register Key/Mouse Input
-    //      3. Update buttons/application features 
-    while (currentLayer != mainMenuLayerId::leave && currentLayer != mainMenuLayerId::game){
-    
-        //  1. DRAW
-        window->clear(sf::Color::Transparent);
-        window->draw(backgroundSprite);
-        if (menuWarning == menuPopUps::noPopUp){
-            drawMenuButtons();
-            if (!writing){//No text input?->Draw cursor
-                cursor->draw(*window);
-            }
-        }
-        else {
-            drawMenuPopUp();
-        }  
-        window->display();
-
-
-        //  2. Handle Events
-        sf::Event event;
-        while (window->pollEvent(event) && window->hasFocus()){
-            if (event.type == sf::Event::KeyPressed){
-                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){
-                    escapeKeyPressed();
-                }
-                else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)){
-                    enterKeyPressed();
-                }
-                else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Delete) || sf::Keyboard::isKeyPressed(sf::Keyboard::BackSpace)){
-                    deleteKeyPressed();
-                }
-            }
-            else if (event.type == sf::Event::TextEntered){
-                textEntered(event);
-            }
-            else if (event.type == sf::Event::MouseButtonPressed ){
-                mouseButtonPressed();
-            }
-        }
-                        
-        //  3. UPDATE BUTTONS
-        if (window->hasFocus() && currentLayer != mainMenuLayerId::game && currentLayer != mainMenuLayerId::leave && menuWarning == menuPopUps::noPopUp){
-            for (button* butt : menuButtons){
-                if (butt->layer == currentLayer){
-                    butt->update(cursor->returnPosition());
-                }
-            }
-            if (!writing){
-                cursor->update();
-            }
-            getMenuPicks();
-        }
-    }
-    //End of visual menu loop. user chose either to exit or play
-
-    
-    if (currentLayer == mainMenuLayerId::leave){
-        std::cout << "Leaving Application!\n";
-        return GAME_STATE::QUIT;
-    }
-    std::cout << "Starting Game!\n";
-    return GAME_STATE::GAME;
-}    
     
     
-void MainMenu::drawMenuButtons(void){
+void MainMenu::drawMenuButtons(sf::RenderWindow *window){
     for (button* buttTmp : menuButtons){
         if (buttTmp->layer == currentLayer){
-            buttTmp->draw(*window);
+            window->draw(buttTmp->text);
         }
     }
 }
 
-void MainMenu::drawMenuPopUp(void){
+void MainMenu::drawMenuPopUp(sf::RenderWindow *window){
     window->draw(warningMessage);
 }
 
@@ -470,7 +512,7 @@ void MainMenu::deleteKeyPressed(void){
             if (buttTmp->layer == currentLayer && buttTmp->focus){
                 textButton *buttonPointer = dynamic_cast<textButton*>(buttTmp);
                 if (buttonPointer && buttonPointer->activeInput){
-                    buttonPointer->delLastInput(res.res);
+                    buttonPointer->delLastInput(sf::Vector2u(settings_p->res_x, settings_p->res_y));
                     return;
                 }
             }
@@ -500,7 +542,7 @@ void MainMenu::textEntered(sf::Event ev){
         if (buttTmp->layer == currentLayer && buttTmp->focus){
             textButton *textPointer = dynamic_cast<textButton*>(buttTmp);
             if (textPointer){
-                textPointer->addInput(ev.text.unicode, res.res);
+                textPointer->addInput(ev.text.unicode, sf::Vector2u(settings_p->res_x, settings_p->res_y));
                 return;
             }
         }
@@ -509,7 +551,7 @@ void MainMenu::textEntered(sf::Event ev){
 
 
 
-void MainMenu::mouseButtonPressed(void){
+void MainMenu::mouseButtonPressed(sf::RenderWindow *window){
     if (sf::Mouse::isButtonPressed(sf::Mouse::Left) && writing == false){
 
         for (button *buttTmp : menuButtons){
@@ -524,15 +566,16 @@ void MainMenu::mouseButtonPressed(void){
                             }
                         }
                     }
-                    // Click buttons always change the layer on click
-                    if (currentLayer != mainMenuLayerId::joining){
-                        currentLayer = buttTmp->layer_next;
+                    // Joining. Change to "Game" layer if the "Connect" button is pressed and the IP and Port are valid
+                    if (currentLayer == mainMenuLayerId::joining && clickPointer->idx == 2 && hostIp != sf::IpAddress::None && hostPort > 2024 && hostPort < 65534){
+                        currentLayer = mainMenuLayerId::game;
+                    }
+                    else if (currentLayer == mainMenuLayerId::options && clickPointer->idx == 0){
+                        //changeFullscreen(window);
                     }
                     //Except for the "Connect" button in the "Joining" layer, which requires a valid IP and Port to change to "Game" layer
                     else {
-                        if (currentLayer == mainMenuLayerId::joining && clickPointer->idx == 2 && hostIp != sf::IpAddress::None && hostPort > 2024 && hostPort < 65534){
-                            currentLayer = mainMenuLayerId::game;
-                        }
+                        currentLayer = clickPointer->layer_next;
                     }
                     
                 }
@@ -575,4 +618,17 @@ void MainMenu::getMenuPicks(void){
         return;
     }
 
+}
+
+gameMode MainMenu::getGameMode(void){
+    return mode;
+}
+sf::IpAddress MainMenu::getHostIp(void){
+    return hostIp;
+}
+unsigned short MainMenu::getHostPort(void){
+    return hostPort;
+}
+gamesave_summary MainMenu::getChosenSave(void){
+    return chosen_save;
 }

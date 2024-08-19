@@ -28,21 +28,22 @@ class button{
     public:
     /**
      * @brief Construct a new button object
-     * @param i index of the button in its own layer (determines the y position)
-     * @param tex std::string text to be displayed
-     * @param currentLayer Layer the button is in
-     * @param followLayer Layer the button leads to if used
-     * @param pos   float[2] x,y CENTER position. is converted to top left corner using the actualy size of the text
-     * @param font  sf::Font font to be used
+     * @param i             (short) index of the button in its own layer (determines the y position)
+     * @param max_i         (short) maximum number of buttons in the layer
+     * @param tex           (std::string) text to be displayed
+     * @param currentLayer  (mainMenuLayerId) Layer the button is in
+     * @param followLayer   (mainMenuLayerId) Layer the button leads to if used
+     * @param pos           (resolution_tools *)
+     * @param font          (sf::Font*) font to be used
      */
-    button(short i, std::string tex, mainMenuLayerId currentLayer, mainMenuLayerId followLayer,  float pos[2], sf::Font &font);
+    button(short i, short max_i, std::string tex, mainMenuLayerId currentLayer, mainMenuLayerId followLayer,  unsigned int width, unsigned int height, sf::Vector2f scale, sf::Font &font);
     
 
     /**
      * @brief draws the button on the window
      * @param window sf::renderWindow window to draw on
      */
-    void draw(sf::RenderWindow &window);
+    //void draw(sf::RenderWindow &window);
 
 
     /**
@@ -50,6 +51,7 @@ class button{
      * @param mousePos x,y position of the cursor tip
      */
     virtual void update(sf::Vector2f mousePos);
+    virtual void changeResolution(unsigned int width, unsigned int height, sf::Vector2f scale);
     virtual ~button();
 
     mainMenuLayerId layer;      //!< layer the button is in
@@ -57,8 +59,8 @@ class button{
     std::string stringText;     //!< text to be displayed
     sf::Text text;              //!< text object
     bool focus;                 //!< true if the cursor hovering over the button         
-    float position[2];          //!< x,y position of the top left corner of the button
     short idx;                  //!< index of the button in its layer
+    short max_idx;              //!< maximum number of buttons in the layer
 };
 
 
@@ -75,15 +77,16 @@ class ClickButton : public button {
     public:
     /**
      * @brief Construct a new Click Button object
-     * @param i             index of the button in its own layer (determines the y position)
-     * @param tex           std::string text to be displayed
-     * @param currentLayer  Layer the button is in
-     * @param followLayer   Layer the button leads to if used
-     * @param pos           float[2] x,y CENTER position. is converted to top left corner using the actualy size of the text
-     * @param font          sf::Font font to be used
-     * @param type          clickbuttonTypes type of the button
+     * @param i             (short) index of the button in its own layer (determines the y position)
+     * @param max_i         (short) maximum number of buttons in the layer
+     * @param tex           (std::string) text to be displayed
+     * @param currentLayer  (mainMenuLayerId) Layer the button is in
+     * @param followLayer   (mainMenuLayerId) Layer the button leads to if used
+     * @param pos           (resolution_tools *) 
+     * @param font          (sf::Font*) font to be used
+     * @param type          (clickbuttonTypes) type of the button
      */
-    ClickButton(short i, std::string tex, mainMenuLayerId currentLayer, mainMenuLayerId followLayer,  float pos[2], sf::Font &font, clickbuttonTypes type);
+    ClickButton(short i, short max_i, std::string text, mainMenuLayerId currentLayer, mainMenuLayerId followLayer,  unsigned int width, unsigned int height, sf::Vector2f scale, sf::Font &font, clickbuttonTypes type);
     
     /**
      * @brief Calls the parents update function
@@ -115,15 +118,16 @@ class textButton : public button{
     public:
     /**
      * @brief Construct a new text Button object
-     * @param i             index of the button in its own layer (determines the y position)
-     * @param tex           std::string text to be displayed
-     * @param currentLayer  Layer the button is in
-     * @param followLayer   Layer the button leads to if used
-     * @param pos           float[2] x,y CENTER position. is converted to top left corner using the actualy size of the text
-     * @param font          sf::Font font to be used
-     * @param type          textbuttonTypes type of the button
+     * @param i             (short) index of the button in its own layer (determines the y position)
+     * @param max_i         (short) maximum number of buttons in the layer
+     * @param tex           (std::string) text to be displayed
+     * @param currentLayer  (mainMenuLayerId) Layer the button is in
+     * @param followLayer   (mainMenuLayerId) Layer the button leads to if used
+     * @param pos           (resolution_tools *)
+     * @param font          (sf::Font*) font to be used
+     * @param type          (textbuttonTypes) textbuttonTypes type of the button
      */
-    textButton(short i, std::string tex, mainMenuLayerId currentLayer, mainMenuLayerId followLayer,  float pos[2], sf::Font &font, textbuttonTypes type);
+    textButton(short i, short max_i,std::string tex, mainMenuLayerId currentLayer, mainMenuLayerId followLayer,  unsigned int width, unsigned int height, sf::Vector2f scale, sf::Font &font, textbuttonTypes type);
     
     /**
      * @brief Either calls the parents update function or changes the color of the text if text input is active

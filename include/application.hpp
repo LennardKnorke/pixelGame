@@ -22,7 +22,8 @@
 
 /// @brief makros: load/display error messages in mainmenu
 enum errorCodes{
-    NoErr                   //!< display no error
+    NoErr,                   //!< display no error
+    Error
 };
 
 #define nr_menu_textures 1      //!< maximum number of menu textures to load
@@ -47,7 +48,7 @@ class Application{
     /**
      * @brief Default constructor that runs the application.
      */
-    Application(void);
+    Application(bool dev);
     errorCodes error = NoErr;       //!< error to display after application has failed. TO DO
     
     private:
@@ -70,11 +71,6 @@ class Application{
      * @brief Create a setting file with default settings.
      */
     void createSettings(void);
-
-    /**
-     * @brief Save the setting file.
-     */
-    void saveSettings(void);
 
     /**
      * @brief Load all assets, such as textures and music.
@@ -106,15 +102,14 @@ class Application{
     GAME_STATE gameLoop(void);
 
 
-    // Window variables
-    sf::RenderWindow window;            //!< window variable to display everything in
-    resolution_tools res_tools;         //!< resolution tools
-    short FPS;                          //!< frames per second
-    
-    Cursor *cursor;              //!< application cursor. used throughout the programm
-    
-    float volume;               //!< 0-1
+    // Settings variables
+    bool DEV_MODE;                  //!< Developer mode. Prints more information to the console
+    app_settings settings;          //!< settings of the application
 
+    // Window variables 
+    sf::RenderWindow window;            //!< window variable to display everything in
+    Cursor *cursor;                     //!< application cursor. used throughout the programme
+    sf::Vector2f scale_window;          //!< location of the window
     // Networking variables
     sf::IpAddress machinePublicAdress = sf::IpAddress::getPublicAddress();  //!< local ip address of user machine
     sf::IpAddress machineLocalAdress = sf::IpAddress::getLocalAddress();    //!< public ip address of user machine
@@ -129,8 +124,7 @@ class Application{
     // Controller variables
     GAME_STATE State;               //!< state of game/APPLICATION. game, menu, or exit
     gameMode mode = undefined;      //!< Online, Local, or Alone
-    
-    std::string localUserID;        //!< Id of active user
+
 
     // collection of loadable assets. everything that needs to be loaded and is presented sensory
     struct Assets {
@@ -139,16 +133,13 @@ class Application{
         
         // Textures assets
         struct Textures {
-            sf::Texture cursors[nr_cursor_textures];      //!< cursor textures
-            sf::Texture menu[nr_menu_textures];           //!< menu textures
+            sf::Texture cursors;        //!< cursor textures
+            sf::Texture menu;           //!< menu textures
         } textures;
-
+        
         // Font assets
         sf::Font gameFont;  //!< font used for all text in the game
     } assets;
-
-    // Saved input variables. (TO DO: make adaptable in menu -> save after user changes)
-    inGameInputKey inGameControls[n_keyInputOptions];   //!< assigned keys for in-game controls
 };
 
 

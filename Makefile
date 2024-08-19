@@ -1,6 +1,7 @@
-all: all_static # default command is static
-#default all, otherwise all_static, all_dynamic
 
+all: all_static
+
+#default all, otherwise all_static, all_dynamic
 
 # Variables
 WFLAGS = -Wall -Wfatal-errors -pedantic -Wextra -O2
@@ -29,6 +30,7 @@ LINK_DYNAMIC = -L $(LIB_PATH) $(sfml_link_d) $(other_links)
 sfml_link_d =  -l sfml-graphics -l sfml-window -l sfml-audio -l sfml-network -l sfml-system
 
 
+
 # Targets
 all_static: clean $(OBJ)
 	$(COMPILER_s) $(OBJ) -o Game.exe $(LINK_STATIC)
@@ -48,7 +50,20 @@ compile_dynamic:
 	$(COMPILER_d) $(WFLAGS) -c ./src/*.cpp -I $(INCLUDE_PATH) -o $(BIN_PATH)/$@F)
 
 
+compile_file_static:
+	$(COMPILER_s) $(WFLAGS) -c $(SRC_PATH)/$(file) -I $(INCLUDE_PATH) -o $(BIN_PATH)/$(basename $(file)).o
 
+
+# single file compilation
+file ?=
+single:
+ifeq ($(file),)
+	@echo "No file specified"
+else
+	@echo "Compiling $(file).cpp"
+	$(COMPILER_s) $(WFLAGS) -c $(SRC_PATH)/$(file).cpp -I $(INCLUDE_PATH) -o $(BIN_PATH)/$(basename $(file)).o
+	$(COMPILER_s) $(OBJ) -o Game.exe $(LINK_STATIC)
+endif
 
 # Clean Up Tools
 clean:

@@ -7,35 +7,27 @@
 
 
 //pretending we define the parent class functions
-button::button(short i, std::string tex, mainMenuLayerId currentLayer, mainMenuLayerId followLayer,  float pos[2], sf::Font &font){
+button::button(short i, short max_i, std::string tex, mainMenuLayerId currentLayer, mainMenuLayerId followLayer,  unsigned int width, unsigned int height, sf::Vector2f scale, sf::Font &font){
     // Init variables
     layer = currentLayer;
     layer_next = followLayer;
     stringText = tex;
     idx = i;
-    
+    max_idx = max_i;
     // Set visual properties
     text.setString(stringText);
     text.setFillColor(sf::Color::White);
     text.setFont(font);
-    text.setCharacterSize(GAMEFONT_SIZE);
     text.setStyle(sf::Text::Style::Regular);
 
-    position[0] = pos[0] - (text.getGlobalBounds().getSize().x/2.0);
-    position[1] = pos[1] - (text.getGlobalBounds().getSize().y/2.0);
-    text.setPosition(position[0], position[1]);
+    changeResolution(width, height, scale);
 
     // Control Variables
     focus = false;
 };
-void button::draw(sf::RenderWindow &window){
-    window.draw(text);
-};
-void button::update(sf::Vector2f mousePos){
-    // Check if the mouse is hovering over the button
 
-    if (mousePos.x > text.getPosition().x && mousePos.x < text.getPosition().x + text.getGlobalBounds().getSize().x
-    && mousePos.y > text.getPosition().y && mousePos.y < text.getPosition().y + text.getGlobalBounds().getSize().y){
+void button::update(sf::Vector2f mousePos){
+    if (text.getGlobalBounds().contains(mousePos)){
         if (!focus){
             focus = true;
             text.setStyle(sf::Text::Style::Underlined);
@@ -50,13 +42,20 @@ void button::update(sf::Vector2f mousePos){
         }
     }
 };
-button::~button(){};
+button::~button(void){};
 
-
+void button::changeResolution(unsigned int width, unsigned int height, sf::Vector2f scale){
+    text.setCharacterSize(GAMEFONT_SIZE * scale.y);
+    
+    float x = (width - text.getLocalBounds().width) / 2.0;
+    float y = ((height / float(max_idx + 1)) * (idx + 1)) - (text.getLocalBounds().height / 2.0);
+    
+    text.setPosition(x, y);
+};
 
 // CLICK BUTTONS
-ClickButton::ClickButton(short i, std::string text, mainMenuLayerId currentLayer, mainMenuLayerId followLayer,  float pos[2], sf::Font &font, clickbuttonTypes type)
-: button(i, text, currentLayer, followLayer, pos, font){
+ClickButton::ClickButton(short i, short max_i, std::string text, mainMenuLayerId currentLayer, mainMenuLayerId followLayer,  unsigned int width, unsigned int height, sf::Vector2f scale, sf::Font &font, clickbuttonTypes type)
+: button(i, max_i, text, currentLayer, followLayer, width, height, scale, font){
     // Call parent constructor and set type
     this->type = type;
 };
@@ -69,8 +68,8 @@ void ClickButton::update(sf::Vector2f mousePos){
 
 
 
-textButton::textButton(short i, std::string tex, mainMenuLayerId currentLayer, mainMenuLayerId followLayer,  float pos[2], sf::Font &font, textbuttonTypes type)
-: button(i, tex, currentLayer, followLayer, pos, font){
+textButton::textButton(short i, short max_i,std::string tex, mainMenuLayerId currentLayer, mainMenuLayerId followLayer,  unsigned int width, unsigned int height, sf::Vector2f scale, sf::Font &font, textbuttonTypes type)
+: button(i, max_i, tex, currentLayer, followLayer, width, height, scale, font){
     this->type = type;
     ogPosition[0] = text.getPosition().x;
     ogPosition[1] = text.getPosition().y;
@@ -129,7 +128,7 @@ void textButton::addInput(sf::Uint32 input, sf::Vector2u res){
         }
         else if (type == textbuttonTypes::newSafe){
             // Allow letters, numbers and spaces for the save name
-            if ((input >= 'a' && input <= 'z') || (input >= 'A' && input <= 'Z') || (input >= '0' && input <= '9') || input == ' '){
+            if ((input >= 'a' && input <= 'z') || (input >= 'A' && input <= 'Z') || (input >= '0' && input <= '9') || (input == ' ' && userText.size() != 0)){
                 userText += input;
             }
         }

@@ -8,13 +8,14 @@
 
 #include "utils.hpp"
 
-#define nr_cursor_textures 2    //!< maximum number of cursor textures to load
+#define nr_cursor_textures 4    //!< maximum number of cursor textures to load
 
 /// \brief Enumeration of cursor sprite indexes
 enum cursorSpriteIdx {
     menu = 0, 
     melee = 1,
-    ranged = 2
+    ranged_0 = 2,
+    ranged_1 = 3
 };
 
 
@@ -22,7 +23,7 @@ enum cursorSpriteIdx {
 /// \brief Class containing cursor sprites for the menu, in-game, etc.
 class Cursor{    
 public:
-    Cursor(sf::RenderWindow *win, resolution_tools res, sf::Texture textures[nr_cursor_textures]);  //!< Constructor
+    Cursor(sf::RenderWindow *win, sf::Vector2f *s, sf::Texture *textures);  //!< Constructor
 
     /**
      * @brief Change the active sprite used for the cursor
@@ -57,13 +58,19 @@ public:
      * @return The size of the cursor as a sf::Vector2f
      */
     sf::Vector2f returnSize(void);
+    
+    void changeResolution(bool dev); //!< Change the resolution of the cursor
+
     bool display;                           //!< True/false to show the cursor sprite    
+    
+    cursorSpriteIdx spriteIdx;              //!< Active sprite for drawing
+    
     private:
     sf::RenderWindow *window;               //!< Pointer to the window
-    cursorSpriteIdx spriteIdx;              //!< Active sprite for drawing
-    sf::Sprite sprites[nr_cursor_textures]; //!< Available sprites
+    sf::Sprite sprite;                      //!< Available sprites
     bool pressed;                           //!< True/false if mouse button is pressed (redundant?)
-    resolution_tools resolutions;           //!< Resolution tools
+    sf::Vector2f *w_scale;                  //!< Resolution tools
+    
 };
 
 

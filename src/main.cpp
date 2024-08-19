@@ -2,9 +2,23 @@
 //copied files according to https://www.youtube.com/watch?v=rZE700aaT5I
 #include "application.hpp"
 
+#include <cstring>
 
-int main(){
-    Application Game;
+bool run_as_dev(char *argv1){
+    return strcmp(argv1, "-d") == 0;
+}
+
+int main(int argc, char *argv[]){
+    
+    bool dev;
+    if (argc > 1){
+        dev = run_as_dev(argv[1]);
+    }
+    else{
+        dev = false;
+    }
+
+    Application Game(dev);
     if (Game.error != NoErr){
         system("pause");
         return 1;
