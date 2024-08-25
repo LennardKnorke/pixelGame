@@ -24,7 +24,7 @@ typedef struct inGameInputKey {
 }inGameInputKey;
 
 
-#define n_keyInputOptions 9 //!< number of possible inputs in the game
+#define n_keyInputOptions 10 //!< number of possible inputs in the game
 
 /// @brief possible inputs in the game
 enum keyInputOptions {
@@ -36,7 +36,9 @@ enum keyInputOptions {
     nextItem = 5,       //!< next item
     attack = 6,         //!< attack
     special = 7,        //!< special
-    useItem = 8         //!< use item
+    useItem = 8,         //!< use item
+    jump = 9            //!< jump
+
 };
 
 

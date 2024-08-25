@@ -5,6 +5,7 @@
 //
 #include <string>
 #include <fstream>
+#include <random>
 #include <regex>
 
 #include <SFML/Network.hpp>
@@ -14,6 +15,7 @@
 #define MAX_SAVES 5                     //!< Maximum number of saves load or create
 
 #define DEFAULT_PORT 53000              //!< Default port for networking
+
 #define DEFAULT_FPS 60                  //!< Default frames per second
 #define DEFAULT_VOLUME 50.0             //!< Default volume level
 #define DEFAULT_WINDOW_WIDTH 1280       //!< Default window width
@@ -47,14 +49,6 @@ enum maxInputLengths {
 
 
 /**
- * @brief Checks if a file exists.
- * @param filename String with filename/relative location + type. e.g. "settings.bin"
- * @return True if it exists, else false 
- */
-bool fileExists(const std::string& filename);
-
-
-/**
  * @brief Reads size and then string out of an open binary file.
  * @param file Opened file to read out of.
  * @param str String variable to read into.
@@ -84,4 +78,13 @@ bool validIP(const std::string &ip);
  * @return unsigned short 
  */
 unsigned short findFreePort(void);
+
+
+/**
+ * @brief Get a random seed number
+ * @return unsigned int 
+ */
+unsigned int getRandomSeed(void);
+
+
 #endif //UTILS_HPP

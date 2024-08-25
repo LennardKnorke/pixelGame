@@ -19,7 +19,7 @@ int main(int argc, char *argv[]){
     }
 
     Application Game(dev);
-    if (Game.error != NoErr){
+    if (Game.error != NoErr || dev){
         system("pause");
         return 1;
     }

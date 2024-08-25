@@ -1,6 +1,9 @@
 
 all: all_static
-
+tmp:
+	$(COMPILER_s) $(WFLAGS) -c ./src/map_loader.cpp -I $(INCLUDE_PATH) -o $(BIN_PATH)/map_loader.o
+	$(COMPILER_s) ./$(BIN_PATH)/map_loader.o -o get_map.exe $(LINK_STATIC)
+	
 #default all, otherwise all_static, all_dynamic
 
 # Variables

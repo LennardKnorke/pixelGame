@@ -31,22 +31,6 @@ std::vector<gamesave_summary> read_all_save_summaries (void);
 gamesave_summary load_summary(const std::string &filepath);
 
 
-/// @brief Struct containing all settings of the application
-struct app_settings{
-    std::string userId;                         // User ID
 
-    float volumne;                              // Volume of the game
-    
-    inGameInputKey controls[n_keyInputOptions]; // Controls
-    
-    short fps;                                  // Frames per second
-    bool fullscreen;                            // Fullscreen mode
-    unsigned int res_x;                         // Resolution width
-    unsigned int res_y;                         // Resolution height
-};
-
-void save_settings(app_settings s);
-
-app_settings load_settings(void);
 
 #endif // SAVE_MANAGEMENT_HPP

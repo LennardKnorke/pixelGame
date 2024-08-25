@@ -3,103 +3,151 @@
 
 GAME_STATE Application::gameLoop(void){
     Game *game;
-
     if (mode == gameMode::Single || mode == gameMode::Host){
-        game = new Game(mode, &window, cursor, loadingTools.chosenSave);
+        game = new Host_Game(mode, &window, cursor, DEV_MODE, settings, &assets, loadingTools.chosenSave);
     }
     else if (mode == gameMode::Join){
-        game = new Game(mode, &window, cursor, loadingTools.ip, loadingTools.port);
+        game = new Join_Game(mode, &window, cursor, DEV_MODE, settings, &assets, loadingTools.ip, loadingTools.port);
     }
     else {
         std::cerr << "ERROR: Invalid game mode" << std::endl;
         return GAME_STATE::QUIT;
     }
 
-    GAME_STATE next_state = game->run();
-
-
+    // END OF GAME LOOP.
+    // Go to menu
+    if (game->gameState == GameStates::MENU_){
+        delete game;
+        return GAME_STATE::MENU;
+    }
+    //Or quit application
+    //(optional with error)
+    if (game->gameState == GameStates::QUIT_ERROR){
+        error = Error;
+    }
     delete game;
-    return next_state;
+    return GAME_STATE::QUIT;
 }
+
+
+game_save::game_save(gamesave_summary *s){
+    // Constructor. save all parameters given
+    summary = *s;
+    if (summary.initialized){
+
+    }
+}
+game_save::game_save(){
+    // Constructor. save all parameters given
+    seed = 0;
+}
+
+
 
 // Constructor for playing singleplayer or hosting game
-Game::Game(gameMode m, sf::RenderWindow *win, Cursor *cur, gamesave_summary save){
+Game::Game(gameMode m, sf::RenderWindow *win, Cursor *cur, bool dev, settings_class *ps, asset_manager *am){
     // Constructor. save all parameters given
-    mode = m;
-    info = save;
-    window = win;
-    cursor = cur;
-
-    if (mode == gameMode::Host){
-        network_tools_c.host_ip = sf::IpAddress::getLocalAddress();
-        network_tools_c.host_port = findFreePort();
-        std::cout << "Hosting on " << network_tools_c.host_ip << ":" << network_tools_c.host_port << std::endl;
-    }
-}
-
-// Constructor for joining a game
-Game::Game(gameMode m, sf::RenderWindow *win, Cursor *cur, sf::IpAddress ip, unsigned short port){
-    mode = m;
-    window = win;
-    cursor = cur;
-
-    network_tools_c.host_ip = ip;
-    network_tools_c.host_port = port;
-
-}
-
-
-GAME_STATE Game::run(void){
-    // If hosting or joining, set up sockets for communication
+    this->mode = m;
+    this->window = win;
     
+    this->cursor = cur;
+    this->settings = ps;
+    this->DEV_MODE = dev;
+    this->assets = am;
+
+    this->loading_done = false;
+    //win->setActive(true);
+    this->loadingThread = new sf::Thread(&Game::loadingScreen_t, this);
+    if (DEV_MODE){
+        std::cout << "INIT GAME: " << std::endl;
+        std::cout << "\tGame mode: " << m << std::endl;
+        std::cout << "\tWindow size: " << window->getSize().x << "x" << window->getSize().y << std::endl;
+        std::cout << "\tResolution: " << settings->res.width << "x" << settings->res.height << std::endl;
+        std::cout << "\tScale: " << settings->res.scaling.x << "x" << settings->res.scaling.y << std::endl;
+
+    }
+}
+
+void Game::loadingScreen_t(void){
+    window->setActive(true);
+
+    sf::Text loadingText;
+    loadingText.setString("Loading...");
+    loadingText.setFont(assets->gameFont);
+    loadingText.setCharacterSize(GAMEFONT_SIZE * settings->res.scaling.x);
+    loadingText.setFillColor(sf::Color::Red);
+    loadingText.setPosition(window->getSize().x / 2 - loadingText.getGlobalBounds().width / 2, window->getSize().y / 2 - loadingText.getGlobalBounds().height / 2);
+
+
+    while (!loading_done){
+        // Draw loading screen
+        window->clear(sf::Color::Black);
+        window->draw(loadingText);
+        window->display();
+    }
+    window->setActive(false);
+}
+
+
+Join_Game::Join_Game(gameMode m, sf::RenderWindow *win, Cursor *cur, bool dev, settings_class *ps, asset_manager *am, sf::IpAddress ip, unsigned short port) 
+: Game(m, win, cur, dev, ps, am){
+    // Constructor. save all parameters given
+    h_ip = ip;
+    h_port = port;
+
+    if (DEV_MODE){
+        std::cout << "INIT JOIN GAME: " << std::endl;
+        std::cout << "\tHost Ip " << h_ip << std::endl;
+        std::cout << "\tHost Port" << h_port << std::endl;
+    }
+
+    // LOADING THREAD. Connect with host and load game from host
+    loadingThread->launch();
+
+    loading_done = true;
+    loadingThread->wait();
+    // END OF LOADING THREAD
+    gameState = QUIT_NOERROR;
+}
+
+Host_Game::Host_Game(gameMode m, sf::RenderWindow *win, Cursor *cur, bool dev, settings_class *ps, asset_manager *am, gamesave_summary s)
+: Game(m, win, cur, dev, ps, am){
+    // Constructor. save all parameters given
+    this->save = new game_save(&s);
+    if (DEV_MODE){
+        std::cout << "INIT HOST GAME: " << std::endl;
+        std::cout << "\t" << save->summary.path << "\t";
+        std::cout << "\t" << save->summary.name << "\t";
+        std::cout << "\t" << save->summary.initialized << std::endl;
+    }
+    
+    // LOADING THREAD. Load game from save
+    loadingThread->launch();
+    // Host specific loading
     if (mode == gameMode::Host){
-        sf::TcpSocket socket;
-        if (network_tools_c.host_port == 0){
-            std::cerr << "ERROR: Could not find free port" << std::endl;
-            return GAME_STATE::QUIT;
+        port = findFreePort();
+        if (port == 0){
+            std::cerr << "ERROR: Failed to find free port" << std::endl;
+            gameState = QUIT_ERROR;
         }
-        hostingTools.listener.listen(network_tools_c.host_port);
-        hostingTools.listener.accept(socket);
+        else {
+            ip = sf::IpAddress::getLocalAddress();
 
-        std::string message = "Hello from server\n";
-        sf::Packet packet;
-        packet << message;
-        socket.send(packet);
-        packet.clear();
-        socket.receive(packet);
-        packet >> message;
-        std::cout << message << std::endl;
-        socket.disconnect();
+        }
+        listener.listen(port, ip);
     }
-    else if (mode == gameMode::Join){
-        network_tools_c.socket.connect(network_tools_c.host_ip, network_tools_c.host_port);
-        
-        std::string message = "Hello from client\n";
-        sf::Packet packet;
-        packet << message;
-        network_tools_c.socket.send(packet);
-        packet.clear();
-        network_tools_c.socket.receive(packet);
-        packet >> message;
-        std::cout << message << std::endl;
-        network_tools_c.socket.disconnect();
+    loading_done = true;
+    loadingThread->wait();
+    // END OF LOADING THREAD
+
+
+
+
+
+
+    // END OF GAME APPLICATION
+    if (mode == gameMode::Host){
+        listener.close();
     }
-    // If hosting or single player, load the save file
-    // else if joining, wait for the host to send the save file
-
-    // Main game loop
-        //draw
-
-        //handle input by user
-
-        //if hosting or joining, communicate with other players
-
-        //update game state
-
-    // End of loop
-    // Cut off communication if hosting or joining
-    // Save the game if hosting or single player
-
-    // Return to main menu, exit, and mark possible errors
-    return GAME_STATE::QUIT;
+    gameState = QUIT_NOERROR;
 }

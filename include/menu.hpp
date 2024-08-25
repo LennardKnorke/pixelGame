@@ -14,7 +14,7 @@
 #include "cursor.hpp"
 #include "menuButtons.hpp"
 #include "save_management.hpp"
-
+#include "settings.hpp"
 
 /// @brief Enum to index message pop ups in main menu loop.
 enum menuPopUps{
@@ -38,7 +38,7 @@ class MainMenu {
      * @param font pointer to font to be used for the buttons and text.
      * @param bg_music pointer to the background music for the menu
      */
-    MainMenu(Cursor *cursor, app_settings *ps, sf::Texture *bg_Texture, sf::Font *font, sf::Music *bg_music, bool dev);
+    MainMenu(Cursor *cursor, settings_class *ps, sf::Texture *bg_Texture, sf::Font *font, sf::Music *bg_music, bool dev);
 
     /**
      * @brief Destroys the MainMenu object.
@@ -92,8 +92,7 @@ class MainMenu {
     menuPopUps menuWarning = menuPopUps::noPopUp;           /**< The menu warning pop-up. */
     bool writing = false;                                   /**< Flag indicating whether text input is allowed. */
     
-    app_settings *settings_p;                                  /**< The resolution of the window. */
-    sf::Vector2f scale_window;                                  /**< The scale of the window. */
+    settings_class *settings;                                  /**< The resolution of the window. */
     
     Cursor *cursor;
     std::vector<button *> menuButtons;

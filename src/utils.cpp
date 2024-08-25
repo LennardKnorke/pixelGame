@@ -1,15 +1,5 @@
 #include "utils.hpp"
 
-
-bool fileExists(const std::string &filename){
-    std::ifstream file(filename);
-    bool works = file.good();
-    file.close();
-    return works;
-}
-
-
-
 void readStrOfFile(std::ifstream &file, std::string &str){
     //Get Size of String
     size_t size;
@@ -45,4 +35,12 @@ unsigned short findFreePort(void){
         }
     }
     return 0;
+}
+
+
+unsigned int getRandomSeed(void){
+    std::random_device rd;
+    std::mt19937 generator(rd());
+    std::uniform_int_distribution<unsigned int> dtr(0, UINT_MAX);
+    return dtr(generator);
 }
