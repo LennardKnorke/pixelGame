@@ -25,14 +25,28 @@ enum GameStates {
 
 class game_save{
     private:
+    bool *DEV_MODE;
+    bool hosting;
     unsigned int seed;
     
+    char map[MAP_WIDTH][MAP_HEIGHT];
+
+    std::vector<std::string> players;
+    int player_idxs[4];
 
     public:
+    bool valid;
     gamesave_summary summary;
-    game_save(gamesave_summary *s);
+    game_save(gamesave_summary *s, std::string host_id, bool *dev);
     game_save();
     ~game_save();
+
+    short add_player(std::string id);
+
+    void init_save(std::string host_id);
+    sf::Thread *save_thread;
+    void save_save_t(void);
+    void load_save(std::ifstream &inputFile);
 };
 
 

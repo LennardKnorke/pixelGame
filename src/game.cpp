@@ -30,18 +30,85 @@ GAME_STATE Application::gameLoop(void){
 }
 
 
-game_save::game_save(gamesave_summary *s){
-    // Constructor. save all parameters given
-    summary = *s;
-    if (summary.initialized){
+game_save::game_save(gamesave_summary *s, std::string host_id, bool *dev){
+    save_thread = new sf::Thread(&game_save::save_save_t, this);
+    DEV_MODE = dev;
 
+    std::string file_path = s->path;
+    std::ifstream inputFile(file_path, std::ios::binary);
+
+    std::string confirm_name;
+    readStrOfFile(inputFile, confirm_name);
+    bool confirm_initialized;
+    inputFile.read(reinterpret_cast<char*>(&confirm_initialized), sizeof(bool));
+
+    if (confirm_initialized == s->initialized && confirm_name == s->name){
+        summary.name = s->name;
+        summary.path = s->path;
+        summary.initialized = s->initialized;
     }
+    else {
+        std::cerr << "ERROR: Save file corrupted" << std::endl;
+        valid = false;
+        return;
+    }
+
+    if (summary.initialized){
+        load_save(inputFile);
+        inputFile.close();
+    }
+    else {
+        inputFile.close();
+        init_save(host_id);
+        save_thread->launch();
+    }
+
+    valid = true;
 }
+
+void game_save::init_save(std::string host_id){
+    std::random_device rd;
+    std::mt19937_64 eng(rd()); 
+    // Initialize save
+    seed = std::uniform_int_distribution<unsigned int>(0, UINT16_MAX)(eng);
+
+
+    // Initialize (empty) map
+    Map_Generator mapGen(seed);
+    // Ugly but alright.
+    for (auto i = 0; i < MAP_WIDTH; i++){
+        for (auto j = 0; j < MAP_HEIGHT; j++){
+            map[i][j] = mapGen.tile_map[i][j];
+        }
+    }
+    add_player(host_id);
+    //
+}
+
+short game_save::add_player(std::string id){
+    /// Returns the index of the player after adding them to the Player List
+    players.push_back(id);
+
+    if (hosting){
+        save_thread->launch();
+    }
+    return players.size()-1;
+}
+
+void game_save::load_save(std::ifstream &inputFile){
+    // Load game
+}
+
+void game_save::save_save_t(void){
+    std::cout << "Saving game" << std::endl;
+}
+
 game_save::game_save(){
     // Constructor. save all parameters given
-    seed = 0;
 }
-
+game_save::~game_save(){
+    // Destructor
+}
 
 
 // Constructor for playing singleplayer or hosting game
@@ -113,18 +180,21 @@ Join_Game::Join_Game(gameMode m, sf::RenderWindow *win, Cursor *cur, bool dev, s
 Host_Game::Host_Game(gameMode m, sf::RenderWindow *win, Cursor *cur, bool dev, settings_class *ps, asset_manager *am, gamesave_summary s)
 : Game(m, win, cur, dev, ps, am){
     // Constructor. save all parameters given
-    this->save = new game_save(&s);
+    
     if (DEV_MODE){
         std::cout << "INIT HOST GAME: " << std::endl;
         std::cout << "\t" << save->summary.path << "\t";
         std::cout << "\t" << save->summary.name << "\t";
         std::cout << "\t" << save->summary.initialized << std::endl;
     }
-    
     // LOADING THREAD. Load game from save
     loadingThread->launch();
+    this->save = new game_save(&s); // Loads game
+    if (!save->valid){
+        gameState = QUIT_ERROR;
+    }
     // Host specific loading
-    if (mode == gameMode::Host){
+    if (mode == gameMode::Host && gameState != QUIT_ERROR){
         port = findFreePort();
         if (port == 0){
             std::cerr << "ERROR: Failed to find free port" << std::endl;
@@ -132,10 +202,11 @@ Host_Game::Host_Game(gameMode m, sf::RenderWindow *win, Cursor *cur, bool dev, s
         }
         else {
             ip = sf::IpAddress::getLocalAddress();
-
+            listener.listen(port, ip);
         }
-        listener.listen(port, ip);
+        
     }
+    
     loading_done = true;
     loadingThread->wait();
     // END OF LOADING THREAD
