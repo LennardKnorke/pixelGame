@@ -49,7 +49,7 @@ class Map_Generator{
     void fill_dirt(int x, int y);
     public:
     Map_Generator(unsigned int seed);
-    tile_c tile_map[MAP_WIDTH][MAP_HEIGHT];
+    char tile_map[MAP_WIDTH][MAP_HEIGHT];
     void save_map();
 
 

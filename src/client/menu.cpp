@@ -13,7 +13,6 @@ GAME_STATE Application::menuLoop(void){
 
         menu->update(&window);
     }
-
     // End of menu loop. Get next state and necessary tools
     if (menu->currentLayer == mainMenuLayerId::game){
         mode = menu->getGameMode();
