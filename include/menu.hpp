@@ -7,14 +7,16 @@
 #ifndef MENU_HPP
 #define MENU_HPP
 
-
+#include <optional>
 
 #include "SFML/Audio.hpp"
 
+#include "asset_manager.hpp"
 #include "cursor.hpp"
 #include "menuButtons.hpp"
 #include "save_management.hpp"
 #include "settings.hpp"
+#include "utils.hpp"
 
 /// @brief Enum to index message pop ups in main menu loop.
 enum menuPopUps{
@@ -38,47 +40,29 @@ class MainMenu {
      * @param font pointer to font to be used for the buttons and text.
      * @param bg_music pointer to the background music for the menu
      */
-    MainMenu(Cursor *cursor, settings_class *ps, sf::Texture *bg_Texture, sf::Font *font, sf::Music *bg_music, bool dev);
+    MainMenu(sf::RenderWindow *window, Cursor *cursor, settings_class *ps, asset_manager *assets, stateInfo *stateTracker, bool dev);
 
     /**
      * @brief Destroys the MainMenu object.
      */
     ~MainMenu(void);
 
+    void run(void);
+
     /**
      * @brief Draw the menu in the given window
      */
-     void draw(sf::RenderWindow *window);
+     void draw(void);
 
     /**
      * @brief handle user input events
      */
-    void handleEvents(sf::RenderWindow *window);
+    void handleEvents(void);
 
     /**
      * @brief update menu button and control states
      */
-     void update(sf::RenderWindow *window);
-
-    /**
-     * @brief return the selected game mode
-     */
-    gameMode getGameMode(void);
-
-    /**
-     * @brief return the host ip
-     */
-    sf::IpAddress getHostIp(void);
-
-    /**
-     * @brief return the host port
-     */
-    unsigned short getHostPort(void);
-
-    /**
-     * @brief return the save file to load upon game start
-     */
-    gamesave_summary getChosenSave(void);
+     void update(void);
     
     bool running = true;                                    /**< Flag indicating whether the main menu is running. */                                  /**< The next game state. */
     mainMenuLayerId currentLayer = mainMenuLayerId::base;   /**< The current layer of the main menu. */
@@ -86,26 +70,22 @@ class MainMenu {
     // Private Variables
     private:
     bool DEV_MODE = false;                                  /**< Flag indicating whether the game is in development mode. */
-
-    sf::Font *font;                                         /**< The font to be used for the buttons and text. */
-    sf::Sprite backgroundSprite;                            /**< The background sprite. */
+    stateInfo *stateTracker; /**< The next game state. */
     menuPopUps menuWarning = menuPopUps::noPopUp;           /**< The menu warning pop-up. */
     bool writing = false;                                   /**< Flag indicating whether text input is allowed. */
     
     settings_class *settings;                                  /**< The resolution of the window. */
-    
+    asset_manager *assets;                                  /**< The asset manager. */
     Cursor *cursor;
     std::vector<button *> menuButtons;
-    sf::Text warningMessage;                                /**< The warning message text. */
-    sf::Music *bg_music;
+    sf::Text *warningMessage;                                /**< The warning message text. */
+    sf::RenderWindow *window;                               /**< The window to draw the menu in. */
 
-    gameMode mode = gameMode::undefined;                    /**< The game mode. */
+    
     std::vector<gamesave_summary> availableSaveFiles;       /**< The available save files. */
 
-    gamesave_summary chosen_save;                           /**< The chosen save file. */
-    sf::IpAddress hostIp = sf::IpAddress::None;              /**< The host IP address. */
-    unsigned short hostPort = DEFAULT_PORT;                         /**< The host port. */
     
+
     /**
      * @brief Initializes the error message text for the current menu pop up
      * @return The initialized error message text.
@@ -120,12 +100,12 @@ class MainMenu {
     /**
      * @brief Draws the menu buttons.
      */
-    void drawMenuButtons(sf::RenderWindow *window);
+    void drawMenuButtons();
 
     /**
      * @brief Draws the menu pop-up.
      */
-    void drawMenuPopUp(sf::RenderWindow *window);
+    void drawMenuPopUp();
 
     /**
      * @brief Handles the escape key press event.
@@ -147,12 +127,12 @@ class MainMenu {
      * @brief Handles the text entered event.
      * @param ev The text entered event.
      */
-    void textEntered(sf::Event ev);
+    void textEntered(std::optional<sf::Event> event);
 
     /**
      * @brief Handles the mouse button pressed event.
      */
-    void mouseButtonPressed(sf::RenderWindow *window);
+    void mouseButtonPressed();
 
     /**
      * @brief Creates a new save file with the given name.
@@ -181,7 +161,7 @@ class MainMenu {
      */
     void getMenuPicks(void);
 
-    void changeFullscreen(sf::RenderWindow *window);
+    void changeFullscreen();
 };
 
 #endif //MENU_HPP

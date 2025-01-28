@@ -4,7 +4,9 @@
 
 #include <iostream>
 #include <filesystem>
-
+#include <map>
+#include <string>
+#include <variant>
 
 #include "SFML/Graphics.hpp"
 #include "SFML/Audio.hpp"
@@ -13,16 +15,12 @@
 #define nr_menu_textures 1      //!< maximum number of menu textures to load
 #define nr_backgroundMusic 2    //!< maximum number of music files to be loaded
 
-/// @brief makros: idx menu textures
-enum menuTextureIdxS {
-    background = 0,     //!< background texture index
-};
-
 /// @brief makros: idx background music
 enum musicIdx {
     mainMenu = 0,           //!< main Menu
     game_main = 1,          //!< main Game
 };
+
 
 
 class asset_manager {
@@ -31,12 +29,19 @@ class asset_manager {
     ~asset_manager();
 
     sf::Music backgroundMusic[nr_backgroundMusic];      //!< background music
+
+    
     struct Textures {
-        sf::Texture menu[nr_menu_textures];             //!< menu textures
+        // Example. Not used, delete later
+        struct menuTextures {
+            std::string keys[1] = {"background"};       
+            std::map<std::string, sf::Texture> textures;
+        } menu;
+
         sf::Texture cursors;                            //!< cursor textures
     } textures;
 
-    sf::Font gameFont;                                  //!< game font
+    sf::Font font;                                  //!< game font
 
     bool load(void);
 

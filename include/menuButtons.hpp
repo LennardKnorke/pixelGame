@@ -57,7 +57,7 @@ class button{
     mainMenuLayerId layer;      //!< layer the button is in
     mainMenuLayerId layer_next; //!< layer the button leads to
     std::string stringText;     //!< text to be displayed
-    sf::Text text;              //!< text object
+    sf::Text *text;             //!< text object
     bool focus;                 //!< true if the cursor hovering over the button         
     short idx;                  //!< index of the button in its layer
     short max_idx;              //!< maximum number of buttons in the layer
@@ -140,7 +140,7 @@ class textButton : public button{
      * @param input     sf::Uint32 input
      * @param res       sf::Vector2u resolution of the window
      */
-    void addInput(sf::Uint32 input, sf::Vector2u res);
+    void addInput(char input, sf::Vector2u res);
 
     /**
      * @brief Removes the last letter or number from the input string

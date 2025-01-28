@@ -6,9 +6,10 @@
 
 #include "SFML/Graphics.hpp"
 
-#include "utils.hpp"
 
-#define nr_cursor_textures 2    //!< maximum number of cursor textures to load
+
+
+#define nr_cursor_textures 1    //!< maximum number of cursor textures to load
 
 /// \brief Enumeration of cursor sprite indexes
 enum cursorSpriteIdx {
@@ -40,7 +41,7 @@ public:
      * @brief Draw the cursor in the window
      * @param renderwindow Window to draw in
      */
-    void draw(sf::RenderWindow &renderwindow);
+    void draw();
 
     /**
      * @brief Return the position of the cursor
@@ -62,7 +63,8 @@ public:
     
     private:
     sf::RenderWindow *window;               //!< Pointer to the window
-    sf::Sprite sprites[nr_cursor_textures];                      //!< Available sprites
+    std::vector<sf::Sprite> sprites;        //!< Available sprites
+
     bool pressed;                           //!< True/false if mouse button is pressed (redundant?)
     sf::Vector2f *w_scale;                  //!< Resolution tools
     

@@ -7,7 +7,8 @@
 #include <fstream>
 #include <random>
 #include <regex>
-
+#include <optional>
+#include <variant>
 #include <SFML/Network.hpp>
 
 
@@ -18,26 +19,72 @@
 
 #define DEFAULT_FPS 60                  //!< Default frames per second
 #define DEFAULT_VOLUME 50.0             //!< Default volume level
-#define DEFAULT_WINDOW_WIDTH 1280       //!< Default window width
-#define DEFAULT_WINDOW_HEIGHT 720       //!< Default window height
+#define DEFAULT_WINDOW_WIDTH 1920       //!< Default window width
+#define DEFAULT_WINDOW_HEIGHT 1080       //!< Default window height
 #define DEFAULT_FULLSCREEN 0            //!< Default fullscreen setting
 
 
-/// @brief Macros: Game states
-enum GAME_STATE {
-    MENU,                               //!< In the main menu
-    GAME,                               //!< In the main game loop
-    QUIT                                //!< Quit application
+
+enum appState{
+    MENU,               //!< in the main menu
+    GAME,               //!< in the main game loop
+    EXIT                //!< quit application
+}; 
+
+enum gameMode{
+    SINGLEPLAYER,               //!< singleplayer mode
+    MULTIPLAYER_HOST,            //!< multiplayer mode
+    MULTIPLAYER_JOIN,             //!< multiplayer mode
+    undefined
 };
 
-/// @brief Macros: Identify required networking settings
-enum gameMode {
-    Single,                             //!< Index for playing alone
-    Host,                               //!< Index for hosting a game
-    Join,                               //!< Index for joining a game
-    undefined                           //!< INVALID
-};
+struct stateInfo {
+    appState state = EXIT; //!< default state of the application
 
+    struct gameModeInfo {
+        gameMode mode = undefined; //!< default game mode
+
+        struct ConnectTo {
+            std::optional<sf::IpAddress> ip = std::nullopt;
+            unsigned short port = 0;
+        };
+
+        struct HostFile {
+            std::string file = "";
+        };
+
+        // Use a variant to represent connectTo or hostFile
+        std::variant<ConnectTo, HostFile> gameInfo = ConnectTo{};
+
+        // Helper to set mode and initialize associated data
+        void setMode(gameMode newMode) {
+            mode = newMode;
+            switch (newMode) {
+                case MULTIPLAYER_JOIN:
+                    gameInfo = ConnectTo{}; // Reset to default ConnectTo
+                    break;
+                case MULTIPLAYER_HOST || SINGLEPLAYER:
+                    gameInfo = HostFile{}; // Reset to default HostFile
+                    break;
+                default:
+                    // Undefined or fallback case
+                    break;
+            }
+        }
+        // Access helpers for connectTo and hostFile
+        ConnectTo& getConnectTo() {
+            return std::get<ConnectTo>(gameInfo);
+        }
+
+        HostFile& getHostFile() {
+            return std::get<HostFile>(gameInfo);
+        }
+    } next;
+
+    void setAppState(appState newState) {
+        state = newState;
+    }
+};
 
 /// @brief Maximum lengths various check ups
 enum maxInputLengths {
